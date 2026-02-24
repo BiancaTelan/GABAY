@@ -1,0 +1,22 @@
+# --- Python Specific ---
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+.txt
+
+# --- VS Code Specific ---
+.vscode/
+*.code-workspace
+
+# --- Database & System Specific ---
+# Ignore local DB configs that might have passwords
+backend/db_config_local.py
+.DS_Store
+Thumbs.db
+
+# --- Temporary Files ---
+*.log
+tmp/
