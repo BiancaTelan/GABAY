@@ -12,7 +12,7 @@ function App() {
     <div className="bg-white min-h-screen">
       <Header />
       <main className="p-10 text-center">
-        <h2 className="text-blue-900">Welcome to the Hospital Appointment System</h2>
+        <h2 className="text-gabay-blue">Welcome to the Hospital Appointment System</h2>
         <p className="text-gray-600 mt-2">Efficient healthcare at your fingertips.</p>
       </main>
     </div>
