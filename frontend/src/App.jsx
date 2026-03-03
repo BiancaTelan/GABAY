@@ -8,7 +8,7 @@ function App() {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      <main>
+      <main className="pt-0">
         <Home />
         <Reservations />
         <Help />
