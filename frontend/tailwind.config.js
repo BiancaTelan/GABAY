@@ -6,6 +6,12 @@ export default {
       colors: {
         'gabay-blue': '#2E5EB5', 
         'gabay-teal': '#33AFAE',
+        'gabay-navy': '#1B335F',
+        'gray-outline': '#929292'
+      },
+      fontFamily: {
+        sans: ['Poppins', 'sans-serif'],
+        montserrat: ['Montserrat', 'sans-serif'],
       },
     },
   },
