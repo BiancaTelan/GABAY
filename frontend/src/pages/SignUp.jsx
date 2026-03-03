@@ -1,15 +1,13 @@
 import caintaBg from '../assets/caintaBg.png';
 
-export default function AuthPage() {
+export default function SignUp({ onNavigate }) {
   return (
     <div className="relative min-h-screen flex items-center justify-center font-sans">
-      {/* 1. Background Image */}
       <div 
         className="absolute inset-0 z-0 bg-cover bg-center"
         style={{ backgroundImage: `url(${caintaBg})` }}
       />
 
-      {/* 2. Black Overlay (Opacity 50% - adjust as needed) */}
       <div className="absolute inset-0 z-10 bg-black opacity-50" />
 
       {/* 3. The Central Content Box */}
@@ -48,6 +46,16 @@ export default function AuthPage() {
               SUBMIT
             </button>
           </form>
+          
+          <p className="text-center mt-4">
+      Already have an account? 
+      <button 
+        onClick={() => onNavigate('login')} 
+        className="text-gabay-blue font-bold ml-1 hover:underline"
+      >
+        Log In
+      </button>
+    </p>
         </div>
       </div>
     </div>

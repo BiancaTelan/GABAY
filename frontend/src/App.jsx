@@ -24,8 +24,8 @@ function App() {
         {currentPage === 'reservations' && <Reservations />}
         {currentPage === 'help' && <Help />}
         {currentPage === 'contact' && <ContactUs />}
-        {currentPage === 'login' && <Login />}
-        {currentPage === 'signup' && <SignUp />}
+        {currentPage === 'login' && <Login onNavigate={setCurrentPage} />}
+        {currentPage === 'signup' && <SignUp onNavigate={setCurrentPage} />}
       </main>
 
     </div>
