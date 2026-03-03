@@ -10,7 +10,7 @@ export default {
         'gray-outline': '#929292'
       },
       fontFamily: {
-        sans: ['Work Sans', 'sans-serif'],
+        poppins: ['Poppins', 'sans-serif'],
         montserrat: ['Montserrat', 'sans-serif'],
       },
     },

@@ -1,4 +1,4 @@
-import caintaHeader from '../assets/caintaHeader.png';
+import caintaLanding from '../assets/caintaLanding.png';
 
 export default function Home() {
   return (
@@ -16,13 +16,13 @@ export default function Home() {
             Your health, our priority.
           </h2>
           
-          <p className="font-sans text-gray-600 text-lg lg:text-xl max-w-lg mb-10 leading-relaxed">
+          <p className="font-poppins text-gray-600 text-lg lg:text-xl max-w-lg mb-10 leading-relaxed">
             With GABAY, we will guide you in scheduling an appointment from 
             Cainta Municipal Hospital's outpatient departments (OPD). 
             Click the link below to get started!
           </p>
           
-          <button className="font-sans flex items-center text-gabay-blue font-bold text-lg hover:underline group">
+          <button className="font-poppins flex items-center text-gabay-blue font-semibold text-lg hover:underline group">
             Head to Department List 
             <span className="ml-2 transform group-hover:translate-x-1 transition-transform">
               →
@@ -32,7 +32,7 @@ export default function Home() {
 
         <div className="flex-1 relative">
           <img 
-            src={caintaHeader} 
+            src={caintaLanding} 
             alt="Cainta Municipal Hospital" 
             className="w-full h-full object-cover object-center"
           />
