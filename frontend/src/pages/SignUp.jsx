@@ -4,6 +4,9 @@ import Button from '../components/button';
 import Input from '../components/input';
 import { useState } from 'react';
 
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const namePattern = /^[a-zA-Z\s]*$/; // no number in first name allowed
+
 export default function SignUp({ onNavigate }) {
     const [formData, setFormData] = useState({
       firstName: '',
@@ -19,11 +22,22 @@ export default function SignUp({ onNavigate }) {
     e.preventDefault();
     let newErrors = {};
     
-    if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
-    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
-    if (!formData.email.trim()) newErrors.email = "Email is required";
-    if (!formData.password) newErrors.password = "Password is required";
+    if (!formData.firstName.trim()) {
+    newErrors.firstName = "First name is required";
+    } else if (!namePattern.test(formData.firstName)) {
+    newErrors.firstName = "Names should only contain letters";}
+    if (!formData.lastName.trim()) {
+    newErrors.lastName = "Last name is required";
+    } else if (!namePattern.test(formData.lastName)) {
+    newErrors.firstName = "Names should only contain letters";}
+    if (!formData.email.trim()) {
+    newErrors.email = "Email is required";
+    } else if (!emailPattern.test(formData.email)) {
+    newErrors.email = "Please enter a valid email address";}
 
+    if (!formData.password) {newErrors.password = "Password is required";
+    } else if (formData.password.length < 8) {
+    newErrors.password = "Password must be at least 8 characters long";}
     if (formData.password !== formData.confirmPassword) {
     newErrors.confirmPassword = "Passwords do not match!";
     }
@@ -33,10 +47,10 @@ export default function SignUp({ onNavigate }) {
     return;
     }
 
-  setErrors({});
-  console.log("Form Submitted! Saving User Data...", formData);
-  onNavigate('home'); 
-};
+    setErrors({});
+    console.log("Form Submitted! Saving User Data...", formData);
+    onNavigate('home'); 
+  };
 
   return (
     
@@ -60,7 +74,7 @@ export default function SignUp({ onNavigate }) {
           </h1>
           <h2 className="font-montserrat text-xl font-semibold mb-6">Your health, our priority.</h2>
           <p className="font-poppins">
-            A helpful guide to book your appointments in Cainta Municipal Hospital.
+            A helpful guide to reserve your appointment slots in Cainta Municipal Hospital.
           </p>
         </div>
 
@@ -122,16 +136,17 @@ export default function SignUp({ onNavigate }) {
           </div>
           </form>
 
-          <p className="text-center mt-4">
-      Already have an account? 
-      <button 
-        onClick={() => onNavigate('login')} 
-        className="text-gabay-blue font-bold ml-1 hover:underline"
-      >
-        Log In
-      </button>
-    </p>
-        </div>
+          <p className="font-poppins text-center text-sm mt-4">
+          Already have an account? 
+          <button 
+            onClick={() => onNavigate('login')} 
+            className="text-gabay-blue font-bold ml-1 hover:underline"
+            >
+            Log In
+          </button>
+          </p>
+          </div>
+        
       </div>
     </div>
   );

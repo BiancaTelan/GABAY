@@ -9,7 +9,7 @@ export default function Input({ label, type = "text", error, placeholder, value,
   };
  
   return (
-    <div className="flex flex-col w-full mb-4">
+    <div className="flex flex-col w-full mb-2 relative">
       {label && (
         <label className="text-sm font-medium text-gabay-navy mb-1 font-poppins">
           {label}
@@ -39,11 +39,13 @@ export default function Input({ label, type = "text", error, placeholder, value,
           </button>
         )}
       </div>
+
         {error && (
-        <span className="text-red-500 text-xs mt-1 font-poppins">
-          {error}
-        </span>
-      )} 
+      <span className="text-red-500 text-[12px] mt-1 font-poppins absolute -bottom-4 left-0 whitespace-nowrap">
+        {error}
+      </span>
+    )} 
+
     </div>
   );
 }
