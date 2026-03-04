@@ -1,13 +1,55 @@
 import caintaBg from '../assets/caintaBg.png';
+import gabayLogo from '../assets/gabayLogo.png';
+import Button from '../components/button';
+import Input from '../components/input';
+import { useState } from 'react';
 
 export default function SignUp({ onNavigate }) {
+    const [formData, setFormData] = useState({
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: '',
+      confirmPassword: ''
+    });
+
+    const [errors, setErrors] = useState({});
+
+    const handleSubmit = (e) => {
+    e.preventDefault();
+    let newErrors = {};
+    
+    if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
+    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
+    if (!formData.email.trim()) newErrors.email = "Email is required";
+    if (!formData.password) newErrors.password = "Password is required";
+
+    if (formData.password !== formData.confirmPassword) {
+    newErrors.confirmPassword = "Passwords do not match!";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+    setErrors(newErrors);
+    return;
+    }
+
+  setErrors({});
+  console.log("Form Submitted! Saving User Data...", formData);
+  onNavigate('home'); 
+};
+
   return (
+    
     <div className="relative min-h-screen flex items-center justify-center font-sans">
       <div 
         className="absolute inset-0 z-0 bg-cover bg-center"
         style={{ backgroundImage: `url(${caintaBg})` }}
       />
-
+      <div 
+      className="absolute top-6 left-6 z-30 cursor-pointer hover:opacity-80 transition"
+      onClick={() => onNavigate('home')}>
+        <img src={gabayLogo} alt="GABAY Logo" className="h-10 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]" />
+      </div>
       <div className="absolute inset-0 z-10 bg-black opacity-50" />
 
       <div className="relative z-20 flex flex-col md:flex-row w-full max-w-5xl bg-white shadow-2xl overflow-hidden md:rounded-2sm mx-4">
@@ -27,21 +69,57 @@ export default function SignUp({ onNavigate }) {
           <h3 className="font-montserrat text-3xl font-bold text-gabay-blue text-center mb-2">Sign Up</h3>
           <p className="font-poppins text-gray-500 text-center text-sm mb-8">Accomplish the form below to create an account</p>
           
-          <form className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="font-poppins block text-sm font-medium text-gabay-navy mb-1">First Name</label>
-                <input type="text" className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-gabay-teal outline-none" placeholder="Juan" />
+                <Input 
+                label="First Name" 
+                placeholder="Enter your first name" 
+                value={formData.firstName}
+                error={errors.firstName}
+                onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                />
               </div>
               <div>
-                <label className="font-poppins block text-sm font-medium text-gabay-navy mb-1">Last Name</label>
-                <input type="text" className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-gabay-teal outline-none" placeholder="Dela Cruz" />
+                <Input
+                label="Last Name" 
+                placeholder="Enter your last name" 
+                value={formData.lastName}
+                error={errors.lastName}
+                onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                />
               </div>
-            </div>
+              </div>
+                <Input 
+                label="Email Address" 
+                type="email" 
+                placeholder="emailaddress@gmail.com" 
+                value={formData.email}
+                error={errors.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                />
+                <Input 
+                label="Password" 
+                type="password" 
+                placeholder="Enter your password" 
+                value={formData.password}
+                error={errors.password}
+                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                />
+                <Input 
+                label="Confirm Password" 
+                type="password" 
+                placeholder="Confirm your password" 
+                value={formData.confirmPassword}
+                error={errors.confirmPassword}
+                onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                />
             
-            <button className="font-poppins w-full bg-gabay-teal text-white font-bold py-3 rounded-full mt-6 hover:bg-opacity-90 transition">
-              SUBMIT
-            </button>
+          <div className="flex justify-center mt-6">
+          <Button variant="teal" type="submit" className="w-48">
+            SUBMIT
+          </Button>
+          </div>
           </form>
 
           <p className="text-center mt-4">

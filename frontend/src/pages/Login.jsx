@@ -1,4 +1,5 @@
 import caintaBg from '../assets/caintaBg.png';
+import gabayLogo from '../assets/gabayLogo.png';
 
 export default function Login({ onNavigate }) {
   return (
@@ -7,6 +8,11 @@ export default function Login({ onNavigate }) {
         className="absolute inset-0 z-0 bg-cover bg-center"
         style={{ backgroundImage: `url(${caintaBg})` }}
       />
+      <div 
+      className="absolute top-6 left-6 z-30 cursor-pointer hover:opacity-80 transition"
+      onClick={() => onNavigate('home')}>
+      <img src={gabayLogo} alt="GABAY Logo" className="h-10 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]" />
+      </div>
 
       <div className="absolute inset-0 z-10 bg-black opacity-50" />
 
@@ -31,11 +37,11 @@ export default function Login({ onNavigate }) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="font-poppins block text-sm font-medium text-gabay-navy mb-1">First Name</label>
-                <input type="text" className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-gabay-teal outline-none" placeholder="Juan" />
+                <input type="text" className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-1 focus:ring-gabay-teal outline-none" placeholder="Juan" />
               </div>
               <div>
                 <label className="font-poppins block text-sm font-medium text-gabay-navy mb-1">Last Name</label>
-                <input type="text" className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-gabay-teal outline-none" placeholder="Dela Cruz" />
+                <input type="text" className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-1 focus:ring-gabay-teal outline-none" placeholder="Dela Cruz" />
               </div>
             </div>
             

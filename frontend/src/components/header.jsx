@@ -1,11 +1,12 @@
 import gabayLogo from '../assets/gabayLogo.png';
+import Button from '../components/button';
 
 export default function Header({ onNavigate }) {
   const navItems = ['Home', 'Reservations', 'Help', 'Contact Us'];
   return (
       <header className="font-poppins sticky top-0 z-50 bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
       <div className="cursor-pointer" onClick={() => onNavigate('home')}>
-        <img src="./assets/gabayLogo.png" alt="GABAY Logo" className="h-10" />
+        <img src={gabayLogo} alt="GABAY Logo" className="h-10" />
       </div>
 
       <nav className="hidden md:flex gap-8 text-gray-600 font-medium">
@@ -16,13 +17,13 @@ export default function Header({ onNavigate }) {
       </nav>
       
       <div className="flex gap-2 p-0.5 font-poppins">
-      <button onClick={() => onNavigate('login')} className="bg-gabay-blue text-white px-5 py-2 text-sm font-medium hover:bg-gabay-navy transition-colors">
+      <Button variant="solid" onClick={() => onNavigate('login')} >
         Log In
-      </button>
+      </Button>
 
-      <button onClick={() => onNavigate('signup')} className="border-2 border-gabay-blue text-gabay-blue px-5 py-2 text-sm font-medium bg-transparent hover:bg-blue-50 transition-colors">
+      <Button variant="outline" onClick={() => onNavigate('signup')} >
         Sign Up
-      </button>
+      </Button>
       </div>
     </header>
   );
