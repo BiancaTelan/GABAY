@@ -1,7 +1,47 @@
 import caintaBg from '../assets/caintaBg.png';
 import gabayLogo from '../assets/gabayLogo.png';
+import Button from '../components/button';
+import Input from '../components/input';
+import { useState } from 'react';
+
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export default function Login({ onNavigate }) {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+
+  const [errors, setErrors] = useState({});
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    let newErrors = {};
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!emailPattern.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters long";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setErrors({});
+    console.log("Login Attempt:", formData);
+    onNavigate('home'); 
+  };
+
+  // add BACKEND CHECKS here
+
   return (
     <div className="relative min-h-screen flex items-center justify-center font-sans">
       <div 
@@ -9,56 +49,76 @@ export default function Login({ onNavigate }) {
         style={{ backgroundImage: `url(${caintaBg})` }}
       />
       <div 
-      className="absolute top-6 left-6 z-30 cursor-pointer hover:opacity-80 transition"
-      onClick={() => onNavigate('home')}>
-      <img src={gabayLogo} alt="GABAY Logo" className="h-10 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]" />
+        className="absolute top-6 left-6 z-30 cursor-pointer hover:opacity-80 transition"
+        onClick={() => onNavigate('home')}>
+        <img src={gabayLogo} alt="GABAY Logo" className="h-10 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]" />
       </div>
-
       <div className="absolute inset-0 z-10 bg-black opacity-50" />
 
       <div className="relative z-20 flex flex-col md:flex-row w-full max-w-5xl bg-white shadow-2xl overflow-hidden md:rounded-2sm mx-4">
-        
         <div className="hidden md:flex flex-1 bg-gabay-blue p-12 flex-col justify-center text-white">
           <h1 className="font-montserrat text-4xl font-bold leading-tight mb-6">
             General to Specialty Appointment & Booking Assistant for You
           </h1>
           <h2 className="font-montserrat text-xl font-semibold mb-6">Your health, our priority.</h2>
           <p className="font-poppins">
-            A helpful guide to book your appointments in Cainta Municipal Hospital.
+            A helpful guide to reserve your appointment slots in Cainta Municipal Hospital.
           </p>
         </div>
 
 
         <div className="flex-1 p-8 md:p-12 bg-white">
           <h3 className="font-montserrat text-3xl font-bold text-gabay-blue text-center mb-2">Log In</h3>
-          <p className="font-poppins text-gray-500 text-center text-sm mb-8">Accomplish the form below to create an account</p>
+          <p className="font-poppins text-gray-500 text-center text-sm mb-8">Accomplish the form below to access your account</p>
           
-          <form className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="font-poppins block text-sm font-medium text-gabay-navy mb-1">First Name</label>
-                <input type="text" className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-1 focus:ring-gabay-teal outline-none" placeholder="Juan" />
-              </div>
-              <div>
-                <label className="font-poppins block text-sm font-medium text-gabay-navy mb-1">Last Name</label>
-                <input type="text" className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-1 focus:ring-gabay-teal outline-none" placeholder="Dela Cruz" />
-              </div>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <Input 
+              label="Email Address" 
+              type="email" 
+              placeholder="emailaddress@gmail.com" 
+              value={formData.email}
+              error={errors.email}
+              onChange={(e) => setFormData({...formData, email: e.target.value})}
+            />
+            <Input 
+              label="Password" 
+              type="password" 
+              placeholder="Enter your password" 
+              value={formData.password}
+              error={errors.password}
+              onChange={(e) => setFormData({...formData, password: e.target.value})}
+            />
+
+            <div className="flex items-center justify-between mt-1 mb-6">
+            <label className="flex items-center cursor-pointer group">
+              <input type="checkbox" 
+              className="w-4 h-4 border-gray-300 rounded text-gabay-teal focus:ring-gabay-teal cursor-pointer"/>
+              <span className="ml-2 text-xs font-poppins text-gray-600 group-hover:text-gabay-blue transition-colors">
+                Remember me
+              </span>
+            </label>
+              <button type="button"
+              className="text-xs font-poppins font-medium text-gabay-blue hover:underline hover:text-gabay-navy transition-colors">
+              Forgot Password?
+              </button>
             </div>
-            
-            <button className="font-poppins w-full bg-gabay-teal text-white font-bold py-3 rounded-full mt-6 hover:bg-opacity-90 transition">
-              SUBMIT
-            </button>
-          </form>
           
-          <p className="text-center mt-4">
-      Don't have an account? 
-      <button 
-        onClick={() => onNavigate('signup')} 
-        className="text-gabay-blue font-bold ml-1 hover:underline"
-      >
-        Sign Up
-      </button>
-    </p>
+            <div className="flex justify-center mt-6">
+              <Button variant="teal" type="submit" className="w-48">
+                LOGIN
+              </Button>
+            </div>
+          </form>
+
+          <p className="font-poppins text-center text-sm mt-6">
+            Don't have an account? 
+            <button 
+              onClick={() => onNavigate('signup')} 
+              className="text-gabay-blue font-bold ml-1 hover:underline"
+            >
+              Sign Up
+            </button>
+          </p>
         </div>
       </div>
     </div>

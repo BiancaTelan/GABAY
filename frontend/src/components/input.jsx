@@ -41,7 +41,7 @@ export default function Input({ label, type = "text", error, placeholder, value,
       </div>
 
         {error && (
-      <span className="text-red-500 text-[12px] mt-1 font-poppins absolute -bottom-4 left-0 whitespace-nowrap">
+      <span className="text-red-500 text-[12px] mt-1 font-poppins absolute -bottom-4 left-0 whitespace-nowrap z-10">
         {error}
       </span>
     )} 

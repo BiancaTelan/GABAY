@@ -1,0 +1,24 @@
+BACKEND for Log In page
+
+try {
+    // 2. This is where the "Identity Check" happens.
+    // You will send the credentials to your backend (e.g., Node.js/Express)
+    const response = await fetch('http://localhost:5000/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      // Success! Move to home
+      onNavigate('home');
+    } else {
+      // 3. This is where you handle "Account Not Found"
+      setErrors({ server: data.message || "Invalid email or password" });
+    }
+  } catch (err) {
+    setErrors({ server: "Connection error. Is the server running?" });
+  }
+};
