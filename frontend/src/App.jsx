@@ -46,7 +46,7 @@ function App() {
           onClick={() => setIsLoggedIn(!isLoggedIn)}
           className="bg-gabay-blue text-white px-3 py-2 rounded-md text-xs font-bold shadow-lg hover:bg-gabay-navy transition-all"
         >
-          STATUS: {isLoggedIn ? 'LOGGED OUT' : 'LOGGED IN'}
+          STATUS: {isLoggedIn ? 'LOGGED IN' : 'LOGGED OUT'}
         </button>
       </div>
 
