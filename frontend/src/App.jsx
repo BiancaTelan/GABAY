@@ -6,6 +6,11 @@ import Help from './pages/Help';
 import ContactUs from './pages/ContactUs';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
+import Account from './pages/Account';
+/*import apptHistory from './pages/apptHistory';
+import Calendar from './pages/Calendar';
+import Inbox from './pages/Inbox';*/
+
 
 function App() { 
   const [currentPage, setCurrentPage] = useState('home');
@@ -29,15 +34,13 @@ function App() {
         {currentPage === 'contact' && <ContactUs />}
         
         {currentPage === 'login' && (
-          <Login 
-            onNavigate={setCurrentPage} 
-            setIsLoggedIn={setIsLoggedIn} 
-          />
-        )}
-        
-        {currentPage === 'signup' && (
-          <SignUp onNavigate={setCurrentPage} />
-        )}
+        <Login onNavigate={setCurrentPage} setIsLoggedIn={setIsLoggedIn} />)}
+        {currentPage === 'signup' && (<SignUp onNavigate={setCurrentPage} />)}
+        {currentPage === 'account' && <Account />}
+        {/*currentPage === 'history' && <apptHistory />}
+        {currentPage === 'calendar' && <Calendar />}
+        {currentPage === 'inbox' && <Inbox />*/}
+
       </main>
 
       {/* TEMPORARY BTN TO SEE HEADER CHANGE */}
