@@ -54,13 +54,12 @@ export default function Input({ label, type = "text", error, placeholder, value,
             <CalendarDays size={18} />
           </div>
         )}
-
-        {/* CHEVRON ICON - New logic for Select/Dropdowns */}
+        {/* CHEVRON ICON */}
         {isSelectType && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10">
-            <ChevronDown size={18} />
-          </div>
-        )}
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10">
+          <ChevronDown size={18} />
+        </div>
+      )}
       </div>
 
       {error && (

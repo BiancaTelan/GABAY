@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import Input from '../components/input';
 
 export default function Account() {
-  // 1. Local state for the user's data
   const [userInfo, setUserInfo] = useState({
     fullName: "Juan Dela Cruz",
     hospitalNumber: "26-154928",
@@ -12,7 +11,6 @@ export default function Account() {
     gender: "Male"
   });
 
-  // 2. State to toggle between view and edit modes
   const [isEditing, setIsEditing] = useState(false);
 
   const handleInputChange = (e) => {
@@ -22,7 +20,7 @@ export default function Account() {
 
   const handleToggleEdit = () => {
     if (isEditing) {
-      // Logic to save to database would go here later
+      // PUT BACKEND LOGIC FOR SAVING ACC DETAILS HERE
       console.log("Saving new data:", userInfo);
     }
     setIsEditing(!isEditing);
@@ -32,11 +30,11 @@ export default function Account() {
     <div className="max-w-2xl mx-auto px-6 py-10 font-poppins">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gabay-teal">My Account</h1>
+          <h1 className="text-3xl font-montserrat font-bold text-gabay-teal">My Account</h1>
           <p className="text-gray-500 text-sm">View your profile information here</p>
         </div>
         
-        {/* Toggle Button */}
+        {/* Edit Profile Btn */}
         <button 
           onClick={handleToggleEdit}
           className={`px-6 py-1.5 rounded-full text-sm font-medium transition-all border
@@ -60,7 +58,7 @@ export default function Account() {
           label="Hospital Number" 
           name="hospitalNumber"
           value={userInfo.hospitalNumber} 
-          readOnly={true} // Usually, hospital IDs are permanent and not editable
+          readOnly={true}
         />
         <Input 
           label="Email Address" 
@@ -87,23 +85,24 @@ export default function Account() {
             onChange={handleInputChange}
             readOnly={!isEditing} 
           />
+
           {isEditing ? (
-  <div className="flex flex-col">
-    <label className="text-sm font-medium text-gabay-navy mb-1">Gender</label>
-    <select 
-      name="gender"
-      value={userInfo.gender}
-      onChange={handleInputChange}
-      className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-gabay-teal"
-    >
-      <option value="Male">Male</option>
-      <option value="Female">Female</option>
-      <option value="Other">Other</option>
-    </select>
-  </div>
-) : (
-  <Input label="Gender" value={userInfo.gender} readOnly />
-)}
+            <div className="flex flex-col">
+                <label className="text-sm font-medium text-gabay-navy mb-1">Gender</label>
+                <select 
+                name="gender"
+                value={userInfo.gender}
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-gabay-teal"
+                >
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+                </select>
+            </div>
+            ) : (
+            <Input label="Gender" value={userInfo.gender} readOnly />
+            )}
         </div>
       </div>
     </div>
