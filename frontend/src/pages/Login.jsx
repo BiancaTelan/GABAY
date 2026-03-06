@@ -6,7 +6,7 @@ import { useState } from 'react';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-export default function Login({ onNavigate }) {
+export default function Login({ onNavigate, setIsLoggedIn }) {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -37,6 +37,7 @@ export default function Login({ onNavigate }) {
 
     setErrors({});
     console.log("Login Attempt:", formData);
+    setIsLoggedIn(true);
     onNavigate('home'); 
   };
 

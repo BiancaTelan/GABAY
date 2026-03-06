@@ -15,6 +15,10 @@ import Inbox from './pages/Inbox';*/
 function App() { 
   const [currentPage, setCurrentPage] = useState('home');
   const [isLoggedIn, setIsLoggedIn] = useState(false); 
+  const handleLogout = () => {
+    setIsLoggedIn(false); 
+    setCurrentPage('home');
+  };
   const showHeader = currentPage !== 'login' && currentPage !== 'signup';
 
   return (
@@ -36,22 +40,11 @@ function App() {
         {currentPage === 'login' && (
         <Login onNavigate={setCurrentPage} setIsLoggedIn={setIsLoggedIn} />)}
         {currentPage === 'signup' && (<SignUp onNavigate={setCurrentPage} />)}
-        {currentPage === 'account' && <Account />}
-        {/*currentPage === 'history' && <apptHistory />}
+        {currentPage === 'account' && (<Account onLogout={handleLogout} />)}
+        {/*currentPage === 'appthistory' && <apptHistory />}
         {currentPage === 'calendar' && <Calendar />}
         {currentPage === 'inbox' && <Inbox />*/}
-
       </main>
-
-      {/* TEMPORARY BTN TO SEE HEADER CHANGE */}
-      <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2">
-        <button 
-          onClick={() => setIsLoggedIn(!isLoggedIn)}
-          className="bg-gabay-blue text-white px-3 py-2 rounded-md text-xs font-bold shadow-lg hover:bg-gabay-navy transition-all"
-        >
-          STATUS: {isLoggedIn ? 'LOGGED IN' : 'LOGGED OUT'}
-        </button>
-      </div>
 
     </div>
   );
