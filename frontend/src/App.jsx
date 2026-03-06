@@ -39,7 +39,7 @@ function App() {
         
         {currentPage === 'login' && (
         <Login onNavigate={setCurrentPage} setIsLoggedIn={setIsLoggedIn} />)}
-        {currentPage === 'signup' && (<SignUp onNavigate={setCurrentPage} />)}
+        {currentPage === 'signup' && (<SignUp onNavigate={handleNavigate} onLogin={handleLogin} />)}
         {currentPage === 'account' && (<Account onLogout={handleLogout} />)}
         {/*currentPage === 'appthistory' && <apptHistory />}
         {currentPage === 'calendar' && <Calendar />}

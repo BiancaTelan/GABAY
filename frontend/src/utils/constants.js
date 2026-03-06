@@ -1,5 +1,3 @@
-// utils/constants.js
-
 export const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 export const namePattern = /^[a-zA-Z\s]*$/;
 export const phonePattern = /^\d{11}$/;

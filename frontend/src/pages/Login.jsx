@@ -3,8 +3,7 @@ import gabayLogo from '../assets/gabayLogo.png';
 import Button from '../components/button';
 import Input from '../components/input';
 import { useState } from 'react';
-
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+import { emailPattern } from '../utils/constants';
 
 export default function Login({ onNavigate, setIsLoggedIn }) {
   const [formData, setFormData] = useState({
@@ -37,11 +36,10 @@ export default function Login({ onNavigate, setIsLoggedIn }) {
 
     setErrors({});
     console.log("Login Attempt:", formData);
+    
     setIsLoggedIn(true);
     onNavigate('home'); 
   };
-
-  // add BACKEND CHECKS here
 
   return (
     <div className="relative min-h-screen flex items-center justify-center font-sans">
@@ -56,8 +54,8 @@ export default function Login({ onNavigate, setIsLoggedIn }) {
       </div>
       <div className="absolute inset-0 z-10 bg-black opacity-50" />
 
-      <div className="relative z-20 flex flex-col md:flex-row w-full max-w-5xl bg-white shadow-2xl overflow-hidden md:rounded-2sm mx-4">
-        <div className="hidden md:flex flex-1 bg-gabay-blue p-12 flex-col justify-center text-white">
+      <div className="relative z-20 flex flex-col md:flex-row w-full max-w-5xl bg-white shadow-2xl overflow-hidden md:rounded-2sm mx-4 text-left">
+        <div className="hidden md:flex flex-1 bg-gabay-blue p-12 flex-col justify-center text-white text-left">
           <h1 className="font-montserrat text-4xl font-bold leading-tight mb-6">
             General to Specialty Appointment & Booking Assistant for You
           </h1>
@@ -66,7 +64,6 @@ export default function Login({ onNavigate, setIsLoggedIn }) {
             A helpful guide to reserve your appointment slots in Cainta Municipal Hospital.
           </p>
         </div>
-
 
         <div className="flex-1 p-8 md:p-12 bg-white">
           <h3 className="font-montserrat text-3xl font-bold text-gabay-blue text-center mb-2">Log In</h3>
@@ -80,6 +77,8 @@ export default function Login({ onNavigate, setIsLoggedIn }) {
               value={formData.email}
               error={errors.email}
               onChange={(e) => setFormData({...formData, email: e.target.value})}
+              required // consistent asterisks
+              isEditing={true}
             />
             <Input 
               label="Password" 
@@ -88,19 +87,21 @@ export default function Login({ onNavigate, setIsLoggedIn }) {
               value={formData.password}
               error={errors.password}
               onChange={(e) => setFormData({...formData, password: e.target.value})}
+              required // consistent asterisks
+              isEditing={true}
             />
 
             <div className="flex items-center justify-between mt-1 mb-6">
-            <label className="flex items-center cursor-pointer group">
-              <input type="checkbox" 
-              className="w-4 h-4 border-gray-300 rounded text-gabay-teal focus:ring-gabay-teal cursor-pointer"/>
-              <span className="ml-2 text-xs font-poppins text-gray-600 group-hover:text-gabay-blue transition-colors">
-                Remember me
-              </span>
-            </label>
+              <label className="flex items-center cursor-pointer group">
+                <input type="checkbox" 
+                className="w-4 h-4 border-gray-300 rounded text-gabay-teal focus:ring-gabay-teal cursor-pointer"/>
+                <span className="ml-2 text-xs font-poppins text-gray-600 group-hover:text-gabay-blue transition-colors">
+                  Remember me
+                </span>
+              </label>
               <button type="button"
               className="text-xs font-poppins font-medium text-gabay-blue hover:underline hover:text-gabay-navy transition-colors">
-              Forgot Password?
+                Forgot Password?
               </button>
             </div>
           
