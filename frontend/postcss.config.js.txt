@@ -22,3 +22,18 @@ try {
     setErrors({ server: "Connection error. Is the server running?" });
   }
 };
+
+
+
+// EMERGENCY CONTACT SECTION (FORM VALIDATION WITH SPAN * required fields)
+
+    // SECTION 2: OPTIONAL VALIDATION
+    if (userInfo.emergencyContact.trim() && !namePattern.test(userInfo.emergencyContact)) {
+      newErrors.emergencyContact = "Name cannot contain numbers";
+    }
+    if (userInfo.emergencyContactNum.trim() && !phonePattern.test(userInfo.emergencyContactNum)) {
+      newErrors.emergencyContactNum = "Must be a valid 11-digit number";
+    }
+    if (userInfo.emergencyEmail.trim() && !emailPattern.test(userInfo.emergencyEmail)) {
+      newErrors.emergencyEmail = "Enter a valid emergency email address";
+    }

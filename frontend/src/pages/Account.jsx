@@ -1,22 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Input from '../components/input';
 import { LogOut, Trash2 } from 'lucide-react';
-
-// Regex Patterns for Validation
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const namePattern = /^[a-zA-Z\s]*$/; 
-const phonePattern = /^\d{11}$/;    
-// Added regex for MM/DD/YYYY validation
-const dobPattern = /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/;
+import { emailPattern, namePattern, phonePattern, dobPattern, minAgeRequirement } from '../utils/constants';
 
 export default function Account({ onLogout }) {
+  const dateInputRef = useRef(null);
+
   const [userInfo, setUserInfo] = useState({
     firstName: "Juan",
     lastName: "Dela Cruz",
     hospitalNumber: "26-154928",
     email: "juandelacruz@gmail.com",
     contactNumber: "09191234567",
-    dob: "MM/DD/YYYY",
+    dob: "",
     gender: "Male",
     homeAddress: "910 Plaza Miranda, Quezon City",
     emergencyContact: "Maria Dela Cruz",
@@ -27,13 +23,11 @@ export default function Account({ onLogout }) {
   const [isEditing, setIsEditing] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // 1. UPDATED: Format DOB input during typing
   const handleInputChange = (e) => {
     let { name, value } = e.target;
 
-    // Apply auto-slashes only to DOB field when editing
     if (name === 'dob' && isEditing) {
-      const cleanValue = value.replace(/\D/g, ''); // Remove non-digits
+      const cleanValue = value.replace(/\D/g, ''); 
       if (cleanValue.length <= 2) {
         value = cleanValue;
       } else if (cleanValue.length <= 4) {
@@ -47,22 +41,70 @@ export default function Account({ onLogout }) {
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }));
   };
 
+  const handleCalendarChange = (e) => {
+    const dateValue = e.target.value; 
+    if (!dateValue) return;
+
+    const [y, m, d] = dateValue.split('-');
+    const formattedDate = `${m}/${d}/${y}`; 
+    
+    setUserInfo(prev => ({ ...prev, dob: formattedDate }));
+    if (errors.dob) setErrors(prev => ({ ...prev, dob: null }));
+  };
+
   const validate = () => {
     let newErrors = {};
+    const today = new Date(); 
 
-    if (!namePattern.test(userInfo.firstName)) newErrors.firstName = "Name cannot contain numbers";
-    if (!namePattern.test(userInfo.lastName)) newErrors.lastName = "Name cannot contain numbers";
-    if (!namePattern.test(userInfo.emergencyContact)) newErrors.emergencyContact = "Name cannot contain numbers";
-    
-    if (!emailPattern.test(userInfo.email)) newErrors.email = "Enter a valid email address";
-    if (!emailPattern.test(userInfo.emergencyEmail)) newErrors.emergencyEmail = "Enter a valid emergency email address";
+    // PERSONAL INFORMATION SECTION
+    if (!userInfo.firstName.trim()) {
+      newErrors.firstName = "First name is required";
+    } else if (!namePattern.test(userInfo.firstName)) {
+      newErrors.firstName = "Name cannot contain numbers";
+    }
 
-    if (!phonePattern.test(userInfo.contactNumber)) newErrors.contactNumber = "Must be a valid 11-digit number";
-    if (!phonePattern.test(userInfo.emergencyContactNum)) newErrors.emergencyContactNum = "Must be a valid 11-digit number";
+    if (!userInfo.lastName.trim()) {
+      newErrors.lastName = "Last name is required";
+    } else if (!namePattern.test(userInfo.lastName)) {
+      newErrors.lastName = "Name cannot contain numbers";
+    }
 
-    // 2. UPDATED: Validate the MM/DD/YYYY format
-    if (!dobPattern.test(userInfo.dob)) {
+    if (!userInfo.email.trim()) {
+      newErrors.email = "Email address is required";
+    } else if (!emailPattern.test(userInfo.email)) {
+      newErrors.email = "Enter a valid email address";
+    }
+
+    if (!userInfo.dob.trim() || userInfo.dob === "MM/DD/YYYY") {
+      newErrors.dob = "Date of birth is required";
+    } else if (!dobPattern.test(userInfo.dob)) {
       newErrors.dob = "Please use MM/DD/YYYY format";
+    } else {
+      const [m, d, y] = userInfo.dob.split('/').map(Number);
+      const birthDate = new Date(y, m - 1, d);
+      
+      if (birthDate > today) {
+        newErrors.dob = "Invalid date of birth";
+      } else {
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+        if (age < minAgeRequirement) {
+          newErrors.dob = `USER MUST BE ATLEAST ${minAgeRequirement} YEARS OLD`;
+        }
+      }
+    }
+
+    if (!userInfo.homeAddress.trim()) {
+      newErrors.homeAddress = "Home address is required";
+    }
+
+    if (!userInfo.contactNumber.trim()) {
+      newErrors.contactNumber = "Contact number is required";
+    } else if (!phonePattern.test(userInfo.contactNumber)) {
+      newErrors.contactNumber = "Must be a valid 11-digit number";
     }
 
     setErrors(newErrors);
@@ -84,6 +126,14 @@ export default function Account({ onLogout }) {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-10 font-poppins transition-all">
+      <input
+        type="date"
+        ref={dateInputRef}
+        onChange={handleCalendarChange}
+        max={new Date().toISOString().split("T")[0]}
+        className="sr-only invisible absolute"
+      />
+
       <div className="flex items-center justify-between mb-10">
         <div className="flex items-center gap-6">
           <div>
@@ -109,20 +159,21 @@ export default function Account({ onLogout }) {
 
       <div className="flex flex-col md:flex-row gap-12">
         <div className="flex-1 space-y-10">
+
           <section>
             <h2 className="text-base font-semibold text-gabay-blue mb-6 tracking-wider uppercase">Personal Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
               {isEditing ? (
                 <>
-                  <Input label="First Name" name="firstName" value={userInfo.firstName} onChange={handleInputChange} error={errors.firstName} />
-                  <Input label="Last Name" name="lastName" value={userInfo.lastName} onChange={handleInputChange} error={errors.lastName} />
+                  <Input label="First Name" name="firstName" value={userInfo.firstName} onChange={handleInputChange} error={errors.firstName} isEditing={isEditing} required />
+                  <Input label="Last Name" name="lastName" value={userInfo.lastName} onChange={handleInputChange} error={errors.lastName} isEditing={isEditing} required />
                 </>
               ) : (
                 <Input label="Full Name" value={`${userInfo.firstName} ${userInfo.lastName}`} readOnly noHover />
               )}
               
               <Input label="Hospital Number" value={userInfo.hospitalNumber} readOnly noHover />
-              <Input label="Email Address" name="email" value={userInfo.email} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} error={errors.email} />
+              <Input label="Email Address" name="email" value={userInfo.email} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} error={errors.email} isEditing={isEditing} required />
               
               <div className="flex flex-col">
                 <label className="text-sm font-medium text-gabay-navy mb-1">Gender</label>
@@ -142,35 +193,37 @@ export default function Account({ onLogout }) {
                 )}
               </div>
 
-              {/* 3. UPDATED: Changed type to "text" and added maxLength for manual typing */}
               <Input 
                 label="Date of Birth" 
                 name="dob" 
                 type="text" 
                 value={isEditing ? userInfo.dob : formatDisplayDate(userInfo.dob)} 
                 onChange={handleInputChange} 
+                onIconClick={() => dateInputRef.current.showPicker()}
                 readOnly={!isEditing} 
                 noHover={!isEditing}
                 isEditing={isEditing}
+                required
                 placeholder="MM/DD/YYYY"
                 maxLength={10}
                 error={errors.dob}
               />
 
               <div className="md:col-span-1">
-                <Input label="Home Address" name="homeAddress" value={userInfo.homeAddress} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} />
+                <Input label="Home Address" name="homeAddress" value={userInfo.homeAddress} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} required error={errors.homeAddress} />
               </div>
-              <Input label="Contact Number" name="contactNumber" value={userInfo.contactNumber} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} error={errors.contactNumber} />
+              <Input label="Contact Number" name="contactNumber" value={userInfo.contactNumber} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} required error={errors.contactNumber} />
             </div>
           </section>
+
 
           <section>
             <h2 className="text-base font-semibold text-gabay-blue mb-6 tracking-wider uppercase">Emergency Contact Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-              <Input label="Emergency Contact" name="emergencyContact" value={userInfo.emergencyContact} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} error={errors.emergencyContact} />
-              <Input label="Emergency Contact Number" name="emergencyContactNum" value={userInfo.emergencyContactNum} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} error={errors.emergencyContactNum} />
+              <Input label="Emergency Contact" name="emergencyContact" value={userInfo.emergencyContact} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} error={errors.emergencyContact} />
+              <Input label="Emergency Contact Number" name="emergencyContactNum" value={userInfo.emergencyContactNum} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} error={errors.emergencyContactNum} />
               <div className="md:col-span-1">
-                <Input label="Emergency Email Address" name="emergencyEmail" value={userInfo.emergencyEmail} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} error={errors.emergencyEmail} />
+                <Input label="Emergency Email Address" name="emergencyEmail" value={userInfo.emergencyEmail} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} error={errors.emergencyEmail} />
               </div>
             </div>
           </section>
@@ -183,6 +236,7 @@ export default function Account({ onLogout }) {
           )}
         </div>
 
+
         <div className="w-full md:w-64 flex flex-col items-start gap-4 border-l border-gray-100 pl-8 pt-10">
           <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Account Settings</h3>
           <button onClick={onLogout} className="flex items-center gap-2 text-gabay-teal hover:text-gabay-teal2 transition-colors hover:underline text-sm font-semibold">
@@ -190,8 +244,8 @@ export default function Account({ onLogout }) {
           </button>
           {isEditing && (
             <>
-              <button className="text-gabay-blue hover:underline text-sm font-medium">Change Email</button>
-              <button className="text-gabay-blue hover:underline text-sm font-medium">Change Password</button>
+              <button className="text-gabay-blue hover:text-gabay-navy transition-colors hover:underline text-sm font-medium">Change Email</button>
+              <button className="text-gabay-blue hover:text-gabay-navy transition-colors hover:underline text-sm font-medium">Change Password</button>
               <button className="text-red-500 hover:text-red-700 text-sm font-semibold mt-10 underline w-full flex gap-2">
                 <Trash2 size={16} /> Delete Account
               </button>
