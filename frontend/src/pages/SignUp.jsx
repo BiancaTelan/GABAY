@@ -56,7 +56,6 @@ export default function SignUp({ onNavigate, onLogin }) {
       setErrors({});
       console.log("Account Created! Logging you in...", formData);
       
-      // 2. TRIGGER the login state and navigate
       onLogin(); 
       onNavigate('home'); 
     };
@@ -97,7 +96,7 @@ export default function SignUp({ onNavigate, onLogin }) {
                   value={formData.firstName}
                   error={errors.firstName}
                   onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                  required // Added the asterisk prop we built earlier
+                  required
                   isEditing={true}
                 />
                 <Input
