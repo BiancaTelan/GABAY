@@ -1,6 +1,14 @@
 import caintaLanding from '../assets/caintaLanding.png';
+import introimage1 from '../assets/intro1.png'; 
+import introimage2 from '../assets/intro2.png';
+import lists from '../assets/lists.png';
+import send from '../assets/send.png';
+import checkCircle from '../assets/checkCircle.png';
+import plus from '../assets/plus.png';
+import like from '../assets/like.png';
+import calendarCheck from '../assets/calendarCheck.png';
 
-export default function Home() {
+export default function Home({ onNavigate }) {
   return (
     <div className="bg-white font-sans">
       <section className="flex flex-col md:flex-row h-[800px] overflow-hidden">
@@ -22,7 +30,9 @@ export default function Home() {
             Click the link below to get started!
           </p>
           
-          <button className="font-poppins flex items-center text-gabay-blue font-semibold text-lg hover:underline group">
+          <button 
+          onClick={() => onNavigate('departments')}
+          className="font-poppins flex items-center text-gabay-blue font-semibold text-lg hover:underline group">
             Head to Department List 
             <span className="ml-2 transform group-hover:translate-x-1 transition-transform">
               →
@@ -40,7 +50,147 @@ export default function Home() {
         </div>
       </section>
 
-      {/* PLACE L.P. SECTIONS 1, 2, & 3 HERE */}
+      <section className="py-20 px-4 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="font-montserrat text-4xl lg:text-6xl font-bold text-gabay-blue leading-tight mb-4 mt-20 text-center">
+            Introduction to GABAY
+          </h2>
+          <p className="font-poppins text-lg mt-6 mb-12 text-center text-center">
+            Here’s a background about General-to-Specialty Appointment & Booking Assistant for You
+          </p>
+
+          <div className="flex flex-col md:flex-row gap-8 items-start mb-16">
+            <div className="font-poppins text-lg flex-1 space-y-8 indent-first">
+              <p>
+                Access to vital healthcare services in the Philippines, especially in the municipality of Cainta, is often hindered by traditional appointment booking methods.
+              </p>
+              <p>
+                Traditionally, many Filipinos have felt the need to go to hospitals very early—sometimes even before sunrise—to line up for a check-up slot.
+              </p>
+            </div>
+            <div className="flex-1">
+              <img 
+                src={introimage1} 
+                alt="Traditional queuing" 
+                className="w-full h-auto rounded-lg shadow-lg object-cover"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-8 items-start">
+            <div className="flex-1 order-2 md:order-1">
+              <img 
+                src={introimage2} 
+                alt="GABAY solution" 
+                className="w-full h-full rounded-lg shadow-lg object-cover"
+              />
+            </div>
+            <div className="font-poppins text-lg flex-1 space-y-8 order-1 md:order-2 indent-first">
+              <p>
+                Given the continuous growth of technology, researchers will need to implement new systems that simplify people’s lives, especially in healthcare. Researchers will value the citizens’ lives, which is why they will propose a clear solution to this major problem: the long queue.
+              </p>
+              <p>
+                GABAY will address the queuing problem and use modern technology to save people valuable time, lessening their worries about missing their much-needed check-up.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 px-4 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="font-montserrat text-4xl lg:text-6xl font-bold text-gabay-blue leading-tight mb-4 mt-15 text-center">
+            How to book a reservation?
+          </h2>
+          <p className="font-poppins text-lg text-center max-w-4xl mx-auto mt-6 mb-20">
+            Get started with your scheduled consultation at Cainta Municipal Hospital in three steps.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="flex-1 bg-white rounded-xl shadow-md p-8 border-2 border-gabay-blue">
+              <h3 className="font-poppins text-xl font-semibold text-gabay-teal mb-3">
+                Step One
+              </h3>
+              <p className="font-montserrat text-2xl text-[#1B335F] font-bold mb-2">
+                Choose a Department
+              </p>
+              <img src={lists} alt="Lists icon" className="w-20 h-20 mb-4 mt-12 mx-auto object-contain" />
+              <p className="font-poppins text-[#1B335F]">
+                Head to the Reservation link in the navigation bar and select one
+              </p>
+            </div>
+
+            <div className="flex-1 bg-white rounded-xl shadow-md p-8 border-2 border-gabay-blue">
+              <h3 className="font-poppins text-xl font-semibold text-gabay-teal mb-3">
+                Step Two
+              </h3>
+              <p className="font-montserrat text-2xl text-[#1B335F] font-bold mb-2">
+                Submit the Required Forms
+              </p>
+              <img src={send} alt="Send icon" className="w-20 h-20 mb-4 mt-4 mx-auto object-contain" />
+              <p className="font-poppins text-[#1B335F]">
+                Complete your account details and fill up the scheduling form
+              </p>
+            </div>
+
+            <div className="flex-1 bg-white rounded-xl shadow-md p-8 border-2 border-gabay-blue">
+              <h3 className="font-poppins text-xl font-semibold text-gabay-teal text-left mb-3">
+                Step Three
+              </h3>
+              <p className="font-montserrat text-2xl text-[#1B335F] text-left font-bold mb-2">
+                Wait for Confirmation
+              </p>
+              <img src={checkCircle} alt="Check Circle icon" className="w-20 h-20 mb-4 mt-12 mx-auto object-contain" />
+              <p className="font-poppins text-[#1B335F]">
+                Ensure your contact info is correct and wait for the available schedule
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 px-4 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="font-montserrat text-4xl lg:text-6xl font-bold text-gabay-blue leading-tight mb-4 mt-15 text-center">
+            Healthcare made simple.
+          </h2>
+          <p className="font-poppins text-lg text-center max-w-4xl mx-auto mt-6 mb-20">
+            GABAY is an alternative option to Cainta Municipal’s manual booking process.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="flex-1 bg-white rounded-xl shadow-md p-8 border-2 border-gabay-blue">
+              <img src={plus} alt="Plus icon" className="w-20 h-20 mb-4 mt-4 mx-auto object-contain" />
+              <p className="font-montserrat text-2xl text-[#1B335F] text-center font-bold mt-12 mb-6">
+                Assistive
+              </p>
+              <p className="font-poppins text-[#1B335F] text-center">
+                GABAY’s main objective is to make booking appointments easier
+              </p>
+            </div>
+
+            <div className="flex-1 bg-white rounded-xl shadow-md p-8 border-2 border-gabay-blue">
+              <img src={like} alt="Like icon" className="w-20 h-20 mb-4 mt-4 mx-auto object-contain" />
+              <p className="font-montserrat text-2xl text-[#1B335F] text-center font-bold mt-12 mb-6">
+                User-Friendly
+              </p>
+              <p className="font-poppins text-[#1B335F] text-center">
+                With user experience in mind, page navigation is simplified
+              </p>
+            </div>
+
+            <div className="flex-1 bg-white rounded-xl shadow-md p-8 border-2 border-gabay-blue">
+              <img src={calendarCheck} alt="Calendar Check icon" className="w-20 h-20 mb-4 mt-4 mx-auto object-contain" />
+              <p className="font-montserrat text-2xl text-[#1B335F] text-center font-bold mt-12 mb-6">
+                Transparent
+              </p>
+              <p className="font-poppins text-[#1B335F] text-center">
+                We’ll notify you of your reservation status as soon as possible
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

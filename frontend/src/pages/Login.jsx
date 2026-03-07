@@ -38,7 +38,7 @@ export default function Login({ onNavigate, setIsLoggedIn }) {
     console.log("Login Attempt:", formData);
     
     setIsLoggedIn(true);
-    onNavigate('home'); 
+    onNavigate('hospitalNumber'); 
   };
 
   return (
