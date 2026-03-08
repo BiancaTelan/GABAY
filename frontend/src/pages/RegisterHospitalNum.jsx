@@ -90,7 +90,7 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
         <Input label="Full Name" value={`${formData.firstName} ${formData.lastName}`} readOnly noHover />
         <Input label="Email Address" value={formData.email} readOnly noHover />
         <Input label="Hospital Number" name="hospitalNumber" value={formData.hospitalNumber} 
-        onChange={handleInputChange} placeholder="e.g 26-123456" maxLength={9} error={errors.hospitalNumber} required isEditing={true} />
+        onChange={handleInputChange} placeholder="e.g. 26-123456" maxLength={9} error={errors.hospitalNumber} required isEditing={true} />
         
         <div className="flex flex-col">
           <label className="text-sm font-medium text-gabay-navy mb-1">Gender</label>
@@ -117,7 +117,7 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
           isEditing={true} 
         />
 
-        <Input label="Contact Number" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange} error={errors.contactNumber} required isEditing={true} />
+        <Input label="Contact Number" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange} placeholder="e.g. 09191234567" error={errors.contactNumber} required isEditing={true} />
 
         <div className="md:col-span-2">
           <Input label="Home Address" name="homeAddress" value={formData.homeAddress} onChange={handleInputChange} error={errors.homeAddress} required isEditing={true} />
