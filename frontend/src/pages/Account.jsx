@@ -5,7 +5,6 @@ import { emailPattern, namePattern, phonePattern, dobPattern, minAgeRequirement 
 import ConfirmationModal from '../components/confirmModal';
 
 export default function Account({ userInfo, onLogout, onUpdateProfile }) {
-  // Use a local state for editing, initialized by the prop from App.jsx
   const [localUserInfo, setLocalUserInfo] = useState({
     firstName: "",
     lastName: "",
@@ -25,7 +24,6 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
   const [errors, setErrors] = useState({});
   const [showToast, setShowToast] = useState(false);
 
-  // FIX: This effect "pulls" the global data into your local form fields
   useEffect(() => {
     if (userInfo) {
       setLocalUserInfo(prev => ({
@@ -143,7 +141,6 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
 
   const handleSave = () => {
     if (validate()) {
-      // FIX: Push the final data back up to App.jsx global state
       if (onUpdateProfile) {
         onUpdateProfile(localUserInfo);
       }

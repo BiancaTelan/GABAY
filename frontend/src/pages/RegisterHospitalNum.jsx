@@ -82,7 +82,7 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-10 font-poppins text-left">
+    <div id="register-form" className="max-w-4xl mx-auto p-10 font-poppins text-left">
       <h1 className="text-3xl font-bold text-gabay-teal mb-2 font-montserrat">Complete Your Profile</h1>
       <p className="text-gray-500 mb-10 text-sm">Please provide your hospital details to access GABAY services.</p>
 

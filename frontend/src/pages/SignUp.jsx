@@ -5,7 +5,7 @@ import Input from '../components/input';
 import { useState } from 'react';
 import { emailPattern, namePattern } from '../utils/constants'; 
 
-export default function SignUp({ onNavigate, onLogin, onCompleteSignup }) {
+export default function SignUp({ onNavigate, onCompleteSignup }) {
     const [formData, setFormData] = useState({
       firstName: '',
       lastName: '',

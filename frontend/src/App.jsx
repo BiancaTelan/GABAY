@@ -10,6 +10,7 @@ import HospitalNumber from './pages/HospitalNumber';
 import GeneratedHospitalNumber from './pages/GenerateHospitalNum';
 import RegisterHospitalNumber from './pages/RegisterHospitalNum';
 import DepartmentList from './pages/DepartmentList';
+import ConfirmationModal from './components/confirmModal';
 
 function App() { 
   const [currentPage, setCurrentPage] = useState('home');
@@ -17,19 +18,23 @@ function App() {
   const [intendedPage, setIntendedPage] = useState(null);
   const [registrationData, setRegistrationData] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
+  const [showBlockerModal, setShowBlockerModal] = useState(false);
 
-  // EXISTING USERS
-  const handleLogin = () => {
+  // LOGIN ROUTE
+  const handleLogin = (userFromDb) => {
     setIsLoggedIn(true);
+    if (userFromDb) setUserInfo(userFromDb);
     if (intendedPage) {
       setCurrentPage(intendedPage);
       setIntendedPage(null);
+    } else if (userFromDb && !userFromDb.hospitalNumber) {
+      setCurrentPage('hospitalNumber');
     } else {
       setCurrentPage('home'); 
     }
   };
 
-// NEW USERS
+  // SIGNUP ROUTE
   const handleCompleteSignUp = (data) => {
     setIsLoggedIn(true); 
     setRegistrationData(data); 
@@ -55,6 +60,19 @@ function App() {
   };
 
   const handleNavigate = (page) => {
+    const isRegistering = currentPage === 'registerNumber';
+    const isProfileIncomplete = isLoggedIn && !userInfo?.hospitalNumber;
+
+    if (isRegistering && isProfileIncomplete && page !== 'registerNumber') {
+      const formElement = document.getElementById('register-form');
+      if (formElement) {
+        formElement.classList.add('animate-shake');
+        setTimeout(() => formElement.classList.remove('animate-shake'), 500);
+      }
+      setShowBlockerModal(true);
+      return;
+    }
+
     const protectedPages = [
       'departments',
       'account',
@@ -86,11 +104,8 @@ function App() {
       )}
 
       <main className={showHeader ? "pt-0" : ""}>
-        {currentPage === 'home' && (
-          <Home onNavigate={handleNavigate} />
-        )}
-
-        {currentPage === 'departments' && <DepartmentList />}
+        {currentPage === 'home' && <Home onNavigate={handleNavigate} />}
+        {currentPage === 'departments' && <DepartmentList onNavigate={handleNavigate} />}
         {currentPage === 'help' && <Help />}
         {currentPage === 'contact' && <ContactUs />}
         
@@ -114,12 +129,17 @@ function App() {
           <RegisterHospitalNumber initialData={registrationData} onFinalSubmit={handleFinalRegistration} />
         )}
 
+        <ConfirmationModal 
+          isOpen={showBlockerModal}
+          onClose={() => setShowBlockerModal(false)}
+          onConfirm={() => setShowBlockerModal(false)}
+          title="Registration Incomplete"
+          message="Please finish registering your hospital number before accessing other pages. This ensures your medical records are correctly linked to your account."
+          type="warning"
+        />
+
         {currentPage === 'generatedNumber' && (
           <GeneratedHospitalNumber onNavigate={handleNavigate} />
-        )}
-
-        {currentPage === 'departments' && (
-          <DepartmentList onNavigate={handleNavigate} />
         )}
       </main>
     </div>
