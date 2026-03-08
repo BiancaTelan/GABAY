@@ -42,8 +42,15 @@ function App() {
     setCurrentPage('account'); 
   };
 
+  const handleUpdateProfile = (updatedData) => {
+    setUserInfo(updatedData);
+    console.log("Global profile data updated!", updatedData);
+  };
+
   const handleLogout = () => {
     setIsLoggedIn(false); 
+    setUserInfo(null);
+    setRegistrationData(null);
     setCurrentPage('home');
   };
 
@@ -96,7 +103,7 @@ function App() {
         )}
 
         {currentPage === 'account' && (
-          <Account userInfo={userInfo} onLogout={handleLogout} />
+          <Account userInfo={userInfo} onLogout={handleLogout} onUpdateProfile={handleUpdateProfile} />
         )}
 
         {currentPage === 'hospitalNumber' && (
