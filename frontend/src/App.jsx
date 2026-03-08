@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import Header from './components/header';
 import Home from './pages/home';
-import Reservations from './pages/Reservations';
 import Help from './pages/Help';
 import ContactUs from './pages/ContactUs';
 import Login from './pages/Login';
@@ -9,21 +8,38 @@ import SignUp from './pages/SignUp';
 import Account from './pages/Account'; 
 import HospitalNumber from './pages/HospitalNumber';
 import GeneratedHospitalNumber from './pages/GenerateHospitalNum';
+import RegisterHospitalNumber from './pages/RegisterHospitalNum';
 import DepartmentList from './pages/DepartmentList';
 
 function App() { 
   const [currentPage, setCurrentPage] = useState('home');
   const [isLoggedIn, setIsLoggedIn] = useState(false); 
   const [intendedPage, setIntendedPage] = useState(null);
+  const [registrationData, setRegistrationData] = useState(null);
+  const [userInfo, setUserInfo] = useState(null);
 
+  // EXISTING USERS
   const handleLogin = () => {
     setIsLoggedIn(true);
     if (intendedPage) {
       setCurrentPage(intendedPage);
       setIntendedPage(null);
     } else {
-      setCurrentPage('hospitalNumber');
+      setCurrentPage('home'); 
     }
+  };
+
+// NEW USERS
+  const handleCompleteSignUp = (data) => {
+    setIsLoggedIn(true); 
+    setRegistrationData(data); 
+    setCurrentPage('hospitalNumber'); 
+  };
+
+  const handleFinalRegistration = (finalData) => {
+    setUserInfo({ ...registrationData, ...finalData }); 
+    setRegistrationData(null); 
+    setCurrentPage('account'); 
   };
 
   const handleLogout = () => {
@@ -34,9 +50,9 @@ function App() {
   const handleNavigate = (page) => {
     const protectedPages = [
       'departments',
-      'reservations',
       'account',
       'hospitalNumber',
+      'registerNumber',
       'generatedNumber',
       'generalDepartments',
       'specialtyDepartments',
@@ -67,7 +83,7 @@ function App() {
           <Home onNavigate={handleNavigate} />
         )}
 
-        {currentPage === 'reservations' && <Reservations />}
+        {currentPage === 'departments' && <DepartmentList />}
         {currentPage === 'help' && <Help />}
         {currentPage === 'contact' && <ContactUs />}
         
@@ -76,15 +92,19 @@ function App() {
         )}
 
         {currentPage === 'signup' && (
-          <SignUp onNavigate={setCurrentPage} onLogin={handleLogin} />
+          <SignUp onNavigate={setCurrentPage} onCompleteSignup={handleCompleteSignUp} />
         )}
 
         {currentPage === 'account' && (
-          <Account onLogout={handleLogout} />
+          <Account userInfo={userInfo} onLogout={handleLogout} />
         )}
 
         {currentPage === 'hospitalNumber' && (
           <HospitalNumber onNavigate={handleNavigate} />
+        )}
+
+        {currentPage === 'registerNumber' && (
+          <RegisterHospitalNumber initialData={registrationData} onFinalSubmit={handleFinalRegistration} />
         )}
 
         {currentPage === 'generatedNumber' && (

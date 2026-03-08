@@ -49,7 +49,6 @@ export default function Input({
             [&::-ms-reveal]:hidden [&::-ms-clear]:hidden [&::-webkit-contacts-auto-fill-button]:hidden`}
         />
 
-        {/* PASSWORD TOGGLE */}
         {isPasswordType && (
           <button
             type="button"
@@ -60,22 +59,18 @@ export default function Input({
           </button>
         )}
 
-        {/* CALENDAR PICKER ANCHOR */}
         {isDateType && isEditing && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 z-20">
-            {/* The actual date input is hidden but covers the icon area */}
             <input
               type="date"
               max={new Date().toISOString().split("T")[0]}
               onChange={onIconClick}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30"
             />
-            {/* The icon sits behind the invisible input */}
             <CalendarDays size={18} className="text-gray-400 pointer-events-none" />
           </div>
         )}
 
-        {/* CHEVRON ICON */}
         {isSelectType && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10">
             <ChevronDown size={18} />

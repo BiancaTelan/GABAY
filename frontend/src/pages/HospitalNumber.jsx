@@ -4,13 +4,6 @@ import NoIcon from '../assets/personCancel.png';
 
 export default function HospitalNumber({ onNavigate }) 
 {
-  const handleOptionClick = (option) => {
-    setSelectedOption(option);
-  };
-
-  const handleRegister = () => {
-    console.log('Register hospital number');
-  };
 
   const handleGet = () => {
     console.log('Get hospital number');
@@ -43,7 +36,7 @@ export default function HospitalNumber({ onNavigate })
             I have a hospital number
           </h3>
           <img src={YesIcon} alt="Yes icon" className="w-20 h-20 mb-4 mt-4 mx-auto object-contain" />
-          <Button variant="teal" onClick={handleRegister} className="w-65">
+          <Button variant="teal" onClick={() => onNavigate('registerNumber')} className="w-65">
             REGISTER HOSPITAL NUMBER
           </Button>
         </div>

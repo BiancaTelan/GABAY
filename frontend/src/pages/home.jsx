@@ -116,7 +116,7 @@ export default function Home({ onNavigate }) {
               </p>
               <img src={lists} alt="Lists icon" className="w-20 h-20 mb-4 mt-12 mx-auto object-contain" />
               <p className="font-poppins text-[#1B335F]">
-                Head to the Reservation link in the navigation bar and select one
+                Head to the Departments link in the navigation bar and select your designated choice
               </p>
             </div>
 
@@ -129,7 +129,7 @@ export default function Home({ onNavigate }) {
               </p>
               <img src={send} alt="Send icon" className="w-20 h-20 mb-4 mt-4 mx-auto object-contain" />
               <p className="font-poppins text-[#1B335F]">
-                Complete your account details and fill up the scheduling form
+                Complete updating your account with valid details and fill up the reservation form
               </p>
             </div>
 
@@ -142,7 +142,7 @@ export default function Home({ onNavigate }) {
               </p>
               <img src={checkCircle} alt="Check Circle icon" className="w-20 h-20 mb-4 mt-12 mx-auto object-contain" />
               <p className="font-poppins text-[#1B335F]">
-                Ensure your contact info is correct and wait for the available schedule
+                Ensure your contact information is correct and wait for the updates regarding your reservation
               </p>
             </div>
           </div>

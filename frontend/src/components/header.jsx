@@ -21,7 +21,7 @@ export default function Header({ isLoggedIn, onNavigate, currentPage }) {
           </div>
 
           <nav className="hidden md:flex gap-8 font-medium">
-            {['home', 'reservations', 'help', 'contact'].map((page) => (
+            {['home', 'departments', 'help', 'contact'].map((page) => (
               <button key={page} 
               onClick={() => handleNav(page)}
               className={`transition-all duration-200 border-b-2 pb-1 ${currentPage === page
@@ -88,7 +88,7 @@ export default function Header({ isLoggedIn, onNavigate, currentPage }) {
       {isMenuOpen && (
         <div className="md:hidden absolute top-full left-0 w-full bg-white border-b border-gray-200 shadow-xl p-6 flex flex-col gap-6 animate-in slide-in-from-top duration-300">
           <nav className="flex flex-col gap-4">
-            {['home', 'reservations', 'help', 'contact'].map((page) => (
+            {['home', 'departments', 'help', 'contact'].map((page) => (
               <button key={page} onClick={() => handleNav(page)} 
               className={`text-left font-medium text-lg ${currentPage === page ? 'text-gabay-blue' : 'text-gray-600'}`}>
               {page === 'contact' ? 'Contact Us' : page.charAt(0).toUpperCase() + page.slice(1)}

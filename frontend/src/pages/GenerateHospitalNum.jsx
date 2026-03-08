@@ -3,7 +3,7 @@ import Logo from '../assets/caintaHospitalLogo.png';
 export default function GeneratedHospitalNumber({ onNavigate }) {
   const handleConfirm = () => {
     console.log('Confirm clicked');
-    onNavigate('home');
+    onNavigate('account');
   };
 
   return (

@@ -4,20 +4,20 @@ import { LogOut, Trash2, CheckCircle } from 'lucide-react';
 import { emailPattern, namePattern, phonePattern, dobPattern, minAgeRequirement } from '../utils/constants';
 import ConfirmationModal from '../components/confirmModal';
 
-export default function Account({ onLogout }) {
-
-  const [userInfo, setUserInfo] = useState({
-    firstName: "Juan",
-    lastName: "Dela Cruz",
-    hospitalNumber: "26-154928",
-    email: "juandelacruz@gmail.com",
-    contactNumber: "09191234567",
-    dob: "01/01/1999",
-    gender: "Male",
-    homeAddress: "910 Plaza Miranda, Quezon City",
-    emergencyContact: "Maria Dela Cruz",
-    emergencyContactNum: "09198765432",
-    emergencyEmail: "mariadelacruz@gmail.com"
+export default function Account({ userInfo, onLogout, onUpdateProfile }) {
+  // Use a local state for editing, initialized by the prop from App.jsx
+  const [localUserInfo, setLocalUserInfo] = useState({
+    firstName: "",
+    lastName: "",
+    hospitalNumber: "",
+    email: "",
+    contactNumber: "",
+    dob: "",
+    gender: "Female",
+    homeAddress: "",
+    emergencyContact: "",
+    emergencyContactNum: "",
+    emergencyEmail: ""
   });
 
   const [tempUserInfo, setTempUserInfo] = useState(null);
@@ -25,7 +25,16 @@ export default function Account({ onLogout }) {
   const [errors, setErrors] = useState({});
   const [showToast, setShowToast] = useState(false);
 
-  // Hide notif after 3 seconds
+  // FIX: This effect "pulls" the global data into your local form fields
+  useEffect(() => {
+    if (userInfo) {
+      setLocalUserInfo(prev => ({
+        ...prev,
+        ...userInfo
+      }));
+    }
+  }, [userInfo]);
+
   useEffect(() => {
     if (showToast) {
       const timer = setTimeout(() => setShowToast(false), 3000);
@@ -41,7 +50,7 @@ export default function Account({ onLogout }) {
       else if (cleanValue.length <= 4) value = `${cleanValue.slice(0, 2)}/${cleanValue.slice(2)}`;
       else value = `${cleanValue.slice(0, 2)}/${cleanValue.slice(2, 4)}/${cleanValue.slice(4, 8)}`;
     }
-    setUserInfo(prev => ({ ...prev, [name]: value }));
+    setLocalUserInfo(prev => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }));
   };
 
@@ -49,11 +58,12 @@ export default function Account({ onLogout }) {
     const dateValue = e.target.value; 
     if (!dateValue) return;
     const [y, m, d] = dateValue.split('-');
-    setUserInfo(prev => ({ ...prev, dob: `${m}/${d}/${y}` }));
+    setLocalUserInfo(prev => ({ ...prev, dob: `${m}/${d}/${y}` }));
     if (errors.dob) setErrors(prev => ({ ...prev, dob: null }));
   };
 
   const [modalConfig, setModalConfig] = useState({ isOpen: false, type: '', title: '', message: '', onConfirm: null });
+  
   const openLogoutModal = () => {
     setModalConfig({
       isOpen: true,
@@ -83,22 +93,21 @@ export default function Account({ onLogout }) {
     let newErrors = {};
     const today = new Date(); 
 
-    // REQUIRED FIELDS
-    if (!userInfo.firstName.trim()) newErrors.firstName = "First name is required";
-    else if (!namePattern.test(userInfo.firstName)) newErrors.firstName = "Name cannot contain numbers";
+    if (!localUserInfo.firstName.trim()) newErrors.firstName = "First name is required";
+    else if (!namePattern.test(localUserInfo.firstName)) newErrors.firstName = "Name cannot contain numbers";
 
-    if (!userInfo.lastName.trim()) newErrors.lastName = "Last name is required";
-    else if (!namePattern.test(userInfo.lastName)) newErrors.lastName = "Name cannot contain numbers";
+    if (!localUserInfo.lastName.trim()) newErrors.lastName = "Last name is required";
+    else if (!namePattern.test(localUserInfo.lastName)) newErrors.lastName = "Name cannot contain numbers";
 
-    if (!userInfo.email.trim()) newErrors.email = "Email address is required";
-    else if (!emailPattern.test(userInfo.email)) newErrors.email = "Enter a valid email address";
+    if (!localUserInfo.email.trim()) newErrors.email = "Email address is required";
+    else if (!emailPattern.test(localUserInfo.email)) newErrors.email = "Enter a valid email address";
 
-    if (!userInfo.dob.trim() || userInfo.dob === "MM/DD/YYYY") {
+    if (!localUserInfo.dob.trim() || localUserInfo.dob === "MM/DD/YYYY") {
       newErrors.dob = "Date of birth is required";
-    } else if (!dobPattern.test(userInfo.dob)) {
+    } else if (!dobPattern.test(localUserInfo.dob)) {
       newErrors.dob = "Please use MM/DD/YYYY format";
     } else {
-      const [m, d, y] = userInfo.dob.split('/').map(Number);
+      const [m, d, y] = localUserInfo.dob.split('/').map(Number);
       const birthDate = new Date(y, m - 1, d);
       if (birthDate > today) newErrors.dob = "Invalid date of birth";
       else {
@@ -109,32 +118,35 @@ export default function Account({ onLogout }) {
       }
     }
 
-    if (!userInfo.homeAddress.trim()) newErrors.homeAddress = "Home address is required";
-    if (!userInfo.contactNumber.trim()) newErrors.contactNumber = "Contact number is required";
-    else if (!phonePattern.test(userInfo.contactNumber)) newErrors.contactNumber = "Must be a valid 11-digit number";
+    if (!localUserInfo.homeAddress.trim()) newErrors.homeAddress = "Home address is required";
+    if (!localUserInfo.contactNumber.trim()) newErrors.contactNumber = "Contact number is required";
+    else if (!phonePattern.test(localUserInfo.contactNumber)) newErrors.contactNumber = "Must be a valid 11-digit number";
 
-    // OPTIONAL NOT REQUIRED
-    if (userInfo.emergencyContact.trim() && !namePattern.test(userInfo.emergencyContact)) newErrors.emergencyContact = "Name cannot contain numbers";
-    if (userInfo.emergencyContactNum.trim() && !phonePattern.test(userInfo.emergencyContactNum)) newErrors.emergencyContactNum = "Must be a valid 11-digit number";
-    if (userInfo.emergencyEmail.trim() && !emailPattern.test(userInfo.emergencyEmail)) newErrors.emergencyEmail = "Enter a valid emergency email address";
+    if (localUserInfo.emergencyContact.trim() && !namePattern.test(localUserInfo.emergencyContact)) newErrors.emergencyContact = "Name cannot contain numbers";
+    if (localUserInfo.emergencyContactNum.trim() && !phonePattern.test(localUserInfo.emergencyContactNum)) newErrors.emergencyContactNum = "Must be a valid 11-digit number";
+    if (localUserInfo.emergencyEmail.trim() && !emailPattern.test(localUserInfo.emergencyEmail)) newErrors.emergencyEmail = "Enter a valid emergency email address";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleStartEdit = () => {
-    setTempUserInfo({ ...userInfo });
+    setTempUserInfo({ ...localUserInfo });
     setIsEditing(true);
   };
 
   const handleCancel = () => {
-    setUserInfo(tempUserInfo);
+    setLocalUserInfo(tempUserInfo);
     setErrors({});
     setIsEditing(false);
   };
 
   const handleSave = () => {
     if (validate()) {
+      // FIX: Push the final data back up to App.jsx global state
+      if (onUpdateProfile) {
+        onUpdateProfile(localUserInfo);
+      }
       setIsEditing(false);
       setShowToast(true);
     }
@@ -147,7 +159,7 @@ export default function Account({ onLogout }) {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-10 font-poppins relative">
+    <div className="max-w-6xl mx-auto px-6 py-10 font-poppins relative text-left">
       
       {showToast && (
         <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[100] pointer-events-none">
@@ -188,15 +200,15 @@ export default function Account({ onLogout }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
               {isEditing ? (
                 <>
-                  <Input label="First Name" name="firstName" value={userInfo.firstName} onChange={handleInputChange} error={errors.firstName} isEditing={isEditing} required />
-                  <Input label="Last Name" name="lastName" value={userInfo.lastName} onChange={handleInputChange} error={errors.lastName} isEditing={isEditing} required />
+                  <Input label="First Name" name="firstName" value={localUserInfo.firstName} onChange={handleInputChange} error={errors.firstName} isEditing={isEditing} required />
+                  <Input label="Last Name" name="lastName" value={localUserInfo.lastName} onChange={handleInputChange} error={errors.lastName} isEditing={isEditing} required />
                 </>
               ) : (
-                <Input label="Full Name" value={`${userInfo.firstName} ${userInfo.lastName}`} readOnly noHover />
+                <Input label="Full Name" value={`${localUserInfo.firstName} ${localUserInfo.lastName}`} readOnly noHover />
               )}
               
-              <Input label="Hospital Number" value={userInfo.hospitalNumber} readOnly noHover />
-              <Input label="Email Address" name="email" value={userInfo.email} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} error={errors.email} isEditing={isEditing} required />
+              <Input label="Hospital Number" value={localUserInfo.hospitalNumber} readOnly noHover />
+              <Input label="Email Address" name="email" value={localUserInfo.email} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} error={errors.email} isEditing={isEditing} required />
               
               <div className="flex flex-col">
                 <label className="text-sm font-medium text-gabay-navy mb-1">Gender</label>
@@ -204,13 +216,13 @@ export default function Account({ onLogout }) {
                   <div className="flex items-center gap-6 h-[40px]">
                     {["Female", "Male"].map((g) => (
                       <label key={g} className="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="gender" value={g} checked={userInfo.gender === g} onChange={handleInputChange} className="accent-gabay-blue h-4 w-4" />
+                        <input type="radio" name="gender" value={g} checked={localUserInfo.gender === g} onChange={handleInputChange} className="accent-gabay-blue h-4 w-4" />
                         <span className="text-base">{g}</span>
                       </label>
                     ))}
                   </div>
                 ) : (
-                  <Input value={userInfo.gender} readOnly noHover />
+                  <Input value={localUserInfo.gender} readOnly noHover />
                 )}
               </div>
 
@@ -218,7 +230,7 @@ export default function Account({ onLogout }) {
                 label="Date of Birth" 
                 name="dob" 
                 type="text" 
-                value={isEditing ? userInfo.dob : formatDisplayDate(userInfo.dob)} 
+                value={isEditing ? localUserInfo.dob : formatDisplayDate(localUserInfo.dob)} 
                 onChange={handleInputChange} 
                 onIconClick={handleCalendarChange}
                 readOnly={!isEditing} 
@@ -231,19 +243,19 @@ export default function Account({ onLogout }) {
               />
 
               <div className="md:col-span-1">
-                <Input label="Home Address" name="homeAddress" value={userInfo.homeAddress} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} required error={errors.homeAddress} />
+                <Input label="Home Address" name="homeAddress" value={localUserInfo.homeAddress} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} required error={errors.homeAddress} />
               </div>
-              <Input label="Contact Number" name="contactNumber" value={userInfo.contactNumber} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} required error={errors.contactNumber} />
+              <Input label="Contact Number" name="contactNumber" value={localUserInfo.contactNumber} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} required error={errors.contactNumber} />
             </div>
           </section>
 
           <section>
             <h2 className="text-base font-semibold text-gabay-blue mb-6 tracking-wider uppercase font-poppins">Emergency Contact Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-              <Input label="Emergency Contact" name="emergencyContact" value={userInfo.emergencyContact} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} error={errors.emergencyContact} />
-              <Input label="Emergency Contact Number" name="emergencyContactNum" value={userInfo.emergencyContactNum} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} error={errors.emergencyContactNum} />
+              <Input label="Emergency Contact" name="emergencyContact" value={localUserInfo.emergencyContact} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} error={errors.emergencyContact} />
+              <Input label="Emergency Contact Number" name="emergencyContactNum" value={localUserInfo.emergencyContactNum} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} error={errors.emergencyContactNum} />
               <div className="md:col-span-1">
-                <Input label="Emergency Email Address" name="emergencyEmail" value={userInfo.emergencyEmail} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} error={errors.emergencyEmail} />
+                <Input label="Emergency Email Address" name="emergencyEmail" value={localUserInfo.emergencyEmail} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} error={errors.emergencyEmail} />
               </div>
             </div>
           </section>
@@ -258,14 +270,14 @@ export default function Account({ onLogout }) {
 
         <div className="w-full md:w-64 flex flex-col items-start gap-4 border-l border-gray-100 pl-8 pt-10">
           <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Account Settings</h3>
-          <button onClick={openLogoutModal} className="flex items-center gap-2 text-gabay-teal hover:text-gabay-teal2 transition-colors hover:underline text-sm font-semibold">
+          <button onClick={openLogoutModal} className="flex items-center gap-2 text-gabay-teal hover:text-gabay-teal2 transition-colors hover:underline text-sm font-semibold text-left">
             <LogOut size={18} /> Log Out
           </button>
           {isEditing && (
             <>
-              <button className="text-gabay-blue hover:text-gabay-navy transition-colors hover:underline text-sm font-medium">Change Email</button>
-              <button className="text-gabay-blue hover:text-gabay-navy transition-colors hover:underline text-sm font-medium">Change Password</button>
-              <button onClick={openDeleteModal} className="text-gabay-red hover:text-gabay-red2 text-sm font-semibold mt-10 underline w-full flex gap-2">
+              <button className="text-gabay-blue hover:text-gabay-navy transition-colors hover:underline text-sm font-medium text-left">Change Email</button>
+              <button className="text-gabay-blue hover:text-gabay-navy transition-colors hover:underline text-sm font-medium text-left">Change Password</button>
+              <button onClick={openDeleteModal} className="text-gabay-red hover:text-gabay-red2 text-sm font-semibold mt-10 underline w-full flex gap-2 text-left">
                 <Trash2 size={16} /> Delete Account
               </button>
             </>
@@ -274,14 +286,13 @@ export default function Account({ onLogout }) {
       </div>
 
       <ConfirmationModal 
-      isOpen={modalConfig.isOpen}
-      onClose={closeModal}
-      onConfirm={modalConfig.onConfirm}
-      title={modalConfig.title}
-      message={modalConfig.message}
-      type={modalConfig.type}
-    />
-
+        isOpen={modalConfig.isOpen}
+        onClose={closeModal}
+        onConfirm={modalConfig.onConfirm}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type={modalConfig.type}
+      />
     </div>
   );
 }

@@ -5,7 +5,7 @@ import Input from '../components/input';
 import { useState } from 'react';
 import { emailPattern, namePattern } from '../utils/constants'; 
 
-export default function SignUp({ onNavigate, onLogin }) {
+export default function SignUp({ onNavigate, onLogin, onCompleteSignup }) {
     const [formData, setFormData] = useState({
       firstName: '',
       lastName: '',
@@ -54,10 +54,14 @@ export default function SignUp({ onNavigate, onLogin }) {
       }
 
       setErrors({});
-      console.log("Account Created! Logging you in...", formData);
-      
-      onLogin(); 
-      onNavigate('home'); 
+
+      const userData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email
+      };
+      console.log("Account Created! Logging you in...", userData);
+      onCompleteSignup(userData);
     };
 
     return (
