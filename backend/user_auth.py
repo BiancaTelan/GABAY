@@ -1,25 +1,25 @@
-from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+from datetime import timedelta
 
-from .db_connection import get_db
-from .db_model import User
-from .security import verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
+from db_connection import get_db
+from db_model import User, Patient, roleEnum
+from py_schema import PatientSignUp
+from security import verify_password, create_access_token, get_password_hash, ACCESS_TOKEN_EXPIRE_MINUTES
 
-router = APIRouter(tags=["Authentication"])
+router = APIRouter(prefix="/auth", tags=["Authentication & Registration"])
+
+# ---------------------------------------------------------
+# 1. LOGIN ROUTE
+# ---------------------------------------------------------
 
 @router.post("/login", summary="Create access token for user")
 def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(), 
     db: Session = Depends(get_db)
 ):
-    """
-    Authenticates a user and returns a JWT.
-    Note: OAuth2 strictly expects 'username' and 'password'. 
-    In our React frontend, we will map the user's email to the 'username' field.
-    """
-    
     user = db.query(User).filter(User.email == form_data.username).first()
     
     if not user or not verify_password(form_data.password, user.passwordHash):
@@ -51,3 +51,45 @@ def login_for_access_token(
         "access_token": access_token, 
         "token_type": "bearer"
     }
+
+# ---------------------------------------------------------
+# 2. SIGN-UP ROUTE
+# ---------------------------------------------------------
+@router.post("/signup", status_code=status.HTTP_201_CREATED)
+def register_patient(patient_data: PatientSignUp, db: Session = Depends(get_db)):
+    
+    existing_user = db.query(User).filter(User.email == patient_data.email).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="An account with this email already exists."
+        )
+
+    hashed_password = get_password_hash(patient_data.password)
+    new_user = User(
+        email=patient_data.email,
+        passwordHash=hashed_password,
+        role=roleEnum.Patient,
+        isActive=True
+    )
+    db.add(new_user)
+    
+    try:
+        db.flush()
+        
+        new_patient = Patient(
+            userID=new_user.userID,
+            firstname=patient_data.firstname,
+            surname=patient_data.surname,
+        )
+        db.add(new_patient)
+        db.commit()
+        
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while creating the account."
+        )
+
+    return {"message": "Account created successfully. You can now log in."}

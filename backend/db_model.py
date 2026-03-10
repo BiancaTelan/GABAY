@@ -4,7 +4,7 @@ from typing import Optional, List
 from sqlalchemy import String, Integer, Boolean, ForeignKey, DateTime, Date, Time, Text, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
-from .db_connection import Base
+from db_connection import Base
 
 # === ENUMS OPTIONS ===
 
@@ -73,7 +73,7 @@ class Patient(Base):
     middlename: Mapped[Optional[str]] = mapped_column(String(100))
     surname: Mapped[str] = mapped_column(String(100), nullable=False)
     suffix: Mapped[Optional[str]] = mapped_column(String(10))
-    birthDate: Mapped[date] = mapped_column(Date, nullable=False)
+    birthDate: Mapped[date] = mapped_column(Date, nullable=True)
     address: Mapped[Optional[str]] = mapped_column(Text)
     hospital_num: Mapped[Optional[str]] = mapped_column(String(50), unique=True)
     

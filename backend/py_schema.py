@@ -1,38 +1,58 @@
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, model_validator
 from typing import Optional
 from datetime import date, datetime
 import re
-from .db_model import RoleEnum # Importing the Enum we created earlier
+from db_model import roleEnum 
 
 # ==========================================
-# USER SCHEMAS (Authentication & Accounts)
+# REGISTRATION / SIGN-UP SCHEMAS
+# ==========================================
+
+class PatientSignUp(BaseModel):
+    """Schema for handling new patient registrations from the frontend."""
+    firstname: str = Field(..., min_length=2, max_length=100)
+    surname: str = Field(..., min_length=2, max_length=100)
+    email: EmailStr
+    password: str = Field(..., min_length=8, description="Must be at least 8 characters")
+    confirm_password: str
+
+    @model_validator(mode='after')
+    def check_passwords_match(self) -> 'PatientSignUp':
+        """Ensures the user typed the exact same password twice."""
+        if self.password != self.confirm_password:
+            raise ValueError("Passwords do not match")
+        return self
+
+    @model_validator(mode='after')
+    def validate_password_strength(self) -> 'PatientSignUp':
+        """Enforces basic password complexity to prevent easily guessed passwords."""
+        if not re.search(r"[A-Z]", self.password):
+            raise ValueError("Password must contain at least one uppercase letter.")
+        if not re.search(r"[0-9]", self.password):
+            raise ValueError("Password must contain at least one number.")
+        return self
+
+
+# ==========================================
+# USER SCHEMAS (Accounts & Authentication)
 # ==========================================
 
 class UserBase(BaseModel):
-    email: EmailStr = Field(..., description="A valid email address")
+    email: EmailStr
     isActive: bool = True
 
 class UserCreate(UserBase):
-    # Enforce strong passwords at the API boundary
-    password: str = Field(..., min_length=8, description="Password must be at least 8 characters")
-    role: RoleEnum
-
-    @field_validator('password')
-    @classmethod
-    def validate_password_strength(cls, v: str) -> str:
-        if not re.search(r"[A-Z]", v):
-            raise ValueError("Password must contain at least one uppercase letter.")
-        if not re.search(r"[0-9]", v):
-            raise ValueError("Password must contain at least one number.")
-        return v
+    """Schema for Admins manually creating Staff or Doctor accounts."""
+    password: str = Field(..., min_length=8)
+    role: roleEnum
 
 class UserResponse(UserBase):
-    user_ID: int
-    role: RoleEnum
+    """Secure response schema that NEVER includes the password hash."""
+    userID: int
+    role: roleEnum
     createdDate: datetime
 
     class Config:
-        # This tells Pydantic to read data from SQLAlchemy ORM models
         from_attributes = True
 
 
@@ -41,26 +61,30 @@ class UserResponse(UserBase):
 # ==========================================
 
 class PatientBase(BaseModel):
+    """Base demographic data. birthDate is now Optional for progressive profiling."""
     firstname: str = Field(..., min_length=2, max_length=100)
     middlename: Optional[str] = Field(None, max_length=100)
     surname: str = Field(..., min_length=2, max_length=100)
     suffix: Optional[str] = Field(None, max_length=10)
-    birthDate: date
+    birthDate: Optional[date] = None 
     address: Optional[str] = None
     hasPreviousRecord: bool = False
 
-class PatientCreate(PatientBase):
+class PatientUpdate(BaseModel):
+    """Schema used when the patient later fills in their missing details to book an appointment."""
+    birthDate: date
+    address: str
+    middlename: Optional[str] = None
     
-    @field_validator('birthDate')
-    @classmethod
-    def validate_birthdate(cls, v: date) -> date:
-        if v > date.today():
+    @model_validator(mode='after')
+    def validate_birthdate(self) -> 'PatientUpdate':
+        if self.birthDate > date.today():
             raise ValueError("Birthdate cannot be in the future.")
-        return v
+        return self
 
 class PatientResponse(PatientBase):
-    patient_ID: int
-    user_ID: Optional[int] = None
+    patientID: int
+    userID: Optional[int] = None
     hospital_num: Optional[str] = None
 
     class Config:

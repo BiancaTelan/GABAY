@@ -4,9 +4,9 @@ import jwt
 from sqlalchemy.orm import Session
 from typing import List
 
-from .db_connection import get_db
-from .db_model import User, RoleEnum
-from .security import SECRET_KEY, ALGORITHM
+from db_connection import get_db
+from db_model import User, roleEnum
+from security import SECRET_KEY, ALGORITHM
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
@@ -47,7 +47,7 @@ def get_current_user(
 
 class RoleChecker:
     
-    def __init__(self, allowed_roles: List[RoleEnum]):
+    def __init__(self, allowed_roles: List[roleEnum]):
         self.allowed_roles = allowed_roles
 
     def __call__(self, current_user: User = Depends(get_current_user)):

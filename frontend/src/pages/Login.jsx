@@ -2,8 +2,9 @@ import caintaBg from '../assets/caintaBg.png';
 import gabayLogo from '../assets/gabayLogo.png';
 import Button from '../components/button';
 import Input from '../components/input';
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { emailPattern } from '../utils/constants';
+import { AuthContext } from '../authContext';
 
 export default function Login({ onNavigate, setIsLoggedIn }) {
   const [formData, setFormData] = useState({
@@ -12,9 +13,15 @@ export default function Login({ onNavigate, setIsLoggedIn }) {
   });
 
   const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState('');
 
-  const handleSubmit = async (e) => {
+  const { login } = useContext(AuthContext);
+
+  const handleLogin = async (e) => {
     e.preventDefault();
+    setErrors({});
+    setServerError('');
+
     let newErrors = {};
 
     if (!formData.email.trim()) {
@@ -31,14 +38,42 @@ export default function Login({ onNavigate, setIsLoggedIn }) {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      return;
+      return; 
     }
 
-    setErrors({});
-    console.log("Login Attempt:", formData);
-    
-    setIsLoggedIn(true);
-    onNavigate('home'); 
+    const urlEncodedData = new URLSearchParams();
+    urlEncodedData.append('username', formData.email); 
+    urlEncodedData.append('password', formData.password);
+
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData.toString(),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Invalid email or password');
+      }
+
+      const data = await response.json();
+      const accessToken = data.access_token;
+
+      const payload = JSON.parse(atob(accessToken.split('.')[1]));
+      const userRole = payload.role;
+
+      login(accessToken, userRole);
+
+      setIsLoggedIn(true);
+      onNavigate('home');
+
+    } catch (error) {
+      console.error('Login failed:', error);
+      
+      setServerError(error.message || 'An error occurred during login. Please try again.');
+    };
+    //setErrors({});
+    //console.log("Login Attempt:", formData);
   };
 
   return (
@@ -69,7 +104,7 @@ export default function Login({ onNavigate, setIsLoggedIn }) {
           <h3 className="font-montserrat text-3xl font-bold text-gabay-blue text-center mb-2">Log In</h3>
           <p className="font-poppins text-gray-500 text-center text-sm mb-8">Accomplish the form below to access your account</p>
           
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-6">
             <Input 
               label="Email Address" 
               type="email" 
