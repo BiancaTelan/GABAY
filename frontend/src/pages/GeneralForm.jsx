@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import hospitalData from '../utils/hospitalData.json';
 import { ChevronDown, CalendarDays } from 'lucide-react';
 import DatePicker from "react-datepicker";
@@ -35,41 +36,35 @@ const GabayInput = React.forwardRef(({ value, onClick, onChange, ...props }, ref
   );
 });
 
-  export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
-    const [startDate, setStartDate] = useState(null);
-    const [endDate, setEndDate] = useState(null);
-    const [formData, setFormData] = useState({
-      firstName: userInfo?.firstName || "",
-      lastName: userInfo?.lastName || "",
-      hospitalNumber: userInfo?.hospitalNumber || "",
-      department: "",
-      doctor: "NONE",
-      reason: "",
-      hasPreviousRecord: false
-    });
+export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
+  const navigate = useNavigate();
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+  
+  const [formData, setFormData] = useState({
+    firstName: userInfo?.firstName || "",
+    lastName: userInfo?.lastName || "",
+    hospitalNumber: userInfo?.hospitalNumber || "",
+    department: "",
+    doctor: "NONE",
+    reason: "",
+    hasPreviousRecord: false
+  });
 
-    const [errors, setErrors] = useState({});
-    const isReadOnly = mode === "confirm";
+  const [errors, setErrors] = useState({});
+  const isReadOnly = mode === "confirm";
 
-    const today = new Date();
-    const maxDate = new Date();
-    maxDate.setMonth(maxDate.getMonth() + 6);
+  const today = new Date();
+  const maxDate = new Date();
+  maxDate.setMonth(maxDate.getMonth() + 6);
 
-    const isWeekday = (date) => {
-      const day = date.getDay();
-      return day !== 0 && day !== 6;
-    };
+  const isWeekday = (date) => {
+    const day = date.getDay();
+    return day !== 0 && day !== 6;
+  };
 
-    const formatDateInput = (value) => {
-    const digits = value.replace(/\D/g, "");
-    if (digits.length <= 2) return digits;
-    if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-    return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 8)}`;
-    };
-
-    const handleInputChange = (e) => {
+  const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }));
 
     setFormData(prev => ({
@@ -84,13 +79,8 @@ const GabayInput = React.forwardRef(({ value, onClick, onChange, ...props }, ref
     if (!formData.department) newErrors.department = "Department is required.";
     if (!formData.reason) newErrors.reason = "Please provide a reason for booking.";
     
-    if (!formData.appointmentDate) {
-      newErrors.appointmentDate = "Please select a date.";
-    } else {
-      const day = new Date(formData.appointmentDate).getDay();
-      if (day === 0 || day === 6) {
-        newErrors.appointmentDate = "Weekends are not available.";
-      }
+    if (!startDate) {
+      newErrors.appointmentDate = "Please select a date range.";
     }
 
     setErrors(newErrors);
@@ -102,9 +92,9 @@ const GabayInput = React.forwardRef(({ value, onClick, onChange, ...props }, ref
   )?.doctors || [];
 
   return (
-    <div className="max-w-6xl mx-auto p-10 font-poppins text-left animate-fade-in">
+    <div className="max-w-6xl mx-auto p-10 font-poppins text-left animate-in fade-in duration-500">
       <h1 className="text-3xl font-montserrat font-bold text-gabay-teal mb-1">
-        {isReadOnly ? "Review Reservation" : "Reservation Form"}
+        {isReadOnly ? "Review Reservation" : "General Appointment Form"}
       </h1>
       <p className="text-gray-500 mb-10">
         {isReadOnly ? "Please double-check your details before confirming." : "Complete the form to reserve your appointment."}
@@ -112,9 +102,9 @@ const GabayInput = React.forwardRef(({ value, onClick, onChange, ...props }, ref
 
       <div className="flex flex-col md:flex-row gap-16">
         <div className="flex-1 space-y-6">
-
+         
           <div className="flex flex-col">
-            <label className="text-gabay-blue font-medium mb-1">Department</label>
+            <label className="text-gabay-blue font-medium mb-1 text-sm uppercase tracking-wide">Department</label>
             <div className="relative">
               <select 
                 name="department"
@@ -123,7 +113,7 @@ const GabayInput = React.forwardRef(({ value, onClick, onChange, ...props }, ref
                 disabled={isReadOnly}
                 className={`hide-chevron w-full p-2 text-base rounded-md border outline-none transition-all pr-10 ${
                   isReadOnly ? 'bg-gray-50 border-gray-300 text-gray-700 cursor-default' : 
-                  errors.department ? 'border-red-500 ring-1 ring-gabay-red' : 'border-gray-300 focus:ring-1 focus:ring-gabay-teal'
+                  errors.department ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 focus:ring-1 focus:ring-gabay-teal'
                 }`}
               >
                 <option value="">Select Department</option>
@@ -133,11 +123,11 @@ const GabayInput = React.forwardRef(({ value, onClick, onChange, ...props }, ref
               </select>
               {!isReadOnly && <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />}
             </div>
-            {errors.department && <p className="text-red-500 text-[11px] mt-1 font-medium uppercase tracking-tighter">{errors.department}</p>}
+            {errors.department && <p className="text-red-500 text-[11px] mt-1 font-medium uppercase">{errors.department}</p>}
           </div>
 
           <div className="flex flex-col">
-            <label className="text-gabay-blue font-medium mb-1">Assigned Doctor</label>
+            <label className="text-gabay-blue font-medium mb-1 text-sm uppercase tracking-wide">Assigned Doctor</label>
             <div className="relative">
               <select 
                 name="doctor"
@@ -159,56 +149,52 @@ const GabayInput = React.forwardRef(({ value, onClick, onChange, ...props }, ref
             </div>
           </div>
 
-    <div className="flex flex-col">
-      <label className="text-gabay-blue font-medium mb-1">Preferred Appointment Date</label>
-      <div className="relative custom-datepicker-container">
-        {isReadOnly ? (
-          <div className="p-2 bg-gray-50 border border-gray-300 rounded-md text-gray-700">
-            {startDate?.toLocaleDateString()} {endDate ? `- ${endDate?.toLocaleDateString()}` : ""}
+          <div className="flex flex-col">
+            <label className="text-gabay-blue font-medium mb-1 text-sm uppercase tracking-wide">Preferred Appointment Date</label>
+            <div className="relative custom-datepicker-container">
+              {isReadOnly ? (
+                <div className="p-2 bg-gray-50 border border-gray-300 rounded-md text-gray-700">
+                  {startDate?.toLocaleDateString()} {endDate ? `- ${endDate?.toLocaleDateString()}` : ""}
+                </div>
+              ) : (
+                <DatePicker
+                  selected={startDate}
+                  onChange={(dates) => {
+                    const [start, end] = dates;
+                    setStartDate(start);
+                    setEndDate(end);
+                  }}
+                  startDate={startDate}
+                  endDate={endDate}
+                  selectsRange
+                  filterDate={isWeekday}
+                  minDate={today}
+                  maxDate={startDate 
+                    ? new Date(startDate.getTime() + 6 * 24 * 60 * 60 * 1000) 
+                    : maxDate
+                  }
+                  placeholderText="MM/DD/YYYY - MM/DD/YYYY"
+                  dateFormat="MM/dd/yyyy"
+                  customInput={
+                    <GabayInput 
+                      className={`w-full p-2 text-base rounded-md border outline-none transition-all pr-10 ${
+                        errors.appointmentDate ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-gabay-teal'
+                      }`} 
+                    />
+                  }
+                />
+              )}
+            </div>
+            {errors.appointmentDate && (
+              <p className="text-red-500 text-[11px] mt-1 font-medium uppercase">
+                {errors.appointmentDate}
+              </p>
+            )}
+            {!isReadOnly && <p className="text-[12px] text-gray-400 mt-1 font-medium">* Max 5-day duration per reservation.</p>}
           </div>
-        ) : (
-          <DatePicker
-            selected={startDate}
-            onChange={(dates) => {
-              const [start, end] = dates;
-              setStartDate(start);
-              setEndDate(end);
-            }}
-            startDate={startDate}
-            endDate={endDate}
-            selectsRange
-            filterDate={isWeekday}
-            minDate={today}
-            maxDate={startDate 
-              ? new Date(startDate.getTime() + 6 * 24 * 60 * 60 * 1000) 
-              : maxDate
-            }
-            placeholderText="MM/DD/YYYY - MM/DD/YYYY"
-            dateFormat="MM/dd/yyyy"
-            customInput={
-              <GabayInput 
-                className={`w-full p-2 text-base rounded-md border outline-none transition-all pr-10 ${
-                  errors.appointmentDate ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-gabay-teal'
-                }`} 
-              />
-            }
-            />
-          )}
-        </div>
-        {errors.appointmentDate && (
-          <p className="text-red-500 text-[11px] mt-1 font-medium uppercase">
-            {errors.appointmentDate}
-          </p>
-        )}
-        {!isReadOnly && !errors.appointmentDate && (
-          <p className="text-[12px] text-gray-400 mt-1 font-medium">
-            * Max 5-day duration per reservation.
-          </p>
-        )}
-    </div>
 
           <div className="flex flex-col">
-            <label className="text-gabay-blue font-medium mb-1">Reason for Booking</label>
+            <label className="text-gabay-blue font-medium mb-1 text-sm uppercase tracking-wide">Reason for Booking</label>
             <textarea 
               name="reason"
               rows="4"
@@ -217,11 +203,11 @@ const GabayInput = React.forwardRef(({ value, onClick, onChange, ...props }, ref
               readOnly={isReadOnly}
               className={`p-3 text-base rounded-md border outline-none resize-none transition-all ${
                 isReadOnly ? 'bg-gray-50 border-gray-300 text-gray-700 cursor-default' : 
-                errors.reason ? 'border-red-500 ring-1 ring-gabay-red' : 'border-gray-300 focus:ring-1 focus:ring-gabay-teal'
+                errors.reason ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 focus:ring-1 focus:ring-gabay-teal'
               }`}
               placeholder="Describe your symptoms..."
             />
-            {errors.reason && <p className="text-red-500 text-[11px] mt-1 font-medium uppercase tracking-tighter">{errors.reason}</p>}
+            {errors.reason && <p className="text-red-500 text-[11px] mt-1 font-medium uppercase">{errors.reason}</p>}
           </div>
         </div>
 
@@ -251,26 +237,35 @@ const GabayInput = React.forwardRef(({ value, onClick, onChange, ...props }, ref
             <button 
               type="button"
               onClick={() => onConfirm(formData, "fill")}
-              className="flex-1 md:flex-none border-2 border-gabay-teal text-gabay-teal px-12 py-3 rounded-xl font-bold transition-all hover:bg-teal-50 active:scale-95"
+              className="flex-1 md:flex-none border-2 border-gabay-teal text-gabay-teal px-12 py-3 rounded-xl font-bold transition-all hover:bg-teal-50 active:scale-95 text-sm"
             >
               EDIT DETAILS
             </button>
             <button 
               type="button"
-              onClick={() => onConfirm(formData, "submit")}
-              className="flex-1 md:flex-none bg-gabay-green hover:bg-gabay-green2 text-white px-12 py-3 rounded-xl font-bold transition-all shadow-lg active:scale-95"
+              onClick={() => onConfirm({ ...formData, startDate, endDate }, "submit")}
+              className="flex-1 md:flex-none bg-gabay-teal hover:bg-teal-700 text-white px-12 py-3 rounded-xl font-bold transition-all shadow-lg active:scale-95 text-sm"
             >
               CONFIRM RESERVATION
             </button>
           </>
         ) : (
-          <button 
-            type="button"
-            onClick={() => validateForm() && onConfirm(formData, "confirm")}
-            className="px-8 py-1.5 rounded-full bg-gabay-teal font-poppins text-base text-white font-semibold hover:bg-teal-600 shadow-md transition-all active:scale-95"
-          >
-            SUBMIT FOR REVIEW
-          </button>
+          <div className="flex gap-4 w-full md:w-auto">
+            <button 
+              type="button"
+              onClick={() => validateForm() && onConfirm(formData, "confirm")}
+              className="px-8 py-3 rounded-xl bg-gabay-teal font-poppins text-sm text-white font-bold hover:bg-teal-600 shadow-md transition-all active:scale-95"
+            >
+              SUBMIT FOR REVIEW
+            </button>
+            <button 
+              type="button"
+              onClick={() => navigate('/departments')}
+              className="px-8 py-3 rounded-xl border border-gray-300 font-poppins text-sm text-gray-500 font-bold hover:bg-gray-50 transition-all active:scale-95"
+            >
+              CANCEL
+            </button>
+          </div>
         )}
       </div>
     </div>

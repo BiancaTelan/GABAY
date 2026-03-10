@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
+
 import Header from './components/header';
 import Home from './pages/home';
 import Help from './pages/Help';
@@ -18,9 +20,10 @@ import GeneralForm from './pages/GeneralForm';
 import SpecialtyForm from './pages/SpecialtyForm';
 
 function App() { 
-  const [currentPage, setCurrentPage] = useState('home');
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [isLoggedIn, setIsLoggedIn] = useState(false); 
-  const [intendedPage, setIntendedPage] = useState(null);
   const [registrationData, setRegistrationData] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
   const [showBlockerModal, setShowBlockerModal] = useState(false);
@@ -29,45 +32,29 @@ function App() {
   const handleLogin = (userFromDb) => {
     setIsLoggedIn(true);
     if (userFromDb) setUserInfo(userFromDb);
-    if (intendedPage) {
-      setCurrentPage(intendedPage);
-      setIntendedPage(null);
-    } else {
-      setCurrentPage('home'); 
-    }
+    
+    const origin = location.state?.from?.pathname || '/';
+    navigate(origin);
   };
 
   const handleCompleteSignUp = (data) => {
     setIsLoggedIn(true); 
     setRegistrationData(data); 
-    setCurrentPage('hospitalNumber'); 
+    navigate('/hospital-number'); 
   };
 
   const handleFinalRegistration = (finalData) => {
     setUserInfo({ ...registrationData, ...finalData }); 
     setRegistrationData(null); 
-    setCurrentPage('account'); 
-  };
-
-  const handleUpdateProfile = (updatedData) => {
-    setUserInfo(updatedData);
+    navigate('/account'); 
   };
 
   const handleLogout = () => {
-    setIsLoggedIn(false); 
+    /*setIsLoggedIn(false); 
     setUserInfo(null);
     setRegistrationData(null);
-    setCurrentPage('home');
-  };
-
-  const handleReserveGeneral = () => {
-    handleNavigate('generalForm');
-    setFormMode('fill');
-  };
-
-  const handleReserveSpecialty = () => {
-    handleNavigate('specialtyForm'); 
-    setFormMode('fill');
+    navigate('/');
+    */
   };
 
   const handleFormSubmission = (data, nextStep) => {
@@ -78,88 +65,60 @@ function App() {
     } else if (nextStep === "submit") {
       console.log("Saving Appointment:", data);
       setFormMode('fill');
-      setCurrentPage('prevAppt'); 
+      navigate('/prevAppt'); 
     }
   };
 
-  const handleNavigate = (page) => {
-    const isRegistering = currentPage === 'registerNumber';
-    const isProfileIncomplete = isLoggedIn && !userInfo?.hospitalNumber;
-
-    if (isRegistering && isProfileIncomplete && page !== 'registerNumber') {
-      const formElement = document.getElementById('register-form');
-      if (formElement) {
-        formElement.classList.add('animate-shake');
-        setTimeout(() => formElement.classList.remove('animate-shake'), 500);
-      }
-      setShowBlockerModal(true);
-      return;
+  const ProtectedRoute = ({ children }) => {
+    if (!isLoggedIn) {
+      return <Navigate to="/login" state={{ from: location }} replace />;
     }
-
-    const protectedPages = [
-      'departments', 'account', 'hospitalNumber', 'registerNumber', 
-      'generatedNumber', 'generalForm', 'specialtyForm',
-      'prevAppt', 'inbox', 'calendar'
-    ];
-
-    if (protectedPages.includes(page) && !isLoggedIn) {
-      setIntendedPage(page);
-      setCurrentPage('login');
-    } else {
-      setCurrentPage(page);
-    }
+    return children;
   };
 
-  const showHeader = currentPage !== 'login' && currentPage !== 'signup';
+  const showHeader = location.pathname !== '/login' && location.pathname !== '/signup';
 
   return (
     <div className="min-h-screen bg-white font-sans relative">
       {showHeader && (
         <Header 
           isLoggedIn={isLoggedIn} 
-          onNavigate={handleNavigate}
-          currentPage={currentPage} 
+          currentPage={location.pathname} 
         />
       )}
 
       <main className={showHeader ? "pt-0" : ""}>
-        {currentPage === 'home' && (
-          <Home onNavigate={handleNavigate} onReserveGeneral={handleReserveGeneral} />
-        )}
-        
-        {currentPage === 'departments' && (
-          <DepartmentList 
-            onNavigate={handleNavigate} 
-            onReserveGeneral={handleReserveGeneral} 
-            onReserveSpecialty={handleReserveSpecialty} 
-          />
-        )}
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Home onReserveGeneral={() => navigate('/general-form')} />} />
+          <Route path="/help" element={<Help />} />
+          <Route path="/contact" element={<ContactUs />} />
+          <Route path="/login" element={<Login setIsLoggedIn={handleLogin} />} />
+          <Route path="/signup" element={<SignUp onCompleteSignup={handleCompleteSignUp} />} />
+          {/* Protected Routes */}
+          <Route path="/departments" element={<ProtectedRoute><DepartmentList onReserveGeneral={() => { setFormMode('fill'); navigate('/general-form'); }} onReserveSpecialty={() => { setFormMode('fill'); navigate('/specialty-form'); }} /></ProtectedRoute>} />
+          <Route path="/account" element={<ProtectedRoute><Account userInfo={userInfo} onLogout={handleLogout} onUpdateProfile={setUserInfo} /></ProtectedRoute>} />
+          <Route path="/hospital-number" element={<ProtectedRoute><HospitalNumber /></ProtectedRoute>} />
+          <Route path="/register-number" element={<ProtectedRoute><RegisterHospitalNumber initialData={registrationData} onFinalSubmit={handleFinalRegistration} /></ProtectedRoute>} />
+          <Route path="/generated-number" element={<ProtectedRoute><GeneratedHospitalNumber /></ProtectedRoute>} />
+          <Route path="/prevAppt" element={<ProtectedRoute><AppointmentHistory /></ProtectedRoute>} />
+          <Route path="/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
+          <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
+          
+          <Route path="/general-form" element={
+            <ProtectedRoute>
+              <GeneralForm userInfo={userInfo} mode={formMode} onConfirm={handleFormSubmission} />
+            </ProtectedRoute>
+          } />
 
-        {currentPage === 'generalForm' && (
-          <GeneralForm 
-            userInfo={userInfo} 
-            mode={formMode} 
-            onConfirm={handleFormSubmission} 
-          />
-        )}
+          <Route path="/specialty-form" element={
+            <ProtectedRoute>
+              <SpecialtyForm userInfo={userInfo} mode={formMode} onConfirm={handleFormSubmission} />
+            </ProtectedRoute>
+          } />
 
-        {currentPage === 'specialtyForm' && (
-          <SpecialtyForm userInfo={userInfo} 
-          mode={formMode} 
-          onConfirm={handleFormSubmission} />
-        )}
-
-        {currentPage === 'help' && <Help />}
-        {currentPage === 'contact' && <ContactUs />}
-        {currentPage === 'login' && <Login onNavigate={setCurrentPage} setIsLoggedIn={handleLogin} />}
-        {currentPage === 'signup' && <SignUp onNavigate={setCurrentPage} onCompleteSignup={handleCompleteSignUp} />}
-        {currentPage === 'account' && <Account userInfo={userInfo} onLogout={handleLogout} onUpdateProfile={handleUpdateProfile} />}
-        {currentPage === 'hospitalNumber' && <HospitalNumber onNavigate={handleNavigate} />}
-        {currentPage === 'registerNumber' && <RegisterHospitalNumber initialData={registrationData} onFinalSubmit={handleFinalRegistration} />}
-        {currentPage === 'generatedNumber' && <GeneratedHospitalNumber onNavigate={handleNavigate} />}
-        {currentPage === 'prevAppt' && <AppointmentHistory onNavigate={handleNavigate} />}
-        {currentPage === 'inbox' && <Inbox onNavigate={handleNavigate} />}
-        {currentPage === 'calendar' && <Calendar onNavigate={handleNavigate} />}
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
 
         <ConfirmationModal 
           isOpen={showBlockerModal}
