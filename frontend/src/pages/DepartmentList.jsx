@@ -1,7 +1,7 @@
 import generalbg from '../assets/generalbg.png';
 import specialtybg from '../assets/specialtybg.png';
 
-export default function DepartmentList({ onNavigate }) {
+export default function DepartmentList({ onNavigate, onReserveGeneral, onReserveSpecialty }) {
   const handleReserveGeneral = () => {
     console.log('Reserve general appointment');
     onNavigate('generalDepartments');
@@ -44,13 +44,10 @@ export default function DepartmentList({ onNavigate }) {
                 </p>
               </div>
               <button 
-              onClick={handleReserveGeneral}
-              className="font-poppins text-white font-semibold text-lg hover:underline group"
-            >
-              RESERVE AN APPOINTMENT
-              <span className="ml-2 transform group-hover:translate-x-1 transition-transform">
-              →
-              </span>
+                onClick={onReserveGeneral}
+                className="font-poppins text-white font-semibold text-lg hover:underline group text-left">
+                RESERVE A GENERAL APPOINTMENT
+                <span className="ml-2 inline-block transform group-hover:translate-x-1 transition-transform">→</span>
               </button>
             </div>
           </div>
@@ -76,13 +73,10 @@ export default function DepartmentList({ onNavigate }) {
                 </p>
               </div>
               <button 
-              onClick={handleReserveSpecialty}
-              className="font-poppins text-white font-semibold text-lg hover:underline group"
-            >
-              RESERVE AN APPOINTMENT
-              <span className="ml-2 transform group-hover:translate-x-1 transition-transform">
-              →
-              </span>
+                onClick={onReserveSpecialty}
+                className="font-poppins text-white font-semibold text-lg hover:underline group text-left">
+                RESERVE A SPECIALTY APPOINTMENT
+                <span className="ml-2 inline-block transform group-hover:translate-x-1 transition-transform">→</span>
               </button>
             </div>
           </div>

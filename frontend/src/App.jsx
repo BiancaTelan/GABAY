@@ -14,6 +14,8 @@ import ConfirmationModal from './components/confirmModal';
 import AppointmentHistory from './pages/AppointmentHistory';
 import Inbox from './pages/Inbox';
 import Calendar from './pages/Calendar';
+import GeneralForm from './pages/GeneralForm';
+// import SpecialtyForm from './pages/SpecialtyForm'; // Import this once created
 
 function App() { 
   const [currentPage, setCurrentPage] = useState('home');
@@ -22,8 +24,9 @@ function App() {
   const [registrationData, setRegistrationData] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
   const [showBlockerModal, setShowBlockerModal] = useState(false);
+  const [formMode, setFormMode] = useState('fill');
 
-  // LOGIN ROUTE
+  // --- AUTH HANDLERS ---
   const handleLogin = (userFromDb) => {
     setIsLoggedIn(true);
     if (userFromDb) setUserInfo(userFromDb);
@@ -35,7 +38,6 @@ function App() {
     }
   };
 
-  // SIGNUP ROUTE
   const handleCompleteSignUp = (data) => {
     setIsLoggedIn(true); 
     setRegistrationData(data); 
@@ -50,7 +52,6 @@ function App() {
 
   const handleUpdateProfile = (updatedData) => {
     setUserInfo(updatedData);
-    console.log("Global profile data updated!", updatedData);
   };
 
   const handleLogout = () => {
@@ -60,6 +61,32 @@ function App() {
     setCurrentPage('home');
   };
 
+  // --- RESERVATION HANDLERS ---
+  const handleReserveGeneral = () => {
+    // We reuse handleNavigate logic so it checks if the user is logged in
+    handleNavigate('generalForm');
+    setFormMode('fill');
+  };
+
+  const handleReserveSpecialty = () => {
+    // Once you have SpecialtyForm, change this to 'specialtyForm'
+    handleNavigate('specialtyForm'); 
+    setFormMode('fill');
+  };
+
+  const handleFormSubmission = (data, nextStep) => {
+    if (nextStep === "confirm") {
+      setFormMode('confirm');
+    } else if (nextStep === "fill") {
+      setFormMode('fill');
+    } else if (nextStep === "submit") {
+      console.log("Saving Appointment:", data);
+      setFormMode('fill');
+      setCurrentPage('prevAppt'); 
+    }
+  };
+
+  // --- NAVIGATION GUARD ---
   const handleNavigate = (page) => {
     const isRegistering = currentPage === 'registerNumber';
     const isProfileIncomplete = isLoggedIn && !userInfo?.hospitalNumber;
@@ -75,13 +102,9 @@ function App() {
     }
 
     const protectedPages = [
-      'departments',
-      'account',
-      'hospitalNumber',
-      'registerNumber',
-      'generatedNumber',
-      'generalDepartments',
-      'specialtyDepartments',
+      'departments', 'account', 'hospitalNumber', 'registerNumber', 
+      'generatedNumber', 'generalForm', 'specialtyForm',
+      'prevAppt', 'inbox', 'calendar'
     ];
 
     if (protectedPages.includes(page) && !isLoggedIn) {
@@ -105,55 +128,51 @@ function App() {
       )}
 
       <main className={showHeader ? "pt-0" : ""}>
-        {currentPage === 'home' && <Home onNavigate={handleNavigate} />}
-        {currentPage === 'departments' && <DepartmentList onNavigate={handleNavigate} />}
+        {currentPage === 'home' && (
+          <Home onNavigate={handleNavigate} onReserveGeneral={handleReserveGeneral} />
+        )}
+        
+        {currentPage === 'departments' && (
+          <DepartmentList 
+            onNavigate={handleNavigate} 
+            onReserveGeneral={handleReserveGeneral} 
+            onReserveSpecialty={handleReserveSpecialty} 
+          />
+        )}
+
+        {currentPage === 'generalForm' && (
+          <GeneralForm 
+            userInfo={userInfo} 
+            mode={formMode} 
+            onConfirm={handleFormSubmission} 
+          />
+        )}
+
+        {/* Placeholder for SpecialtyForm once you create it */}
+        {/* {currentPage === 'specialtyForm' && (
+          <SpecialtyForm userInfo={userInfo} mode={formMode} onConfirm={handleFormSubmission} />
+        )} */}
+
         {currentPage === 'help' && <Help />}
         {currentPage === 'contact' && <ContactUs />}
-        
-        {currentPage === 'login' && (
-          <Login onNavigate={setCurrentPage} setIsLoggedIn={handleLogin} />
-        )}
-
-        {currentPage === 'signup' && (
-          <SignUp onNavigate={setCurrentPage} onCompleteSignup={handleCompleteSignUp} />
-        )}
-
-        {currentPage === 'account' && (
-          <Account userInfo={userInfo} onLogout={handleLogout} onUpdateProfile={handleUpdateProfile} />
-        )}
-
-        {currentPage === 'hospitalNumber' && (
-          <HospitalNumber onNavigate={handleNavigate} />
-        )}
-
-        {currentPage === 'registerNumber' && (
-          <RegisterHospitalNumber initialData={registrationData} onFinalSubmit={handleFinalRegistration} />
-        )}
+        {currentPage === 'login' && <Login onNavigate={setCurrentPage} setIsLoggedIn={handleLogin} />}
+        {currentPage === 'signup' && <SignUp onNavigate={setCurrentPage} onCompleteSignup={handleCompleteSignUp} />}
+        {currentPage === 'account' && <Account userInfo={userInfo} onLogout={handleLogout} onUpdateProfile={handleUpdateProfile} />}
+        {currentPage === 'hospitalNumber' && <HospitalNumber onNavigate={handleNavigate} />}
+        {currentPage === 'registerNumber' && <RegisterHospitalNumber initialData={registrationData} onFinalSubmit={handleFinalRegistration} />}
+        {currentPage === 'generatedNumber' && <GeneratedHospitalNumber onNavigate={handleNavigate} />}
+        {currentPage === 'prevAppt' && <AppointmentHistory onNavigate={handleNavigate} />}
+        {currentPage === 'inbox' && <Inbox onNavigate={handleNavigate} />}
+        {currentPage === 'calendar' && <Calendar onNavigate={handleNavigate} />}
 
         <ConfirmationModal 
           isOpen={showBlockerModal}
           onClose={() => setShowBlockerModal(false)}
           onConfirm={() => setShowBlockerModal(false)}
           title="Registration Incomplete"
-          message="Please finish registering your hospital number before accessing other pages. This ensures your medical records are correctly linked to your account."
+          message="Please finish registering your hospital number before accessing other pages."
           type="warning"
         />
-
-        {currentPage === 'generatedNumber' && (
-          <GeneratedHospitalNumber onNavigate={handleNavigate} />
-        )}
-
-        {currentPage === 'prevAppt' && (
-        <AppointmentHistory onNavigate={handleNavigate} />
-        )}
-
-        {currentPage === 'inbox' && (
-        <Inbox onNavigate={handleNavigate} />
-        )}
-
-        {currentPage === 'calendar' && (
-        <Calendar onNavigate={handleNavigate} />
-        )}
       </main>
     </div>
   );

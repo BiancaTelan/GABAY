@@ -1,0 +1,19 @@
+{
+  "departments": [
+    {
+      "id": "internal-med",
+      "name": "Internal Medicine",
+      "doctors": ["Dr. Ritchie Cruz", "Dr. Sarah Gomez", "Dr. Mark Velez"]
+    },
+    {
+      "id": "pediatrics",
+      "name": "Pediatrics",
+      "doctors": ["Dr. Maria Santos", "Dr. Juan Dela Cruz"]
+    },
+    {
+      "id": "obgyn",
+      "name": "OB-GYN",
+      "doctors": ["Dr. Elena Reyes", "Dr. Patricia Luna"]
+    }
+  ]
+}

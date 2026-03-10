@@ -170,7 +170,7 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
       <div className="flex items-center justify-between mb-10">
         <div className="flex items-center gap-6">
           <div>
-            <h1 className="text-3xl font-poppins font-bold text-gabay-teal">
+            <h1 className="text-3xl font-montserrat font-bold text-gabay-teal">
               {isEditing ? "Account Information" : "My Account"}
             </h1>
             <div className="flex items-center gap-4 mt-1">
