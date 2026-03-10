@@ -18,6 +18,7 @@ import Inbox from './pages/Inbox';
 import Calendar from './pages/Calendar';
 import GeneralForm from './pages/GeneralForm';
 import SpecialtyForm from './pages/SpecialtyForm';
+import RescheduleForm from './pages/RescheduleForm';
 
 function App() { 
   const navigate = useNavigate();
@@ -104,6 +105,12 @@ function App() {
           <Route path="/prevAppt" element={<ProtectedRoute><AppointmentHistory /></ProtectedRoute>} />
           <Route path="/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
           <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
+          
+          <Route path="/reschedule/:appointmentId" element={
+            <ProtectedRoute isLoggedIn={isLoggedIn}>
+                <RescheduleForm userInfo={userInfo} />
+            </ProtectedRoute>
+          } />
           
           <Route path="/general-form" element={
             <ProtectedRoute>

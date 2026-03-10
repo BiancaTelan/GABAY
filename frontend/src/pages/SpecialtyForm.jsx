@@ -122,7 +122,7 @@ export default function SpecialtyForm({ userInfo, mode = "fill", onConfirm }) {
         <div className="flex-1 space-y-6">
 
           <div className="flex flex-col">
-            <label className="text-gabay-blue font-medium mb-1 text-sm uppercase tracking-wide">Specialty Department</label>
+            <label className="text-gabay-blue font-semibold mb-1 text-base uppercase tracking-wide">Specialty Department</label>
             <div className="relative">
               <select 
                 name="department"
@@ -145,7 +145,7 @@ export default function SpecialtyForm({ userInfo, mode = "fill", onConfirm }) {
           </div>
 
           <div className="flex flex-col">
-            <label className="text-gabay-blue font-medium mb-1 text-sm uppercase tracking-wide">Preferred Appointment Date</label>
+            <label className="text-gabay-blue font-semibold mb-1 text-base uppercase tracking-wide">Preferred Appointment Date</label>
             <div className="relative custom-datepicker-container">
               {isReadOnly ? (
                 <div className="p-2 bg-gray-50 border border-gray-300 rounded-md text-gray-700">
@@ -175,7 +175,7 @@ export default function SpecialtyForm({ userInfo, mode = "fill", onConfirm }) {
           </div>
 
           <div className="flex flex-col">
-            <label className="text-gabay-blue font-medium mb-1 text-sm uppercase tracking-wide">Reason for Specialty Consultation</label>
+            <label className="text-gabay-blue font-semibold mb-1 text-base uppercase tracking-wide">Reason for Specialty Consultation</label>
             <textarea 
               name="reason"
               rows="4"
@@ -191,7 +191,7 @@ export default function SpecialtyForm({ userInfo, mode = "fill", onConfirm }) {
 
         <div className="w-full md:w-1/3 space-y-8 pt-5">
           <div className={`flex items-center justify-between py-3 px-4 rounded-md transition-all ${isReadOnly ? 'bg-gray-100' : 'bg-gray-50 border border-gray-200'}`}>
-            <span className="text-gabay-blue text-lg font-medium">Has previous OPD record?</span>
+            <span className="text-gabay-blue text-lg font-semibold">Has previous OPD record?</span>
             <label className={`relative inline-flex items-center ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}>
               <input type="checkbox" name="hasPreviousRecord" checked={formData.hasPreviousRecord} onChange={handleInputChange} disabled={isReadOnly} className="sr-only peer" />
               <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gabay-teal"></div>
@@ -199,7 +199,7 @@ export default function SpecialtyForm({ userInfo, mode = "fill", onConfirm }) {
           </div>
 
           <div className="flex flex-col">
-            <label className="text-gabay-blue font-medium mb-3 text-sm uppercase tracking-wide flex items-center gap-2">
+            <label className="text-gabay-blue font-semibold mb-3 text-base uppercase tracking-wide flex items-center gap-2">
               <FileText size={16} /> Medical Referral (Required)
             </label>
             
@@ -236,13 +236,13 @@ export default function SpecialtyForm({ userInfo, mode = "fill", onConfirm }) {
       <div className="mt-12 flex gap-4">
         {isReadOnly ? (
           <>
-            <button type="button" onClick={() => onConfirm(formData, "fill")} className="flex-1 md:flex-none border-2 border-gabay-teal text-gabay-teal px-12 py-3 rounded-xl font-bold transition-all hover:bg-teal-50 text-sm">EDIT DETAILS</button>
-            <button type="button" onClick={() => onConfirm({ ...formData, startDate, endDate, referralImage }, "submit")} className="flex-1 md:flex-none bg-gabay-teal hover:bg-teal-700 text-white px-12 py-3 rounded-xl font-bold transition-all shadow-lg text-sm">CONFIRM RESERVATION</button>
+            <button type="button" onClick={() => onConfirm(formData, "fill")} className="flex-1 md:flex-none px-8 py-2 rounded-full border-2 border-gabay-teal font-poppins text-base text-gabay-teal font-bold hover:bg-gray-50 transition-all active:scale-95">EDIT DETAILS</button>
+            <button type="button" onClick={() => onConfirm({ ...formData, startDate, endDate, referralImage }, "submit")} className="flex-1 md:flex-none px-8 py-2 rounded-full bg-gabay-teal font-poppins text-base text-white font-bold hover:bg-teal-600 shadow-md transition-all active:scale-95">CONFIRM RESERVATION</button>
           </>
         ) : (
           <div className="flex gap-4 w-full md:w-auto">
-            <button type="button" onClick={() => validateForm() && onConfirm(formData, "confirm")} className="px-8 py-3 rounded-xl bg-gabay-teal text-sm text-white font-bold hover:bg-teal-600 shadow-md transition-all">SUBMIT FOR REVIEW</button>
-            <button type="button" onClick={() => navigate('/departments')} className="px-8 py-3 rounded-xl border border-gray-300 text-sm text-gray-500 font-bold hover:bg-gray-50 transition-all">CANCEL</button>
+            <button type="button" onClick={() => navigate('/departments')} className="flex-1 md:flex-none px-8 py-2 rounded-full border-2 border-gabay-teal font-poppins text-base text-gabay-teal font-bold hover:bg-gray-50 transition-all active:scale-95">CANCEL</button>
+            <button type="button" onClick={() => validateForm() && onConfirm(formData, "confirm")} className="flex-1 md:flex-none px-8 py-2 rounded-full bg-gabay-teal font-poppins text-base text-white font-bold hover:bg-teal-600 shadow-md transition-all active:scale-95">SUBMIT FOR REVIEW</button>
           </div>
         )}
       </div>

@@ -104,7 +104,7 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
         <div className="flex-1 space-y-6">
          
           <div className="flex flex-col">
-            <label className="text-gabay-blue font-medium mb-1 text-sm uppercase tracking-wide">Department</label>
+            <label className="text-gabay-blue font-semibold mb-1 text-base uppercase tracking-wide">Department</label>
             <div className="relative">
               <select 
                 name="department"
@@ -127,7 +127,7 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
           </div>
 
           <div className="flex flex-col">
-            <label className="text-gabay-blue font-medium mb-1 text-sm uppercase tracking-wide">Assigned Doctor</label>
+            <label className="text-gabay-blue font-semibold mb-1 text-base uppercase tracking-wide">Assigned Doctor</label>
             <div className="relative">
               <select 
                 name="doctor"
@@ -150,7 +150,7 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
           </div>
 
           <div className="flex flex-col">
-            <label className="text-gabay-blue font-medium mb-1 text-sm uppercase tracking-wide">Preferred Appointment Date</label>
+            <label className="text-gabay-blue font-semibold mb-1 text-base uppercase tracking-wide">Preferred Appointment Date</label>
             <div className="relative custom-datepicker-container">
               {isReadOnly ? (
                 <div className="p-2 bg-gray-50 border border-gray-300 rounded-md text-gray-700">
@@ -194,7 +194,7 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
           </div>
 
           <div className="flex flex-col">
-            <label className="text-gabay-blue font-medium mb-1 text-sm uppercase tracking-wide">Reason for Booking</label>
+            <label className="text-gabay-blue font-semibold mb-1 text-base uppercase tracking-wide">Reason for Booking</label>
             <textarea 
               name="reason"
               rows="4"
@@ -215,7 +215,7 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
           <div className={`flex items-center justify-between py-3 px-4 rounded-md transition-all ${
             isReadOnly ? 'bg-gray-100' : 'bg-gray-30'
           }`}>
-            <span className="text-gabay-blue text-lg font-medium">Has previous OPD record?</span>
+            <span className="text-gabay-blue text-lg font-semibold">Has previous OPD record?</span>
             <label className={`relative inline-flex items-center ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}>
               <input 
                 type="checkbox" 
@@ -237,14 +237,14 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
             <button 
               type="button"
               onClick={() => onConfirm(formData, "fill")}
-              className="flex-1 md:flex-none border-2 border-gabay-teal text-gabay-teal px-12 py-3 rounded-xl font-bold transition-all hover:bg-teal-50 active:scale-95 text-sm"
+              className="flex-1 md:flex-none border-2 border-gabay-teal text-gabay-teal px-8 py-2 rounded-full font-bold transition-all hover:bg-teal-50 active:scale-95 text-base"
             >
               EDIT DETAILS
             </button>
             <button 
               type="button"
               onClick={() => onConfirm({ ...formData, startDate, endDate }, "submit")}
-              className="flex-1 md:flex-none bg-gabay-teal hover:bg-teal-700 text-white px-12 py-3 rounded-xl font-bold transition-all shadow-lg active:scale-95 text-sm"
+              className="flex-1 md:flex-none bg-gabay-teal hover:bg-teal-700 text-white px-8 py-2 rounded-full font-bold transition-all shadow-lg active:scale-95 text-base"
             >
               CONFIRM RESERVATION
             </button>
@@ -253,17 +253,17 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
           <div className="flex gap-4 w-full md:w-auto">
             <button 
               type="button"
-              onClick={() => validateForm() && onConfirm(formData, "confirm")}
-              className="px-8 py-3 rounded-xl bg-gabay-teal font-poppins text-sm text-white font-bold hover:bg-teal-600 shadow-md transition-all active:scale-95"
+              onClick={() => navigate('/departments')}
+              className="flex-1 md:flex-none px-8 py-2 rounded-full border-2 border-gabay-teal font-poppins text-base text-gabay-teal font-bold hover:bg-gray-50 transition-all active:scale-95"
             >
-              SUBMIT FOR REVIEW
+              CANCEL
             </button>
             <button 
               type="button"
-              onClick={() => navigate('/departments')}
-              className="px-8 py-3 rounded-xl border border-gray-300 font-poppins text-sm text-gray-500 font-bold hover:bg-gray-50 transition-all active:scale-95"
+              onClick={() => validateForm() && onConfirm(formData, "confirm")}
+              className="flex-1 md:flex-none px-8 py-2 rounded-full bg-gabay-teal font-poppins text-base text-white font-bold hover:bg-teal-600 shadow-md transition-all active:scale-95"
             >
-              CANCEL
+              SUBMIT FOR REVIEW
             </button>
           </div>
         )}
