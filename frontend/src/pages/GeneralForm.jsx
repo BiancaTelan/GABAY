@@ -87,6 +87,8 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
     return Object.keys(newErrors).length === 0;
   };
 
+  const generalDepts = hospitalData.departments.filter(d => d.type === 'general');
+
   const availableDoctors = hospitalData.departments.find(
     d => d.name === formData.department
   )?.doctors || [];
@@ -117,8 +119,10 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
                 }`}
               >
                 <option value="">Select Department</option>
-                {hospitalData.departments.map(dept => (
-                  <option key={dept.id} value={dept.name}>{dept.name}</option>
+                {hospitalData.departments
+                  .filter(dept => dept.type === 'general')
+                  .map(dept => (
+                    <option key={dept.id} value={dept.name}>{dept.name}</option>
                 ))}
               </select>
               {!isReadOnly && <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />}
