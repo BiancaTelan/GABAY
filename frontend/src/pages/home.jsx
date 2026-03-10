@@ -111,11 +111,11 @@ export default function Home({ onNavigate }) {
               <h3 className="font-poppins text-xl font-semibold text-gabay-teal mb-3">
                 Step One
               </h3>
-              <p className="font-montserrat text-2xl text-[#1B335F] font-bold mb-2">
+              <p className="font-montserrat text-2xl text-gabay-navy font-bold mb-2">
                 Choose a Department
               </p>
               <img src={lists} alt="Lists icon" className="w-20 h-20 mb-4 mt-12 mx-auto object-contain" />
-              <p className="font-poppins text-[#1B335F]">
+              <p className="font-poppins text-gabay-navy">
                 Head to the Departments link in the navigation bar and select your designated choice
               </p>
             </div>
@@ -124,11 +124,11 @@ export default function Home({ onNavigate }) {
               <h3 className="font-poppins text-xl font-semibold text-gabay-teal mb-3">
                 Step Two
               </h3>
-              <p className="font-montserrat text-2xl text-[#1B335F] font-bold mb-2">
+              <p className="font-montserrat text-2xl text-gabay-navy font-bold mb-2">
                 Submit the Required Forms
               </p>
               <img src={send} alt="Send icon" className="w-20 h-20 mb-4 mt-4 mx-auto object-contain" />
-              <p className="font-poppins text-[#1B335F]">
+              <p className="font-poppins text-gabay-navy">
                 Complete updating your account with valid details and fill up the reservation form
               </p>
             </div>
@@ -137,7 +137,7 @@ export default function Home({ onNavigate }) {
               <h3 className="font-poppins text-xl font-semibold text-gabay-teal text-left mb-3">
                 Step Three
               </h3>
-              <p className="font-montserrat text-2xl text-[#1B335F] text-left font-bold mb-2">
+              <p className="font-montserrat text-2xl text-gabay-navy text-left font-bold mb-2">
                 Wait for Confirmation
               </p>
               <img src={checkCircle} alt="Check Circle icon" className="w-20 h-20 mb-4 mt-12 mx-auto object-contain" />
@@ -161,30 +161,30 @@ export default function Home({ onNavigate }) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="flex-1 bg-white rounded-xl shadow-md p-8 border-2 border-gabay-blue">
               <img src={plus} alt="Plus icon" className="w-20 h-20 mb-4 mt-4 mx-auto object-contain" />
-              <p className="font-montserrat text-2xl text-[#1B335F] text-center font-bold mt-12 mb-6">
+              <p className="font-montserrat text-2xl text-gabay-navy text-center font-bold mt-12 mb-6">
                 Assistive
               </p>
-              <p className="font-poppins text-[#1B335F] text-center">
+              <p className="font-poppins text-gabay-navy text-center">
                 GABAY’s main objective is to make booking appointments easier
               </p>
             </div>
 
             <div className="flex-1 bg-white rounded-xl shadow-md p-8 border-2 border-gabay-blue">
               <img src={like} alt="Like icon" className="w-20 h-20 mb-4 mt-4 mx-auto object-contain" />
-              <p className="font-montserrat text-2xl text-[#1B335F] text-center font-bold mt-12 mb-6">
+              <p className="font-montserrat text-2xl text-gabay-navy text-center font-bold mt-12 mb-6">
                 User-Friendly
               </p>
-              <p className="font-poppins text-[#1B335F] text-center">
+              <p className="font-poppins text-gabay-navy text-center">
                 With user experience in mind, page navigation is simplified
               </p>
             </div>
 
             <div className="flex-1 bg-white rounded-xl shadow-md p-8 border-2 border-gabay-blue">
               <img src={calendarCheck} alt="Calendar Check icon" className="w-20 h-20 mb-4 mt-4 mx-auto object-contain" />
-              <p className="font-montserrat text-2xl text-[#1B335F] text-center font-bold mt-12 mb-6">
+              <p className="font-montserrat text-2xl text-gabay-navy text-center font-bold mt-12 mb-6">
                 Transparent
               </p>
-              <p className="font-poppins text-[#1B335F] text-center">
+              <p className="font-poppins text-gabay-navy text-center">
                 We’ll notify you of your reservation status as soon as possible
               </p>
             </div>

@@ -27,8 +27,6 @@ function App() {
     if (intendedPage) {
       setCurrentPage(intendedPage);
       setIntendedPage(null);
-    } else if (userFromDb && !userFromDb.hospitalNumber) {
-      setCurrentPage('hospitalNumber');
     } else {
       setCurrentPage('home'); 
     }
