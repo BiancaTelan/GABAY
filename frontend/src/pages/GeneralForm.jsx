@@ -213,7 +213,7 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
 
         <div className="w-full md:w-1/3 pt-5">
           <div className={`flex items-center justify-between py-3 px-4 rounded-md transition-all ${
-            isReadOnly ? 'bg-gray-100' : 'bg-gray-30'
+            isReadOnly ? 'bg-gray-100' : 'bg-gray-50'
           }`}>
             <span className="text-gabay-blue text-lg font-semibold">Has previous OPD record?</span>
             <label className={`relative inline-flex items-center ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}>
@@ -246,7 +246,7 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
               onClick={() => onConfirm({ ...formData, startDate, endDate }, "submit")}
               className="flex-1 md:flex-none bg-gabay-teal hover:bg-teal-700 text-white px-8 py-2 rounded-full font-bold transition-all shadow-lg active:scale-95 text-base"
             >
-              CONFIRM RESERVATION
+              SUBMIT RESERVATION
             </button>
           </>
         ) : (
@@ -263,7 +263,7 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
               onClick={() => validateForm() && onConfirm(formData, "confirm")}
               className="flex-1 md:flex-none px-8 py-2 rounded-full bg-gabay-teal font-poppins text-base text-white font-bold hover:bg-teal-600 shadow-md transition-all active:scale-95"
             >
-              SUBMIT FOR REVIEW
+              CONFIRM
             </button>
           </div>
         )}

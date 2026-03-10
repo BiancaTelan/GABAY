@@ -105,6 +105,10 @@ export default function SpecialtyForm({ userInfo, mode = "fill", onConfirm }) {
     return Object.keys(newErrors).length === 0;
   };
 
+  const specialtyDepts = hospitalData.departments.filter(
+    dept => dept.type === 'specialty'
+  );
+
   const availableDoctors = hospitalData.departments.find(
     d => d.name === formData.department
   )?.doctors || [];
@@ -142,6 +146,35 @@ export default function SpecialtyForm({ userInfo, mode = "fill", onConfirm }) {
               {!isReadOnly && <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />}
             </div>
             {errors.department && <p className="text-red-500 text-[11px] mt-1 font-medium uppercase">{errors.department}</p>}
+          </div>
+
+          <div className="flex flex-col">
+            <label className="text-gabay-blue font-semibold mb-1 text-base uppercase tracking-wide">
+                Assigned Doctor
+            </label>
+            <div className="relative">
+                <select 
+                name="doctor"
+                value={formData.doctor}
+                onChange={handleInputChange}
+                disabled={!formData.hasPreviousRecord || isReadOnly}
+                className={`hide-chevron w-full p-2 text-base rounded-md border outline-none transition-all pr-10 ${
+                    isReadOnly || !formData.hasPreviousRecord
+                    ? 'bg-gray-100 text-gray-500 border-gray-300 cursor-default' 
+                    : 'border-gray-300 focus:ring-1 focus:ring-gabay-teal'
+                }`}
+                >
+                <option value="NONE">Select a Doctor</option>
+                {availableDoctors.map((doc) => (
+                    <option key={doc} value={doc}>
+                    {doc}
+                    </option>
+                ))}
+                </select>
+                {(!isReadOnly && formData.hasPreviousRecord) && (
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
+                )}
+            </div>
           </div>
 
           <div className="flex flex-col">
@@ -237,12 +270,12 @@ export default function SpecialtyForm({ userInfo, mode = "fill", onConfirm }) {
         {isReadOnly ? (
           <>
             <button type="button" onClick={() => onConfirm(formData, "fill")} className="flex-1 md:flex-none px-8 py-2 rounded-full border-2 border-gabay-teal font-poppins text-base text-gabay-teal font-bold hover:bg-gray-50 transition-all active:scale-95">EDIT DETAILS</button>
-            <button type="button" onClick={() => onConfirm({ ...formData, startDate, endDate, referralImage }, "submit")} className="flex-1 md:flex-none px-8 py-2 rounded-full bg-gabay-teal font-poppins text-base text-white font-bold hover:bg-teal-600 shadow-md transition-all active:scale-95">CONFIRM RESERVATION</button>
+            <button type="button" onClick={() => onConfirm({ ...formData, startDate, endDate, referralImage }, "submit")} className="flex-1 md:flex-none px-8 py-2 rounded-full bg-gabay-teal font-poppins text-base text-white font-bold hover:bg-teal-600 shadow-md transition-all active:scale-95">SUBMIT RESERVATION</button>
           </>
         ) : (
           <div className="flex gap-4 w-full md:w-auto">
             <button type="button" onClick={() => navigate('/departments')} className="flex-1 md:flex-none px-8 py-2 rounded-full border-2 border-gabay-teal font-poppins text-base text-gabay-teal font-bold hover:bg-gray-50 transition-all active:scale-95">CANCEL</button>
-            <button type="button" onClick={() => validateForm() && onConfirm(formData, "confirm")} className="flex-1 md:flex-none px-8 py-2 rounded-full bg-gabay-teal font-poppins text-base text-white font-bold hover:bg-teal-600 shadow-md transition-all active:scale-95">SUBMIT FOR REVIEW</button>
+            <button type="button" onClick={() => validateForm() && onConfirm(formData, "confirm")} className="flex-1 md:flex-none px-8 py-2 rounded-full bg-gabay-teal font-poppins text-base text-white font-bold hover:bg-teal-600 shadow-md transition-all active:scale-95">CONFIRM</button>
           </div>
         )}
       </div>
