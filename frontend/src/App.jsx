@@ -11,6 +11,8 @@ import GeneratedHospitalNumber from './pages/GenerateHospitalNum';
 import RegisterHospitalNumber from './pages/RegisterHospitalNum';
 import DepartmentList from './pages/DepartmentList';
 import ConfirmationModal from './components/confirmModal';
+import AppointmentHistory from './pages/AppointmentHistory';
+import Inbox from './pages/Inbox';
 
 function App() { 
   const [currentPage, setCurrentPage] = useState('home');
@@ -138,6 +140,14 @@ function App() {
 
         {currentPage === 'generatedNumber' && (
           <GeneratedHospitalNumber onNavigate={handleNavigate} />
+        )}
+
+        {currentPage === 'prevAppt' && (
+        <AppointmentHistory onNavigate={handleNavigate} />
+        )}
+
+        {currentPage === 'inbox' && (
+        <Inbox onNavigate={handleNavigate} />
         )}
       </main>
     </div>
