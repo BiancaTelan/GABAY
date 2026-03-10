@@ -13,6 +13,7 @@ import DepartmentList from './pages/DepartmentList';
 import ConfirmationModal from './components/confirmModal';
 import AppointmentHistory from './pages/AppointmentHistory';
 import Inbox from './pages/Inbox';
+import Calendar from './pages/Calendar';
 
 function App() { 
   const [currentPage, setCurrentPage] = useState('home');
@@ -148,6 +149,10 @@ function App() {
 
         {currentPage === 'inbox' && (
         <Inbox onNavigate={handleNavigate} />
+        )}
+
+        {currentPage === 'calendar' && (
+        <Calendar onNavigate={handleNavigate} />
         )}
       </main>
     </div>
