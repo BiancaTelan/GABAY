@@ -9,7 +9,7 @@ from db_model import roleEnum
 # ==========================================
 
 class PatientSignUp(BaseModel):
-    """Schema for handling new patient registrations from the frontend."""
+    
     firstname: str = Field(..., min_length=2, max_length=100)
     surname: str = Field(..., min_length=2, max_length=100)
     email: EmailStr
@@ -18,14 +18,13 @@ class PatientSignUp(BaseModel):
 
     @model_validator(mode='after')
     def check_passwords_match(self) -> 'PatientSignUp':
-        """Ensures the user typed the exact same password twice."""
         if self.password != self.confirm_password:
             raise ValueError("Passwords do not match")
         return self
 
     @model_validator(mode='after')
     def validate_password_strength(self) -> 'PatientSignUp':
-        """Enforces basic password complexity to prevent easily guessed passwords."""
+        
         if not re.search(r"[A-Z]", self.password):
             raise ValueError("Password must contain at least one uppercase letter.")
         if not re.search(r"[0-9]", self.password):
@@ -42,12 +41,12 @@ class UserBase(BaseModel):
     isActive: bool = True
 
 class UserCreate(UserBase):
-    """Schema for Admins manually creating Staff or Doctor accounts."""
+    
     password: str = Field(..., min_length=8)
     role: roleEnum
 
 class UserResponse(UserBase):
-    """Secure response schema that NEVER includes the password hash."""
+    
     userID: int
     role: roleEnum
     createdDate: datetime
@@ -61,17 +60,16 @@ class UserResponse(UserBase):
 # ==========================================
 
 class PatientBase(BaseModel):
-    """Base demographic data. birthDate is now Optional for progressive profiling."""
+    
     firstname: str = Field(..., min_length=2, max_length=100)
     middlename: Optional[str] = Field(None, max_length=100)
     surname: str = Field(..., min_length=2, max_length=100)
     suffix: Optional[str] = Field(None, max_length=10)
     birthDate: Optional[date] = None 
     address: Optional[str] = None
-    hasPreviousRecord: bool = False
-
+    
 class PatientUpdate(BaseModel):
-    """Schema used when the patient later fills in their missing details to book an appointment."""
+    
     birthDate: date
     address: str
     middlename: Optional[str] = None
