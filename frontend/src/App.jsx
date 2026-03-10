@@ -15,7 +15,7 @@ import AppointmentHistory from './pages/AppointmentHistory';
 import Inbox from './pages/Inbox';
 import Calendar from './pages/Calendar';
 import GeneralForm from './pages/GeneralForm';
-// import SpecialtyForm from './pages/SpecialtyForm'; // Import this once created
+import SpecialtyForm from './pages/SpecialtyForm';
 
 function App() { 
   const [currentPage, setCurrentPage] = useState('home');
@@ -26,7 +26,6 @@ function App() {
   const [showBlockerModal, setShowBlockerModal] = useState(false);
   const [formMode, setFormMode] = useState('fill');
 
-  // --- AUTH HANDLERS ---
   const handleLogin = (userFromDb) => {
     setIsLoggedIn(true);
     if (userFromDb) setUserInfo(userFromDb);
@@ -61,15 +60,12 @@ function App() {
     setCurrentPage('home');
   };
 
-  // --- RESERVATION HANDLERS ---
   const handleReserveGeneral = () => {
-    // We reuse handleNavigate logic so it checks if the user is logged in
     handleNavigate('generalForm');
     setFormMode('fill');
   };
 
   const handleReserveSpecialty = () => {
-    // Once you have SpecialtyForm, change this to 'specialtyForm'
     handleNavigate('specialtyForm'); 
     setFormMode('fill');
   };
@@ -86,7 +82,6 @@ function App() {
     }
   };
 
-  // --- NAVIGATION GUARD ---
   const handleNavigate = (page) => {
     const isRegistering = currentPage === 'registerNumber';
     const isProfileIncomplete = isLoggedIn && !userInfo?.hospitalNumber;
@@ -148,10 +143,11 @@ function App() {
           />
         )}
 
-        {/* Placeholder for SpecialtyForm once you create it */}
-        {/* {currentPage === 'specialtyForm' && (
-          <SpecialtyForm userInfo={userInfo} mode={formMode} onConfirm={handleFormSubmission} />
-        )} */}
+        {currentPage === 'specialtyForm' && (
+          <SpecialtyForm userInfo={userInfo} 
+          mode={formMode} 
+          onConfirm={handleFormSubmission} />
+        )}
 
         {currentPage === 'help' && <Help />}
         {currentPage === 'contact' && <ContactUs />}
