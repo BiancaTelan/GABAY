@@ -4,6 +4,7 @@ from db_connection import engine
 import db_model 
 import user_auth
 from routers import appointments 
+from routers import patients
 
 db_model.Base.metadata.create_all(bind=engine)
 
@@ -28,6 +29,7 @@ app.add_middleware(
 
 app.include_router(user_auth.router)
 app.include_router(appointments.router)
+app.include_router(patients.router)
 
 @app.get("/", tags=["Health"])
 def root():

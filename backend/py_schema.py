@@ -13,7 +13,7 @@ class PatientSignUp(BaseModel):
     firstname: str = Field(..., min_length=2, max_length=100)
     surname: str = Field(..., min_length=2, max_length=100)
     email: EmailStr
-    password: str = Field(..., min_length=8, description="Must be at least 8 characters")
+    password: str = Field(..., min_length=8, max_length=72)
     confirm_password: str
 
     @model_validator(mode='after')
@@ -31,6 +31,12 @@ class PatientSignUp(BaseModel):
             raise ValueError("Password must contain at least one number.")
         return self
 
+# ==========================================
+# HOSPITAL NUMBER GENERATION SCHEMAS
+# ==========================================
+
+class HospitalNumberRequest(BaseModel):
+    email: EmailStr
 
 # ==========================================
 # USER SCHEMAS (Accounts & Authentication)

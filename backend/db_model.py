@@ -75,7 +75,7 @@ class Patient(Base):
     suffix: Mapped[Optional[str]] = mapped_column(String(10))
     birthDate: Mapped[date] = mapped_column(Date, nullable=True)
     address: Mapped[Optional[str]] = mapped_column(Text)
-    hospital_num: Mapped[Optional[str]] = mapped_column(String(50), unique=True)
+    hospital_num: Mapped[Optional[str]] = mapped_column(String(50), unique=True, nullable=True) 
     
     # === Relationships ===
     user_account: Mapped[Optional["User"]] = relationship(back_populates="patient_profile")

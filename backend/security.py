@@ -12,7 +12,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "fallback_secret_key_for_dev_only")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-# Tell passlib to use the bcrypt algorithm
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:

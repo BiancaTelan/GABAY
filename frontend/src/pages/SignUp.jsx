@@ -85,7 +85,7 @@ export default function SignUp({ onNavigate, onCompleteSignup }) {
         setSuccessMsg("Account created successfully! Redirecting to login...");
         
         setTimeout(() => {
-           onNavigate('login');
+           onNavigate('HospitalNumber');
         }, 2000);
 
       } catch (error) {

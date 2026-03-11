@@ -57,39 +57,45 @@ def login_for_access_token(
 # ---------------------------------------------------------
 @router.post("/signup", status_code=status.HTTP_201_CREATED)
 def register_patient(patient_data: PatientSignUp, db: Session = Depends(get_db)):
-    
-    existing_user = db.query(User).filter(User.email == patient_data.email).first()
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="An account with this email already exists."
+    try:
+        existing_user = db.query(User).filter(User.email == patient_data.email).first()
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="An account with this email already exists."
+            )
+
+        hashed_password = get_password_hash(patient_data.password) 
+        
+        new_user = User(
+            email=patient_data.email,
+            passwordHash=hashed_password,
+            role=roleEnum.Patient,
+            isActive=True
         )
 
-    hashed_password = get_password_hash(patient_data.password)
-    new_user = User(
-        email=patient_data.email,
-        passwordHash=hashed_password,
-        role=roleEnum.Patient,
-        isActive=True
-    )
-    db.add(new_user)
-    
-    try:
-        db.flush()
+        db.add(new_user)
+        db.flush() 
         
         new_patient = Patient(
             userID=new_user.userID,
             firstname=patient_data.firstname,
-            surname=patient_data.surname,
+            surname=patient_data.surname
         )
         db.add(new_patient)
-        db.commit()
         
-    except IntegrityError:
+        db.commit()
+
+        return {"message": "Account created successfully. You can now log in."}
+
+    except HTTPException:
+        raise 
+        
+    except Exception as e:
+        print(f"\n❌ FATAL BACKEND ERROR: {str(e)}\n")
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An error occurred while creating the account."
+            detail="An unexpected error occurred. Please try again later."
         )
-
-    return {"message": "Account created successfully. You can now log in."}
+    

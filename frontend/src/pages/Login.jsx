@@ -46,10 +46,10 @@ export default function Login({ onNavigate, setIsLoggedIn }) {
     urlEncodedData.append('password', formData.password);
 
     try {
-      const response = await fetch('/api/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: formData.toString(),
+        body: urlEncodedData.toString(),
       });
       
       if (!response.ok) {
