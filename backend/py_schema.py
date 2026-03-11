@@ -31,13 +31,21 @@ class PatientSignUp(BaseModel):
             raise ValueError("Password must contain at least one number.")
         return self
 
-# ==========================================
-# HOSPITAL NUMBER GENERATION SCHEMAS
-# ==========================================
+# ===================================================
+# HOSPITAL NUMBER GENERATION & REGISTRATION SCHEMAS
+# ===================================================
 
 class HospitalNumberRequest(BaseModel):
     email: EmailStr
 
+class PatientProfileUpdate(BaseModel):
+    email: EmailStr
+    hospital_num: str
+    contactNumber: str
+    dob: str
+    gender: str
+    address: str
+    
 # ==========================================
 # USER SCHEMAS (Accounts & Authentication)
 # ==========================================

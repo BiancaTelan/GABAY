@@ -1,12 +1,14 @@
-import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import Logo from '../assets/caintaHospitalLogo.png';
 
-export default function GeneratedHospitalNumber() {
-  const navigate = useNavigate();
+export default function GeneratedHospitalNumber({ onNavigate }) {
+  const location = useLocation();
+  const hospital_num = location.state?.hospital_num;
+  const patientName = location.state?.patientName;
 
   const handleConfirm = () => {
     console.log('Confirm clicked');
-    navigate('/account');
+    onNavigate('account');
   };
 
   return (
@@ -26,11 +28,13 @@ export default function GeneratedHospitalNumber() {
 
         <div className="mb-6">
           <p className="font-montserrat text-4xl text-[#2E5EB5] text-center font-bold">Hospital Number</p>
+          
           <p className="font-montserrat font-bold text-3xl text-[#33AFAE] text-center mt-1">
-            26-154928
+            {hospital_num || "ERROR: NO NUMBER"}
           </p>
+          
           <p className="font-poppins text-center mt-2 mb-10">
-            For Patient: <span className="font-semibold">Juan Dela Cruz</span>
+            For Patient: <span className="font-semibold">{patientName || "New Patient"}</span>
           </p>
         </div>
 
@@ -43,13 +47,13 @@ export default function GeneratedHospitalNumber() {
 
         <div className="flex justify-end">
           <button 
-            onClick={handleConfirm}
-            className="font-poppins flex items-center text-gabay-blue font-semibold text-lg hover:underline group"
-          >
-            CONFIRM
-            <span className="ml-2 transform group-hover:translate-x-1 transition-transform">
+              onClick={handleConfirm}
+              className="font-poppins flex items-center text-gabay-blue font-semibold text-lg hover:underline group"
+            >
+              CONFIRM
+              <span className="ml-2 transform group-hover:translate-x-1 transition-transform">
               →
-            </span>
+              </span>
           </button>
         </div>
       </div>

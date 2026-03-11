@@ -12,19 +12,21 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
     firstName: initialData?.firstName || "",
     lastName: initialData?.lastName || "",
     email: initialData?.email || "",
-    hospitalNumber: "",
+    hospital_num: "",
     contactNumber: "",
     dob: "",
     gender: "Female",
-    homeAddress: ""
+    address: ""
   });
 
   const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState(''); 
+  const [isSubmitting, setIsSubmitting] = useState(false); 
 
   const handleInputChange = (e) => {
     let { name, value } = e.target;
 
-    if (name === 'hospitalNumber') {
+    if (name === 'hospital_num') {
       const digits = value.replace(/\D/g, '');
       if (digits.length <= 2) {
         value = digits;
@@ -56,13 +58,13 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
     let newErrors = {};
     const today = new Date();
 
-    if (!formData.hospitalNumber.trim()) {
-      newErrors.hospitalNumber = "Hospital Number is required";
-    } else if (formData.hospitalNumber.length < 9) {
-      newErrors.hospitalNumber = "Must be a valid hospital number format";
+    if (!formData.hospital_num.trim()) {
+      newErrors.hospital_num = "Hospital Number is required";
+    } else if (formData.hospital_num.length < 9) {
+      newErrors.hospital_num  = "Must be a valid hospital number format";
     }
     
-    if (!formData.homeAddress.trim()) newErrors.homeAddress = "Home address is required";
+    if (!formData.address.trim()) newErrors.address = "Home address is required";
     if (!phonePattern.test(formData.contactNumber)) newErrors.contactNumber = "Must be a valid 11-digit number";
     
     if (!formData.dob.trim() || formData.dob === "MM/DD/YYYY") {
@@ -83,10 +85,34 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setServerError('');
+    
     if (validate()) {
-      onFinalSubmit(formData); 
+      setIsSubmitting(true);
+      
+      try {
+        const response = await fetch('/api/patients/update-profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.detail || "Failed to update profile");
+        }
+
+        onFinalSubmit(formData); 
+
+      } catch (error) {
+        console.error("Profile Update Error:", error);
+        setServerError(error.message);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -95,18 +121,24 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
       <h1 className="text-3xl font-bold text-gabay-teal mb-2 font-montserrat">Complete Your Profile</h1>
       <p className="text-gray-500 mb-10 text-sm">Please provide your hospital details to access GABAY services.</p>
 
+      {serverError && (
+        <div className="mb-6 p-4 bg-red-100 text-red-700 text-sm text-center rounded-lg font-poppins font-semibold">
+          {serverError}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-5">
         <Input label="Full Name" value={`${formData.firstName} ${formData.lastName}`} readOnly noHover />
         <Input label="Email Address" value={formData.email} readOnly noHover />
         
         <Input 
           label="Hospital Number" 
-          name="hospitalNumber" 
-          value={formData.hospitalNumber} 
+          name="hospital_num" 
+          value={formData.hospital_num} 
           onChange={handleInputChange} 
           placeholder="e.g. 26-123456" 
           maxLength={9} 
-          error={errors.hospitalNumber} 
+          error={errors.hospital_num} 
           required 
           isEditing={true} 
         />
@@ -157,10 +189,10 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
         <div className="md:col-span-2">
           <Input 
             label="Home Address" 
-            name="homeAddress" 
-            value={formData.homeAddress} 
+            name="address" 
+            value={formData.address} 
             onChange={handleInputChange} 
-            error={errors.homeAddress} 
+            error={errors.address} 
             required 
             isEditing={true} 
           />

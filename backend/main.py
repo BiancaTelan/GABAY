@@ -16,7 +16,7 @@ app = FastAPI(
 origins = [
     "http://localhost:5173",     
     "http://127.0.0.1:5173",
-    # "https://gabay-system.com" # Add your actual production domain here later
+    # "https://gabay-system.com" # domain for production, replace with actual domain when deployed
 ]
 
 app.add_middleware(

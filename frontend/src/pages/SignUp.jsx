@@ -2,12 +2,15 @@ import caintaBg from '../assets/caintaBg.png';
 import gabayLogo from '../assets/gabayLogo.png';
 import Button from '../components/button';
 import Input from '../components/input';
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AuthContext } from '../authContext'; // <-- Import your AuthContext
 import { emailPattern, namePattern } from '../utils/constants';
 
 export default function SignUp({ onCompleteSignup }) {
     const navigate = useNavigate();
+    const { login } = useContext(AuthContext); // <-- Grab the login function
+    
     const [formData, setFormData] = useState({
       firstName: '',
       lastName: '',
@@ -70,11 +73,10 @@ export default function SignUp({ onCompleteSignup }) {
       };
 
       try {
+        // --- 1. SIGN UP THE USER ---
         const response = await fetch('/api/auth/signup', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json', 
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
 
@@ -84,11 +86,35 @@ export default function SignUp({ onCompleteSignup }) {
           throw new Error(data.detail || 'Failed to create account. Please try again.');
         }
 
-        setSuccessMsg("Account created successfully! Redirecting to login...");
+        setSuccessMsg("Account created! Logging you in automatically...");
         
+        const urlEncodedData = new URLSearchParams();
+        urlEncodedData.append('username', payload.email); 
+        urlEncodedData.append('password', payload.password);
+
+        const loginResponse = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: urlEncodedData.toString(),
+        });
+        
+        if (!loginResponse.ok) {
+           throw new Error('Auto-login failed. Please go to the login page.');
+        }
+
+        const loginData = await loginResponse.json();
+        const accessToken = loginData.access_token;
+        const decodedPayload = JSON.parse(atob(accessToken.split('.')[1]));
+
+        login(accessToken, decodedPayload.role);
+
         setTimeout(() => {
-           onNavigate('HospitalNumber');
-        }, 2000);
+           onCompleteSignup({
+             firstName: payload.firstname,
+             lastName: payload.surname,
+             email: payload.email
+           });
+        }, 1500);
 
       } catch (error) {
         console.error("Signup Error:", error);
@@ -124,14 +150,12 @@ export default function SignUp({ onCompleteSignup }) {
             <h3 className="font-montserrat text-3xl font-bold text-gabay-blue text-center mb-2">Sign Up</h3>
             <p className="font-poppins text-gray-500 text-center text-sm mb-6">Accomplish the form below to create an account</p>
             
-            {/* Server Error Message UI */}
             {serverError && (
               <div className="mb-4 p-3 text-sm text-red-700 bg-red-100 rounded-lg text-center font-poppins animate-pulse">
                 {serverError}
               </div>
             )}
 
-            {/* Success Message UI */}
             {successMsg && (
               <div className="mb-4 p-3 text-sm text-green-700 bg-green-100 rounded-lg text-center font-poppins">
                 {successMsg}
@@ -201,6 +225,7 @@ export default function SignUp({ onCompleteSignup }) {
             <p className="font-poppins text-center text-sm mt-6">
               Already have an account? 
               <button 
+                type="button"
                 onClick={() => navigate('/login')} 
                 className="text-gabay-blue font-bold ml-1 hover:underline"
               >

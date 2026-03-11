@@ -5,7 +5,7 @@ from datetime import datetime
 
 from db_connection import get_db
 from db_model import User, Patient
-from py_schema import HospitalNumberRequest
+from py_schema import HospitalNumberRequest, PatientProfileUpdate
 
 router = APIRouter(prefix="/patients", tags=["Patient Management"])
 
@@ -23,7 +23,7 @@ def generate_hospital_number(request: HospitalNumberRequest, db: Session = Depen
         if patient.hospital_num:
             return {
                 "message": "Patient already has a hospital number.", 
-                "hospitalNumber": patient.hospital_num
+                "hospital_num": patient.hospital_num
             }
 
         # === HOSPITAL NUMBER GENERATION ===
@@ -48,12 +48,57 @@ def generate_hospital_number(request: HospitalNumberRequest, db: Session = Depen
 
         return {
             "message": "Hospital number generated successfully.",
-            "hospitalNumber": new_hospital_number
+            "hospital_num": new_hospital_number,
+            "patientName": f"{patient.firstname} {patient.surname}"
         }
 
     except HTTPException:
         raise
     except Exception as e:
         print(f"\n❌ ERROR GENERATING ID: {str(e)}\n")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Server Error: {str(e)}")
+    
+@router.put("/update-profile")
+def update_patient_profile(profile_data: PatientProfileUpdate, db: Session = Depends(get_db)):
+    try:
+        user = db.query(User).filter(User.email == profile_data.email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found.")
+            
+        patient = db.query(Patient).filter(Patient.userID == user.userID).first()
+        if not patient:
+            raise HTTPException(status_code=404, detail="Patient profile not found.")
+
+        existing_hn = db.query(Patient).filter(
+            Patient.hospital_num == profile_data.hospital_num, 
+            Patient.patientID != patient.patientID 
+        ).first()
+        
+        if existing_hn:
+            raise HTTPException(
+                status_code=400, 
+                detail="This Hospital Number is already registered to another account. Please verify with the hospital administration."
+            )
+        
+        try:
+            formatted_dob = datetime.strptime(profile_data.dob, "%m/%d/%Y").date()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid Date of Birth format. Use MM/DD/YYYY.")
+
+        patient.hospital_num = profile_data.hospital_num
+        patient.contactNumber = profile_data.contactNumber
+        patient.dob = formatted_dob
+        patient.gender = profile_data.gender
+        patient.address = profile_data.address
+        
+        db.commit()
+        
+        return {"message": "Profile completed successfully."}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"\n❌ ERROR UPDATING PROFILE: {str(e)}\n")
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Server Error: {str(e)}")
