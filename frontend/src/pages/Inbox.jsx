@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, Mail, Info, Check, X } from 'lucide-react';
 
-export default function Inbox({ onNavigate }) {
+export default function Inbox() {
   const [activeFilter, setActiveFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = 3;

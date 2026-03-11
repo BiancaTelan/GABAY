@@ -2,11 +2,15 @@ import caintaBg from '../assets/caintaBg.png';
 import gabayLogo from '../assets/gabayLogo.png';
 import Button from '../components/button';
 import Input from '../components/input';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useState, useContext } from 'react';
 import { emailPattern } from '../utils/constants';
 import { AuthContext } from '../authContext';
 
-export default function Login({ onNavigate, setIsLoggedIn }) {
+export default function Login({ setIsLoggedIn }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -84,7 +88,7 @@ export default function Login({ onNavigate, setIsLoggedIn }) {
       />
       <div 
         className="absolute top-6 left-6 z-30 cursor-pointer hover:opacity-80 transition"
-        onClick={() => onNavigate('home')}>
+        onClick={() => navigate('/')}>
         <img src={gabayLogo} alt="GABAY Logo" className="h-10 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]" />
       </div>
       <div className="absolute inset-0 z-10 bg-black opacity-50" />
@@ -112,7 +116,7 @@ export default function Login({ onNavigate, setIsLoggedIn }) {
               value={formData.email}
               error={errors.email}
               onChange={(e) => setFormData({...formData, email: e.target.value})}
-              required // consistent asterisks
+              required
               isEditing={true}
             />
             <Input 
@@ -122,20 +126,21 @@ export default function Login({ onNavigate, setIsLoggedIn }) {
               value={formData.password}
               error={errors.password}
               onChange={(e) => setFormData({...formData, password: e.target.value})}
-              required // consistent asterisks
+              required
               isEditing={true}
             />
 
             <div className="flex items-center justify-between mt-1 mb-6">
               <label className="flex items-center cursor-pointer group">
                 <input type="checkbox" 
-                className="w-4 h-4 border-gray-300 rounded text-gabay-teal focus:ring-gabay-teal cursor-pointer"/>
+                  className="w-4 h-4 border-gray-300 rounded text-gabay-teal focus:ring-gabay-teal cursor-pointer"
+                />
                 <span className="ml-2 text-xs font-poppins text-gray-600 group-hover:text-gabay-blue transition-colors">
                   Remember me
                 </span>
               </label>
               <button type="button"
-              className="text-xs font-poppins font-medium text-gabay-blue hover:underline hover:text-gabay-navy transition-colors">
+                className="text-xs font-poppins font-medium text-gabay-blue hover:underline hover:text-gabay-navy transition-colors">
                 Forgot Password?
               </button>
             </div>
@@ -150,7 +155,7 @@ export default function Login({ onNavigate, setIsLoggedIn }) {
           <p className="font-poppins text-center text-sm mt-6">
             Don't have an account? 
             <button 
-              onClick={() => onNavigate('signup')} 
+              onClick={() => navigate('/signup')} 
               className="text-gabay-blue font-bold ml-1 hover:underline"
             >
               Sign Up

@@ -1,9 +1,12 @@
+import { useNavigate } from 'react-router-dom';
 import Logo from '../assets/caintaHospitalLogo.png';
 
-export default function GeneratedHospitalNumber({ onNavigate }) {
+export default function GeneratedHospitalNumber() {
+  const navigate = useNavigate();
+
   const handleConfirm = () => {
     console.log('Confirm clicked');
-    onNavigate('account');
+    navigate('/account');
   };
 
   return (
@@ -40,13 +43,13 @@ export default function GeneratedHospitalNumber({ onNavigate }) {
 
         <div className="flex justify-end">
           <button 
-              onClick={handleConfirm}
-              className="font-poppins flex items-center text-gabay-blue font-semibold text-lg hover:underline group"
-            >
-              CONFIRM
-              <span className="ml-2 transform group-hover:translate-x-1 transition-transform">
+            onClick={handleConfirm}
+            className="font-poppins flex items-center text-gabay-blue font-semibold text-lg hover:underline group"
+          >
+            CONFIRM
+            <span className="ml-2 transform group-hover:translate-x-1 transition-transform">
               →
-              </span>
+            </span>
           </button>
         </div>
       </div>
