@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-export default function AppointmentHistory({ onNavigate }) {
+export default function AppointmentHistory() {
+  const navigate = useNavigate();
   const appointments = [
     {
       date: '03/16/2026',
@@ -30,6 +32,8 @@ export default function AppointmentHistory({ onNavigate }) {
 
   const handleViewDetails = (appointment) => {
     console.log('View details for:', appointment);
+    // In the future, you could navigate to a details page, e.g.:
+    // navigate(`/appointment/${appointment.id}`);
   };
 
   const goToPage = (page) => {

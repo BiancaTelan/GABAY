@@ -1,13 +1,14 @@
+import { useNavigate } from 'react-router-dom';
 import Button from '../components/button';
 import YesIcon from '../assets/personCheck.png';
 import NoIcon from '../assets/personCancel.png';
 
-export default function HospitalNumber({ onNavigate }) 
-{
+export default function HospitalNumber() {
+  const navigate = useNavigate();
 
   const handleGet = () => {
     console.log('Get hospital number');
-    onNavigate('generatedNumber');
+    navigate('/generated-number');
   };
 
   return (
@@ -17,14 +18,14 @@ export default function HospitalNumber({ onNavigate })
           Do you have a hospital number?
         </h1>
         <div className="font-poppins text-center text-lg mb-8 mt-6">
-         <p>
-           Please take note that a hospital number is a unique ID assigned to{' '}
-           <strong className="text-gabay-teal">ONE</strong> patient only.
-         </p>
-         <p>
-           You <strong className="text-gabay-teal">CANNOT</strong> share, or use, another patient’s hospital number.
-         </p>
-       </div>
+          <p>
+            Please take note that a hospital number is a unique ID assigned to{' '}
+            <strong className="text-gabay-teal">ONE</strong> patient only.
+          </p>
+          <p>
+            You <strong className="text-gabay-teal">CANNOT</strong> share, or use, another patient’s hospital number.
+          </p>
+        </div>
       </div>
 
       <div className="flex flex-col md:flex-row gap-6 w-full max-w-4xl">
@@ -36,7 +37,7 @@ export default function HospitalNumber({ onNavigate })
             I have a hospital number
           </h3>
           <img src={YesIcon} alt="Yes icon" className="w-20 h-20 mb-4 mt-4 mx-auto object-contain" />
-          <Button variant="teal" onClick={() => onNavigate('registerNumber')} className="w-65">
+          <Button variant="teal" onClick={() => navigate('/register-number')} className="w-65">
             REGISTER HOSPITAL NUMBER
           </Button>
         </div>

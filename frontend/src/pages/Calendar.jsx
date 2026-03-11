@@ -27,11 +27,11 @@ const dummyEvents = [
   { id: 5, title: 'Follow‑up', doctor: 'Dr. Anna Reyes', department: 'Internal Medicine', date: '2026-03-09', type: 'Scheduled' },
 ];
 
-export default function CalendarPage({ onNavigate }) {
+export default function CalendarPage() {  // removed onNavigate prop
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
-  const [showSidePanel, setShowSidePanel] = useState(true);
+  const [showSidePanel, setShowSidePanel] = useState(false);
   const [eventPage, setEventPage] = useState(1);
   const totalEventPages = 4;
 

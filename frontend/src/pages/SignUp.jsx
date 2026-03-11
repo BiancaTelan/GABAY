@@ -3,9 +3,11 @@ import gabayLogo from '../assets/gabayLogo.png';
 import Button from '../components/button';
 import Input from '../components/input';
 import { useState } from 'react';
-import { emailPattern, namePattern } from '../utils/constants'; 
+import { useNavigate } from 'react-router-dom';
+import { emailPattern, namePattern } from '../utils/constants';
 
-export default function SignUp({ onNavigate, onCompleteSignup }) {
+export default function SignUp({ onCompleteSignup }) {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
       firstName: '',
       lastName: '',
@@ -72,7 +74,7 @@ export default function SignUp({ onNavigate, onCompleteSignup }) {
         />
         <div 
           className="absolute top-6 left-6 z-30 cursor-pointer hover:opacity-80 transition"
-          onClick={() => onNavigate('home')}>
+          onClick={() => navigate('/')}>
           <img src={gabayLogo} alt="GABAY Logo" className="h-10 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]" />
         </div>
         <div className="absolute inset-0 z-10 bg-black opacity-50" />
@@ -154,7 +156,7 @@ export default function SignUp({ onNavigate, onCompleteSignup }) {
             <p className="font-poppins text-center text-sm mt-4">
               Already have an account? 
               <button 
-                onClick={() => onNavigate('login')} 
+                onClick={() => navigate('/login')} 
                 className="text-gabay-blue font-bold ml-1 hover:underline"
               >
                 Log In

@@ -51,11 +51,10 @@ function App() {
   };
 
   const handleLogout = () => {
-    /*setIsLoggedIn(false); 
+    setIsLoggedIn(false); 
     setUserInfo(null);
     setRegistrationData(null);
     navigate('/');
-    */
   };
 
   const handleFormSubmission = (data, nextStep) => {
