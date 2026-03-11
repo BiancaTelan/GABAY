@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Calendar, Mail, Info, Check, X } from 'lucide-react';
 
-export default function Inbox() {
+export default function Inbox({ userInfo }) {
+  const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = 3;
@@ -71,6 +73,29 @@ export default function Inbox() {
     }
   };
 
+  const handleApprove = (note) => {
+    navigate('/appointment-confirmed', {
+      state: {
+        patientName: userInfo ? `${userInfo.firstName} ${userInfo.lastName}` : 'Patient',
+        department: note.department,
+        date: note.date,
+        doctor: note.doctor,
+      },
+    });
+  };
+
+  const handleReject = (note) => {
+  navigate('/appointment-cancelled', {
+    state: {
+      id: note.id,
+      patientName: userInfo ? `${userInfo.firstName} ${userInfo.lastName}` : 'Patient',
+      department: note.department,
+      date: note.date,
+      doctor: note.doctor,
+    },
+  });
+};
+
   return (
     <main className="flex flex-col items-center justify-start min-h-[calc(100vh-64px)] px-4 py-12 bg-gray-50">
       <div className="w-full max-w-5xl">
@@ -134,39 +159,39 @@ export default function Inbox() {
                     <h3 className="font-poppins font-semibold text-lg text-gabay-blue mb-2">
                       {note.title}
                     </h3>
-                  {note.type === 'appointment' && (
-                    <div className="relative">
-                      <div className="absolute bottom-3 right-1 gap-2">
-                        <button
-                          onClick={() => console.log('Approve', note.id)}
-                          className="p-5 text-green-600 hover:bg-green-400 rounded-full transition"
-                          title="Approve"
-                        >
-                          <Check size={18} />
-                        </button>
-                        <button
-                          onClick={() => console.log('Reject', note.id)}
-                          className="p-5 text-red-600 hover:bg-red-400 rounded-full transition"
-                          title="Reject"
-                        >
-                          <X size={18} />
-                        </button>
-                      </div>
-                      <div className="space-y-1 font-poppins text-sm text-gabay-navy grid grid-cols-1 md:grid-cols-2">
-                        <p>
-                          <span className="font-medium">Appointment Date:</span> {note.date}
-                        </p>
-                        <p>
-                          <span className="font-medium">Department:</span> {note.department}
-                        </p>
-                        <p>
-                          <span className="font-medium">Appointed Doctor:</span> {note.doctor}
-                        </p>
-                        <p>
-                          <span className="font-medium">Status:</span>{' '}
-                          <span className="text-gabay-teal font-bold">{note.status}</span>
-                        </p>
-                      </div>
+                    {note.type === 'appointment' && (
+                      <div className="relative">
+                        <div className="absolute bottom-3 right-1 flex gap-2">
+                          <button
+                            onClick={() => handleApprove(note)}
+                            className="p-4 text-green-800 hover:bg-green-300 rounded-full transition"
+                            title="Approve"
+                          >
+                            <Check size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleReject(note)}
+                            className="p-4 text-red-800 hover:bg-red-300 rounded-full transition"
+                            title="Reject"
+                          >
+                            <X size={18} />
+                          </button>
+                        </div>
+                        <div className="space-y-1 font-poppins text-sm text-gabay-navy grid grid-cols-1 md:grid-cols-2">
+                          <p>
+                            <span className="font-medium">Appointment Date:</span> {note.date}
+                          </p>
+                          <p>
+                            <span className="font-medium">Department:</span> {note.department}
+                          </p>
+                          <p>
+                            <span className="font-medium">Appointed Doctor:</span> {note.doctor}
+                          </p>
+                          <p>
+                            <span className="font-medium">Status:</span>{' '}
+                            <span className="text-gabay-teal font-bold">{note.status}</span>
+                          </p>
+                        </div>
                       </div>
                     )}
                     {note.type === 'reservation' && (
@@ -182,7 +207,7 @@ export default function Inbox() {
                       </div>
                     )}
                     {note.type === 'system' && (
-                      <p className="space-y-1 font-poppins text-sm text-gabay-navy grid grid-cols-1 md:grid-cols-2">{note.content}</p>
+                      <p className="font-poppins text-sm text-gabay-navy">{note.content}</p>
                     )}
                   </div>
                 </div>

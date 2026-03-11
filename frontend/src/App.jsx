@@ -19,6 +19,9 @@ import Calendar from './pages/Calendar';
 import GeneralForm from './pages/GeneralForm';
 import SpecialtyForm from './pages/SpecialtyForm';
 import RescheduleForm from './pages/RescheduleForm';
+import ReservationConfirmation from './pages/R.F.Confirmation';
+import AppointmentConfirmed from './pages/ApptConfirmed';
+import AppointmentCancelled from './pages/ApptCancelled';
 
 function App() { 
   const navigate = useNavigate();
@@ -65,7 +68,7 @@ function App() {
     } else if (nextStep === "submit") {
       console.log("Saving Appointment:", data);
       setFormMode('fill');
-      navigate('/prevAppt'); 
+      navigate('/reservation-confirmation'); 
     }
   };
 
@@ -102,9 +105,11 @@ function App() {
           <Route path="/register-number" element={<ProtectedRoute><RegisterHospitalNumber initialData={registrationData} onFinalSubmit={handleFinalRegistration} /></ProtectedRoute>} />
           <Route path="/generated-number" element={<ProtectedRoute><GeneratedHospitalNumber /></ProtectedRoute>} />
           <Route path="/prevAppt" element={<ProtectedRoute><AppointmentHistory /></ProtectedRoute>} />
-          <Route path="/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
+          <Route path="/inbox" element={<ProtectedRoute><Inbox userInfo={userInfo} /></ProtectedRoute>} />
           <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
-          
+          <Route path="/appointment-confirmed" element={<ProtectedRoute><AppointmentConfirmed /></ProtectedRoute>} />
+          <Route path="/appointment-cancelled" element={<ProtectedRoute><AppointmentCancelled /></ProtectedRoute>} />
+
           <Route path="/reschedule/:appointmentId" element={
             <ProtectedRoute isLoggedIn={isLoggedIn}>
                 <RescheduleForm userInfo={userInfo} />
@@ -120,6 +125,12 @@ function App() {
           <Route path="/specialty-form" element={
             <ProtectedRoute>
               <SpecialtyForm userInfo={userInfo} mode={formMode} onConfirm={handleFormSubmission} />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/reservation-confirmation" element={
+            <ProtectedRoute>
+              <ReservationConfirmation userInfo={userInfo} />
             </ProtectedRoute>
           } />
 

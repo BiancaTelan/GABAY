@@ -27,7 +27,7 @@ const dummyEvents = [
   { id: 5, title: 'Follow‑up', doctor: 'Dr. Anna Reyes', department: 'Internal Medicine', date: '2026-03-09', type: 'Scheduled' },
 ];
 
-export default function CalendarPage() {  // removed onNavigate prop
+export default function CalendarPage() {
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
