@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import caintaLanding from '../assets/caintaLanding.png';
 import introimage1 from '../assets/intro1.png'; 
 import introimage2 from '../assets/intro2.png';
@@ -8,7 +9,10 @@ import plus from '../assets/plus.png';
 import like from '../assets/like.png';
 import calendarCheck from '../assets/calendarCheck.png';
 
-export default function Home({ onNavigate }) {
+
+export default function Home() {
+  const navigate = useNavigate();
+
   return (
     <div className="bg-white font-sans">
       <section className="flex flex-col md:flex-row h-[800px] overflow-hidden">
@@ -31,8 +35,9 @@ export default function Home({ onNavigate }) {
           </p>
           
           <button 
-          onClick={() => onNavigate('departments')}
-          className="font-poppins flex items-center text-gabay-blue font-semibold text-lg hover:underline group">
+            onClick={() => navigate('/departments')}
+            className="font-poppins flex items-center text-gabay-blue font-semibold text-lg hover:underline group"
+          >
             Head to Department List 
             <span className="ml-2 transform group-hover:translate-x-1 transition-transform">
               →
@@ -55,12 +60,12 @@ export default function Home({ onNavigate }) {
           <h2 className="font-montserrat text-4xl lg:text-6xl font-bold text-gabay-blue leading-tight mb-4 mt-20 text-center">
             Introduction to GABAY
           </h2>
-          <p className="font-poppins text-lg mt-6 mb-12 text-center text-center">
+          <p className="font-poppins text-lg mt-6 mb-12 text-center text-gray-600">
             Here’s a background about General-to-Specialty Appointment & Booking Assistant for You
           </p>
 
           <div className="flex flex-col md:flex-row gap-8 items-start mb-16">
-            <div className="font-poppins text-lg flex-1 space-y-8 indent-first">
+            <div className="font-poppins text-lg flex-1 space-y-8 indent-first text-gray-700">
               <p>
                 Access to vital healthcare services in the Philippines, especially in the municipality of Cainta, is often hindered by traditional appointment booking methods.
               </p>
@@ -85,7 +90,7 @@ export default function Home({ onNavigate }) {
                 className="w-full h-full rounded-lg shadow-lg object-cover"
               />
             </div>
-            <div className="font-poppins text-lg flex-1 space-y-8 order-1 md:order-2 indent-first">
+            <div className="font-poppins text-lg flex-1 space-y-8 order-1 md:order-2 indent-first text-gray-700">
               <p>
                 Given the continuous growth of technology, researchers will need to implement new systems that simplify people’s lives, especially in healthcare. Researchers will value the citizens’ lives, which is why they will propose a clear solution to this major problem: the long queue.
               </p>
@@ -108,40 +113,40 @@ export default function Home({ onNavigate }) {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="flex-1 bg-white rounded-xl shadow-md p-8 border-2 border-gabay-blue">
-              <h3 className="font-poppins text-xl font-semibold text-gabay-teal mb-3">
+              <h3 className="font-poppins text-xl font-semibold text-gabay-teal mb-3 text-left">
                 Step One
               </h3>
-              <p className="font-montserrat text-2xl text-gabay-navy font-bold mb-2">
+              <p className="font-montserrat text-2xl text-gabay-navy font-bold mb-2 text-left">
                 Choose a Department
               </p>
               <img src={lists} alt="Lists icon" className="w-20 h-20 mb-4 mt-12 mx-auto object-contain" />
-              <p className="font-poppins text-gabay-navy">
+              <p className="font-poppins text-gabay-navy text-left">
                 Head to the Departments link in the navigation bar and select your designated choice
               </p>
             </div>
 
             <div className="flex-1 bg-white rounded-xl shadow-md p-8 border-2 border-gabay-blue">
-              <h3 className="font-poppins text-xl font-semibold text-gabay-teal mb-3">
+              <h3 className="font-poppins text-xl font-semibold text-gabay-teal mb-3 text-left">
                 Step Two
               </h3>
-              <p className="font-montserrat text-2xl text-gabay-navy font-bold mb-2">
+              <p className="font-montserrat text-2xl text-gabay-navy font-bold mb-2 text-left">
                 Submit the Required Forms
               </p>
               <img src={send} alt="Send icon" className="w-20 h-20 mb-4 mt-4 mx-auto object-contain" />
-              <p className="font-poppins text-gabay-navy">
+              <p className="font-poppins text-gabay-navy text-left">
                 Complete updating your account with valid details and fill up the reservation form
               </p>
             </div>
 
             <div className="flex-1 bg-white rounded-xl shadow-md p-8 border-2 border-gabay-blue">
-              <h3 className="font-poppins text-xl font-semibold text-gabay-teal text-left mb-3">
+              <h3 className="font-poppins text-xl font-semibold text-gabay-teal mb-3 text-left">
                 Step Three
               </h3>
-              <p className="font-montserrat text-2xl text-gabay-navy text-left font-bold mb-2">
+              <p className="font-montserrat text-2xl text-gabay-navy font-bold mb-2 text-left">
                 Wait for Confirmation
               </p>
               <img src={checkCircle} alt="Check Circle icon" className="w-20 h-20 mb-4 mt-12 mx-auto object-contain" />
-              <p className="font-poppins text-[#1B335F]">
+              <p className="font-poppins text-gabay-navy text-left">
                 Ensure your contact information is correct and wait for the updates regarding your reservation
               </p>
             </div>
@@ -149,7 +154,7 @@ export default function Home({ onNavigate }) {
         </div>
       </section>
 
-      <section className="py-20 px-4 bg-white">
+      <section className="py-20 px-4 bg-white pb-32">
         <div className="max-w-6xl mx-auto">
           <h2 className="font-montserrat text-4xl lg:text-6xl font-bold text-gabay-blue leading-tight mb-4 mt-15 text-center">
             Healthcare made simple.
