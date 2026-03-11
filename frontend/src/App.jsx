@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
+
 import Header from './components/header';
 import Home from './pages/home';
 import Help from './pages/Help';
@@ -11,134 +13,127 @@ import GeneratedHospitalNumber from './pages/GenerateHospitalNum';
 import RegisterHospitalNumber from './pages/RegisterHospitalNum';
 import DepartmentList from './pages/DepartmentList';
 import ConfirmationModal from './components/confirmModal';
+import AppointmentHistory from './pages/AppointmentHistory';
+import Inbox from './pages/Inbox';
+import Calendar from './pages/Calendar';
+import GeneralForm from './pages/GeneralForm';
+import SpecialtyForm from './pages/SpecialtyForm';
+import RescheduleForm from './pages/RescheduleForm';
 
 function App() { 
-  const [currentPage, setCurrentPage] = useState('home');
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [isLoggedIn, setIsLoggedIn] = useState(false); 
-  const [intendedPage, setIntendedPage] = useState(null);
   const [registrationData, setRegistrationData] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
   const [showBlockerModal, setShowBlockerModal] = useState(false);
+  const [formMode, setFormMode] = useState('fill');
 
-  // LOGIN ROUTE
   const handleLogin = (userFromDb) => {
     setIsLoggedIn(true);
     if (userFromDb) setUserInfo(userFromDb);
-    if (intendedPage) {
-      setCurrentPage(intendedPage);
-      setIntendedPage(null);
-    } else {
-      setCurrentPage('home'); 
-    }
+    
+    const origin = location.state?.from?.pathname || '/';
+    navigate(origin);
   };
 
-  // SIGNUP ROUTE
   const handleCompleteSignUp = (data) => {
     setIsLoggedIn(true); 
     setRegistrationData(data); 
-    setCurrentPage('hospitalNumber'); 
+    navigate('/hospital-number'); 
   };
 
   const handleFinalRegistration = (finalData) => {
     setUserInfo({ ...registrationData, ...finalData }); 
     setRegistrationData(null); 
-    setCurrentPage('account'); 
-  };
-
-  const handleUpdateProfile = (updatedData) => {
-    setUserInfo(updatedData);
-    console.log("Global profile data updated!", updatedData);
+    navigate('/account'); 
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false); 
     setUserInfo(null);
     setRegistrationData(null);
-    setCurrentPage('home');
+    navigate('/');
   };
 
-  const handleNavigate = (page) => {
-    const isRegistering = currentPage === 'registerNumber';
-    const isProfileIncomplete = isLoggedIn && !userInfo?.hospitalNumber;
-
-    if (isRegistering && isProfileIncomplete && page !== 'registerNumber') {
-      const formElement = document.getElementById('register-form');
-      if (formElement) {
-        formElement.classList.add('animate-shake');
-        setTimeout(() => formElement.classList.remove('animate-shake'), 500);
-      }
-      setShowBlockerModal(true);
-      return;
-    }
-
-    const protectedPages = [
-      'departments',
-      'account',
-      'hospitalNumber',
-      'registerNumber',
-      'generatedNumber',
-      'generalDepartments',
-      'specialtyDepartments',
-    ];
-
-    if (protectedPages.includes(page) && !isLoggedIn) {
-      setIntendedPage(page);
-      setCurrentPage('login');
-    } else {
-      setCurrentPage(page);
+  const handleFormSubmission = (data, nextStep) => {
+    if (nextStep === "confirm") {
+      setFormMode('confirm');
+    } else if (nextStep === "fill") {
+      setFormMode('fill');
+    } else if (nextStep === "submit") {
+      console.log("Saving Appointment:", data);
+      setFormMode('fill');
+      navigate('/prevAppt'); 
     }
   };
 
-  const showHeader = currentPage !== 'login' && currentPage !== 'signup';
+  const ProtectedRoute = ({ children }) => {
+    if (!isLoggedIn) {
+      return <Navigate to="/login" state={{ from: location }} replace />;
+    }
+    return children;
+  };
+
+  const showHeader = location.pathname !== '/login' && location.pathname !== '/signup';
 
   return (
     <div className="min-h-screen bg-white font-sans relative">
       {showHeader && (
         <Header 
           isLoggedIn={isLoggedIn} 
-          onNavigate={handleNavigate}
-          currentPage={currentPage} 
+          currentPage={location.pathname} 
         />
       )}
 
       <main className={showHeader ? "pt-0" : ""}>
-        {currentPage === 'home' && <Home onNavigate={handleNavigate} />}
-        {currentPage === 'departments' && <DepartmentList onNavigate={handleNavigate} />}
-        {currentPage === 'help' && <Help />}
-        {currentPage === 'contact' && <ContactUs />}
-        
-        {currentPage === 'login' && (
-          <Login onNavigate={setCurrentPage} setIsLoggedIn={handleLogin} />
-        )}
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Home onReserveGeneral={() => navigate('/general-form')} />} />
+          <Route path="/help" element={<Help />} />
+          <Route path="/contact" element={<ContactUs />} />
+          <Route path="/login" element={<Login setIsLoggedIn={handleLogin} />} />
+          <Route path="/signup" element={<SignUp onCompleteSignup={handleCompleteSignUp} />} />
+          {/* Protected Routes */}
+          <Route path="/departments" element={<ProtectedRoute><DepartmentList onReserveGeneral={() => { setFormMode('fill'); navigate('/general-form'); }} onReserveSpecialty={() => { setFormMode('fill'); navigate('/specialty-form'); }} /></ProtectedRoute>} />
+          <Route path="/account" element={<ProtectedRoute><Account userInfo={userInfo} onLogout={handleLogout} onUpdateProfile={setUserInfo} /></ProtectedRoute>} />
+          <Route path="/hospital-number" element={<ProtectedRoute><HospitalNumber /></ProtectedRoute>} />
+          <Route path="/register-number" element={<ProtectedRoute><RegisterHospitalNumber initialData={registrationData} onFinalSubmit={handleFinalRegistration} /></ProtectedRoute>} />
+          <Route path="/generated-number" element={<ProtectedRoute><GeneratedHospitalNumber /></ProtectedRoute>} />
+          <Route path="/prevAppt" element={<ProtectedRoute><AppointmentHistory /></ProtectedRoute>} />
+          <Route path="/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
+          <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
+          
+          <Route path="/reschedule/:appointmentId" element={
+            <ProtectedRoute isLoggedIn={isLoggedIn}>
+                <RescheduleForm userInfo={userInfo} />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/general-form" element={
+            <ProtectedRoute>
+              <GeneralForm userInfo={userInfo} mode={formMode} onConfirm={handleFormSubmission} />
+            </ProtectedRoute>
+          } />
 
-        {currentPage === 'signup' && (
-          <SignUp onNavigate={setCurrentPage} onCompleteSignup={handleCompleteSignUp} />
-        )}
+          <Route path="/specialty-form" element={
+            <ProtectedRoute>
+              <SpecialtyForm userInfo={userInfo} mode={formMode} onConfirm={handleFormSubmission} />
+            </ProtectedRoute>
+          } />
 
-        {currentPage === 'account' && (
-          <Account userInfo={userInfo} onLogout={handleLogout} onUpdateProfile={handleUpdateProfile} />
-        )}
-
-        {currentPage === 'hospitalNumber' && (
-          <HospitalNumber onNavigate={handleNavigate} />
-        )}
-
-        {currentPage === 'registerNumber' && (
-          <RegisterHospitalNumber initialData={registrationData} onFinalSubmit={handleFinalRegistration} />
-        )}
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
 
         <ConfirmationModal 
           isOpen={showBlockerModal}
           onClose={() => setShowBlockerModal(false)}
           onConfirm={() => setShowBlockerModal(false)}
           title="Registration Incomplete"
-          message="Please finish registering your hospital number before accessing other pages. This ensures your medical records are correctly linked to your account."
+          message="Please finish registering your hospital number before accessing other pages."
           type="warning"
         />
-
-        {currentPage === 'generatedNumber' && (
-          <GeneratedHospitalNumber onNavigate={handleNavigate} />
-        )}
       </main>
     </div>
   );

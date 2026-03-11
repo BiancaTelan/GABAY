@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Input from '../components/input';
 import { LogOut, Trash2, CheckCircle } from 'lucide-react';
 import { emailPattern, namePattern, phonePattern, dobPattern, minAgeRequirement } from '../utils/constants';
 import ConfirmationModal from '../components/confirmModal';
 
 export default function Account({ userInfo, onLogout, onUpdateProfile }) {
+  const navigate = useNavigate();
+  
   const [localUserInfo, setLocalUserInfo] = useState({
     firstName: "",
     lastName: "",
@@ -68,7 +71,10 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
       type: 'info',
       title: 'Log Out',
       message: 'Are you sure you want to log out of GABAY? You will need to sign in again to book appointments.',
-      onConfirm: onLogout
+      onConfirm: () => {
+        onLogout(); 
+        navigate('/');
+      }
     });
   };
 
@@ -80,7 +86,8 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
       message: 'This action is permanent. Your hospital records and appointment history will be removed from the GABAY system.',
       onConfirm: () => {
         console.log("Account Deleted");
-        onLogout();
+        onLogout(); 
+        navigate('/'); 
       }
     });
   };
@@ -120,10 +127,6 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
     if (!localUserInfo.contactNumber.trim()) newErrors.contactNumber = "Contact number is required";
     else if (!phonePattern.test(localUserInfo.contactNumber)) newErrors.contactNumber = "Must be a valid 11-digit number";
 
-    if (localUserInfo.emergencyContact.trim() && !namePattern.test(localUserInfo.emergencyContact)) newErrors.emergencyContact = "Name cannot contain numbers";
-    if (localUserInfo.emergencyContactNum.trim() && !phonePattern.test(localUserInfo.emergencyContactNum)) newErrors.emergencyContactNum = "Must be a valid 11-digit number";
-    if (localUserInfo.emergencyEmail.trim() && !emailPattern.test(localUserInfo.emergencyEmail)) newErrors.emergencyEmail = "Enter a valid emergency email address";
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -141,6 +144,8 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
 
   const handleSave = () => {
     if (validate()) {
+    console.log("Saving updated profile to global state:", localUserInfo);
+    
       if (onUpdateProfile) {
         onUpdateProfile(localUserInfo);
       }
@@ -156,11 +161,11 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-10 font-poppins relative text-left">
-      
+    <div className="max-w-6xl mx-auto px-6 py-10 font-poppins relative text-left animate-in fade-in duration-500">
+      {/* TOAST NOTIF */}
       {showToast && (
         <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[100] pointer-events-none">
-          <div className="bg-gabay-green text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-white/20 animate-fade-in-down">
+          <div className="bg-green-500 text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-white/20">
             <CheckCircle size={20} className="text-white" />
             <span className="font-medium font-montserrat text-sm tracking-wide">Changes saved successfully!</span>
           </div>
@@ -170,7 +175,7 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
       <div className="flex items-center justify-between mb-10">
         <div className="flex items-center gap-6">
           <div>
-            <h1 className="text-3xl font-poppins font-bold text-gabay-teal">
+            <h1 className="text-3xl font-montserrat font-bold text-gabay-teal">
               {isEditing ? "Account Information" : "My Account"}
             </h1>
             <div className="flex items-center gap-4 mt-1">
@@ -193,7 +198,7 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
       <div className="flex flex-col md:flex-row gap-12">
         <div className="flex-1 space-y-10">
           <section>
-            <h2 className="text-base font-semibold text-gabay-blue mb-6 tracking-wider uppercase font-poppins">Personal Information</h2>
+            <h2 className="text-base font-semibold text-gabay-blue mb-6 tracking-wider uppercase">Personal Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
               {isEditing ? (
                 <>
@@ -226,7 +231,6 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
               <Input 
                 label="Date of Birth" 
                 name="dob" 
-                type="text" 
                 value={isEditing ? localUserInfo.dob : formatDisplayDate(localUserInfo.dob)} 
                 onChange={handleInputChange} 
                 onIconClick={handleCalendarChange}
@@ -247,7 +251,7 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
           </section>
 
           <section>
-            <h2 className="text-base font-semibold text-gabay-blue mb-6 tracking-wider uppercase font-poppins">Emergency Contact Information</h2>
+            <h2 className="text-base font-semibold text-gabay-blue mb-6 tracking-wider uppercase">Emergency Contact Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
               <Input label="Emergency Contact" name="emergencyContact" value={localUserInfo.emergencyContact} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} error={errors.emergencyContact} />
               <Input label="Emergency Contact Number" name="emergencyContactNum" value={localUserInfo.emergencyContactNum} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} error={errors.emergencyContactNum} />
@@ -260,21 +264,22 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
           {isEditing && (
             <div className="flex gap-3.5 pt-1">
               <button onClick={handleCancel} className="px-8 py-1.5 rounded-full border border-gabay-teal text-sm text-gabay-teal font-medium hover:bg-teal-50 transition-all">Cancel</button>
-              <button onClick={handleSave} className="px-8 py-1.5 rounded-full bg-gabay-teal text-sm text-white font-medium hover:bg-teal-600 shadow-md transition-all">Save</button>
+              <button onClick={handleSave} className="px-8 py-1.5 rounded-full bg-gabay-teal text-sm text-white font-medium hover:bg-teal-600 shadow-md transition-all">Save Changes</button>
             </div>
           )}
         </div>
 
+        {/* SIDEBAR */}
         <div className="w-full md:w-64 flex flex-col items-start gap-4 border-l border-gray-100 pl-8 pt-10">
           <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Account Settings</h3>
-          <button onClick={openLogoutModal} className="flex items-center gap-2 text-gabay-teal hover:text-gabay-teal2 transition-colors hover:underline text-sm font-semibold text-left">
+          <button onClick={openLogoutModal} className="flex items-center gap-2 text-gabay-teal hover:text-teal-700 transition-colors hover:underline text-sm font-semibold text-left">
             <LogOut size={18} /> Log Out
           </button>
           {isEditing && (
             <>
               <button className="text-gabay-blue hover:text-gabay-navy transition-colors hover:underline text-sm font-medium text-left">Change Email</button>
               <button className="text-gabay-blue hover:text-gabay-navy transition-colors hover:underline text-sm font-medium text-left">Change Password</button>
-              <button onClick={openDeleteModal} className="text-gabay-red hover:text-gabay-red2 text-sm font-semibold mt-10 underline w-full flex gap-2 text-left">
+              <button onClick={openDeleteModal} className="text-red-500 hover:text-red-700 text-sm font-semibold mt-10 underline w-full flex gap-2 text-left">
                 <Trash2 size={16} /> Delete Account
               </button>
             </>

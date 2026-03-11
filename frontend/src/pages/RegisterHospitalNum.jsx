@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Input from '../components/input';
 import Button from '../components/button';
-import { phonePattern, dobPattern, minAgeRequirement, namePattern } from '../utils/constants';
+import { phonePattern, dobPattern, minAgeRequirement } from '../utils/constants';
+
 
 export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
+  const navigate = useNavigate(); 
+  
   const [formData, setFormData] = useState({
     firstName: initialData?.firstName || "",
     lastName: initialData?.lastName || "",
@@ -21,13 +25,13 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
     let { name, value } = e.target;
 
     if (name === 'hospitalNumber') {
-    const digits = value.replace(/\D/g, '');
-    if (digits.length <= 2) {
-      value = digits;
-    } else {
-      value = `${digits.slice(0, 2)}-${digits.slice(2, 8)}`; 
+      const digits = value.replace(/\D/g, '');
+      if (digits.length <= 2) {
+        value = digits;
+      } else {
+        value = `${digits.slice(0, 2)}-${digits.slice(2, 8)}`; 
+      }
     }
-  }
     
     if (name === 'dob') {
       const cleanValue = value.replace(/\D/g, ''); 
@@ -52,10 +56,15 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
     let newErrors = {};
     const today = new Date();
 
-    if (!formData.hospitalNumber.trim()) {newErrors.hospitalNumber = "Hospital Number is required";
-    } else if (formData.hospitalNumber.length < 9) {newErrors.hospitalNumber = "Must be a valid hospital number format";}
+    if (!formData.hospitalNumber.trim()) {
+      newErrors.hospitalNumber = "Hospital Number is required";
+    } else if (formData.hospitalNumber.length < 9) {
+      newErrors.hospitalNumber = "Must be a valid hospital number format";
+    }
+    
     if (!formData.homeAddress.trim()) newErrors.homeAddress = "Home address is required";
     if (!phonePattern.test(formData.contactNumber)) newErrors.contactNumber = "Must be a valid 11-digit number";
+    
     if (!formData.dob.trim() || formData.dob === "MM/DD/YYYY") {
       newErrors.dob = "Date of birth is required";
     } else if (!dobPattern.test(formData.dob)) {
@@ -82,22 +91,39 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
   };
 
   return (
-    <div id="register-form" className="max-w-4xl mx-auto p-10 font-poppins text-left">
+    <div id="register-form" className="max-w-4xl mx-auto p-10 font-poppins text-left animate-in fade-in duration-500">
       <h1 className="text-3xl font-bold text-gabay-teal mb-2 font-montserrat">Complete Your Profile</h1>
       <p className="text-gray-500 mb-10 text-sm">Please provide your hospital details to access GABAY services.</p>
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-5">
         <Input label="Full Name" value={`${formData.firstName} ${formData.lastName}`} readOnly noHover />
         <Input label="Email Address" value={formData.email} readOnly noHover />
-        <Input label="Hospital Number" name="hospitalNumber" value={formData.hospitalNumber} 
-        onChange={handleInputChange} placeholder="e.g. 26-123456" maxLength={9} error={errors.hospitalNumber} required isEditing={true} />
+        
+        <Input 
+          label="Hospital Number" 
+          name="hospitalNumber" 
+          value={formData.hospitalNumber} 
+          onChange={handleInputChange} 
+          placeholder="e.g. 26-123456" 
+          maxLength={9} 
+          error={errors.hospitalNumber} 
+          required 
+          isEditing={true} 
+        />
         
         <div className="flex flex-col">
           <label className="text-sm font-medium text-gabay-navy mb-1">Gender</label>
           <div className="flex gap-6 h-[40px] items-center">
             {['Female', 'Male'].map(g => (
               <label key={g} className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="gender" value={g} checked={formData.gender === g} onChange={handleInputChange} className="accent-gabay-blue h-4 w-4" />
+                <input 
+                  type="radio" 
+                  name="gender" 
+                  value={g} 
+                  checked={formData.gender === g} 
+                  onChange={handleInputChange} 
+                  className="accent-gabay-blue h-4 w-4" 
+                />
                 <span className="text-sm">{g}</span>
               </label>
             ))}
@@ -117,13 +143,39 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
           isEditing={true} 
         />
 
-        <Input label="Contact Number" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange} placeholder="e.g. 09191234567" error={errors.contactNumber} required isEditing={true} />
+        <Input 
+          label="Contact Number" 
+          name="contactNumber" 
+          value={formData.contactNumber} 
+          onChange={handleInputChange} 
+          placeholder="e.g. 09191234567" 
+          error={errors.contactNumber} 
+          required 
+          isEditing={true} 
+        />
 
         <div className="md:col-span-2">
-          <Input label="Home Address" name="homeAddress" value={formData.homeAddress} onChange={handleInputChange} error={errors.homeAddress} required isEditing={true} />
+          <Input 
+            label="Home Address" 
+            name="homeAddress" 
+            value={formData.homeAddress} 
+            onChange={handleInputChange} 
+            error={errors.homeAddress} 
+            required 
+            isEditing={true} 
+          />
         </div>
 
-        <div className="md:col-span-2 flex justify-end mt-6">
+        <div className="md:col-span-2 flex justify-between items-center mt-6">
+
+          <button 
+            type="button" 
+            onClick={() => navigate('/')} 
+            className="text-gray-400 hover:text-gray-600 text-sm font-medium"
+          >
+            Cancel and Return Home
+          </button>
+
           <Button variant="teal" type="submit" className="w-55 py-3 text-base font-semibold tracking-normal">
             UPDATE MY ACCOUNT
           </Button>

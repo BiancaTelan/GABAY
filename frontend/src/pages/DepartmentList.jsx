@@ -1,16 +1,9 @@
+import { useNavigate } from 'react-router-dom';
 import generalbg from '../assets/generalbg.png';
 import specialtybg from '../assets/specialtybg.png';
 
-export default function DepartmentList({ onNavigate }) {
-  const handleReserveGeneral = () => {
-    console.log('Reserve general appointment');
-    onNavigate('generalDepartments');
-  };
-
-  const handleReserveSpecialty = () => {
-    console.log('Reserve specialty appointment');
-    onNavigate('specialtyDepartments');
-  };
+export default function DepartmentList() {
+  const navigate = useNavigate(); 
 
   return (
     <main className="flex flex-col items-center justify-start min-h-[calc(100vh-64px)] px-4 py-12 bg-gray-50">
@@ -23,13 +16,14 @@ export default function DepartmentList({ onNavigate }) {
         </p>
 
         <div className="flex flex-col md:flex-row gap-6 mt-12">
+
           <div
-            className="flex-1 rounded-xl shadow-md overflow-hidden relative"
+            className="flex-1 rounded-xl shadow-md overflow-hidden relative min-h-[300px]"
             style={{ backgroundImage: `url(${generalbg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
           >
             <div className="absolute inset-0 bg-black/50"></div>
             
-            <div className="relative z-10 p-8 flex flex-col text-white">
+            <div className="relative z-10 p-8 flex flex-col h-full text-white">
               <h2 className="font-montserrat font-bold text-2xl text-white mb-8">
                 General Departments
               </h2>
@@ -43,46 +37,42 @@ export default function DepartmentList({ onNavigate }) {
                   For <strong className="font-bold">FIRST TIME</strong> or <strong className="font-bold">FOLLOW UP</strong>
                 </p>
               </div>
+              
               <button 
-              onClick={handleReserveGeneral}
-              className="font-poppins text-white font-semibold text-lg hover:underline group"
-            >
-              RESERVE AN APPOINTMENT
-              <span className="ml-2 transform group-hover:translate-x-1 transition-transform">
-              →
-              </span>
+                onClick={() => navigate('/general-form')}
+                className="font-poppins text-white font-semibold text-lg hover:underline group text-left mt-auto">
+                RESERVE A GENERAL APPOINTMENT
+                <span className="ml-2 inline-block transform group-hover:translate-x-1 transition-transform">→</span>
               </button>
             </div>
           </div>
 
           <div
-            className="flex-1 rounded-xl shadow-md overflow-hidden relative"
+            className="flex-1 rounded-xl shadow-md overflow-hidden relative min-h-[300px]"
             style={{ backgroundImage: `url(${specialtybg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
           >
             <div className="absolute inset-0 bg-black/50"></div>
 
-            <div className="relative z-10 p-8 flex flex-col text-white">
+            <div className="relative z-10 p-8 flex flex-col h-full text-white">
               <h2 className="font-montserrat font-bold text-2xl text-white mb-8">
                 Specialty Departments
               </h2>
               <p className="font-poppins text-gray-100 text-sm leading-relaxed">
-                Provides consultations for common
+                Provides consultations for specific
                 <br />
-                health concerns and illnesses
+                medical fields and chronic conditions
               </p>
               <div className="mt-4 mb-10">
                 <p className="font-poppins text-white text-sm">
                   Strictly <strong className="font-bold">REFERRALS ONLY</strong>
                 </p>
               </div>
+
               <button 
-              onClick={handleReserveSpecialty}
-              className="font-poppins text-white font-semibold text-lg hover:underline group"
-            >
-              RESERVE AN APPOINTMENT
-              <span className="ml-2 transform group-hover:translate-x-1 transition-transform">
-              →
-              </span>
+                onClick={() => navigate('/specialty-form')}
+                className="font-poppins text-white font-semibold text-lg hover:underline group text-left mt-auto">
+                RESERVE A SPECIALTY APPOINTMENT
+                <span className="ml-2 inline-block transform group-hover:translate-x-1 transition-transform">→</span>
               </button>
             </div>
           </div>
