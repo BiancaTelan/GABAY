@@ -17,9 +17,13 @@ export default function SignUp({ onCompleteSignup }) {
     });
 
     const [errors, setErrors] = useState({});
+    const [serverError, setServerError] = useState('');    
+    const [successMsg, setSuccessMsg] = useState('');       
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
       e.preventDefault();
+      setServerError('');
+      setSuccessMsg('');
       let newErrors = {};
       
       if (!formData.firstName.trim()) {
@@ -57,13 +61,39 @@ export default function SignUp({ onCompleteSignup }) {
 
       setErrors({});
 
-      const userData = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email
+      const payload = {
+        firstname: formData.firstName.trim(),
+        surname: formData.lastName.trim(),
+        email: formData.email.trim(),
+        password: formData.password,
+        confirm_password: formData.confirmPassword
       };
-      console.log("Account Created! Logging you in...", userData);
-      onCompleteSignup(userData);
+
+      try {
+        const response = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json', 
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.detail || 'Failed to create account. Please try again.');
+        }
+
+        setSuccessMsg("Account created successfully! Redirecting to login...");
+        
+        setTimeout(() => {
+           onNavigate('HospitalNumber');
+        }, 2000);
+
+      } catch (error) {
+        console.error("Signup Error:", error);
+        setServerError(error.message);
+      }
     };
 
     return (
@@ -92,10 +122,24 @@ export default function SignUp({ onCompleteSignup }) {
 
           <div className="flex-1 p-8 md:p-12 bg-white">
             <h3 className="font-montserrat text-3xl font-bold text-gabay-blue text-center mb-2">Sign Up</h3>
-            <p className="font-poppins text-gray-500 text-center text-sm mb-8">Accomplish the form below to create an account</p>
+            <p className="font-poppins text-gray-500 text-center text-sm mb-6">Accomplish the form below to create an account</p>
             
+            {/* Server Error Message UI */}
+            {serverError && (
+              <div className="mb-4 p-3 text-sm text-red-700 bg-red-100 rounded-lg text-center font-poppins animate-pulse">
+                {serverError}
+              </div>
+            )}
+
+            {/* Success Message UI */}
+            {successMsg && (
+              <div className="mb-4 p-3 text-sm text-green-700 bg-green-100 rounded-lg text-center font-poppins">
+                {successMsg}
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input 
                   label="First Name" 
                   placeholder="Enter your first name" 
@@ -115,6 +159,7 @@ export default function SignUp({ onCompleteSignup }) {
                   isEditing={true}
                 />
               </div>
+              
               <Input 
                 label="Email Address" 
                 type="email" 
@@ -153,7 +198,7 @@ export default function SignUp({ onCompleteSignup }) {
               </div>
             </form>
 
-            <p className="font-poppins text-center text-sm mt-4">
+            <p className="font-poppins text-center text-sm mt-6">
               Already have an account? 
               <button 
                 onClick={() => navigate('/login')} 
