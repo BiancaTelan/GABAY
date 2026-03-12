@@ -48,6 +48,10 @@ export default function SignUp({ onCompleteSignup }) {
         newErrors.password = "Password is required";
       } else if (formData.password.length < 8) {
         newErrors.password = "Password must be at least 8 characters long";
+      } else if (!/\d/.test(formData.password)) {
+        newErrors.password = "Password must contain at least one number";
+      } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(formData.password)) {
+        newErrors.password = "Password must contain at least one special character (e.g., @, #, $)";
       }
 
       if (formData.password !== formData.confirmPassword) {

@@ -24,7 +24,7 @@ export default function Help() {
           answer="If you are a new patient, GABAY can generate you a hospital number upon Sign Up. Please take note of it since it will be PERMANENT." 
         />
         <FAQItem 
-          question="I forgot my Hospital Number. What should I do??" 
+          question="I forgot my Hospital Number. What should I do?" 
           answer="Patients can check their Hospital Number on their Account Page." 
         />
         <FAQItem 
