@@ -21,7 +21,15 @@ export default function Help() {
         />
         <FAQItem 
           question="What if I don't have a Hospital Number?" 
-          answer="GABAY can generate you a hospital number if you are a new patient. Please take note of it since it will be PERMANENT." 
+          answer="If you are a new patient, GABAY can generate you a hospital number upon Sign Up. Please take note of it since it will be PERMANENT." 
+        />
+        <FAQItem 
+          question="I forgot my Hospital Number. What should I do??" 
+          answer="Patients can check their Hospital Number on their Account Page." 
+        />
+        <FAQItem 
+          question="How do I reschedule an appointment reservation?" 
+          answer="In your Inbox, you can reschedule by pressing the provided link on your cancelled appointment or by simply filling out a new form." 
         />
         <FAQItem 
           question="Can I book for someone else?" 
