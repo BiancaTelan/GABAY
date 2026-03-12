@@ -7,6 +7,7 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast }) => {
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
@@ -58,15 +59,41 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (validate()) {
-      console.log(`Submitting ${type} change...`, formData);
-      if (setShowToast) {
-        setShowToast(true);
+      setIsLoading(true);
+      
+      try {
+        // PUT BACKEND LOGIC HERE
+        // Replace '/api/update-account' with your actual endpoint
+        /*
+        const response = await fetch('/api/update-account', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: type, // Tells backend if it's an email or password update
+            ...formData
+          }),
+        });
+        
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || "Failed to update");
+        */
+
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        console.log(`Submitting ${type} change...`, formData);
+        
+        if (setShowToast) {
+          setShowToast(true);
+        }
+        onClose();
+      } catch (err) {
+        setErrors({ server: err.message });
+      } finally {
+        setIsLoading(false);
       }
-      // PUT BACKEND LOGIC HERE
-      onClose();
     }
   };
 
@@ -87,14 +114,16 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast }) => {
           <button 
             type="button" 
             onClick={onClose} 
-            className="text-gabay-blue hover:underline font-poppins text-lg transition-all"
+            disabled={isLoading}
+            className="text-gabay-blue hover:underline font-poppins text-lg transition-all disabled:opacity-50"
           >
             Cancel
           </button>
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
-          
+          {errors.server && <p className="text-red-500 text-sm mb-4 text-center bg-red-50 p-2 rounded">{errors.server}</p>}
+
           {isEmailType ? (
             <>
               <div className="mb-6">
@@ -190,9 +219,17 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast }) => {
           <div className="flex justify-center">
             <button 
               type="submit" 
-              className="bg-gabay-teal hover:bg-gabay-teal2 text-white font-montserrat font-bold py-3 px-12 rounded-full transition-all shadow-md uppercase tracking-wide"
+              disabled={isLoading}
+              className={`bg-gabay-teal hover:bg-gabay-teal2 text-white font-montserrat font-bold py-3 px-12 rounded-full transition-all shadow-md uppercase tracking-wide flex items-center gap-2 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-              {isEmailType ? "Change Email" : "Change Password"}
+              {isLoading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Processing...
+                </>
+              ) : (
+                isEmailType ? "Change Email" : "Change Password"
+              )}
             </button>
           </div>
         </form>
