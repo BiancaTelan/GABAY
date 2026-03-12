@@ -313,6 +313,7 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
         onClose={() => setIsModalOpen(false)} 
         type={modalType} 
         currentEmail={localUserInfo.email}
+        setShowToast={setShowToast}
       />
     </div>
   );

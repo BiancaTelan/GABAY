@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 
-const ChangeModal = ({ isOpen, onClose, type = "password" }) => {
+const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast }) => {
   const isEmailType = type === "email";
   
   const [showCurrent, setShowCurrent] = useState(false);
@@ -62,6 +62,9 @@ const ChangeModal = ({ isOpen, onClose, type = "password" }) => {
     e.preventDefault();
     if (validate()) {
       console.log(`Submitting ${type} change...`, formData);
+      if (setShowToast) {
+        setShowToast(true);
+      }
       // PUT BACKEND LOGIC HERE
       onClose();
     }
