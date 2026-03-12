@@ -22,6 +22,7 @@ import RescheduleForm from './pages/RescheduleForm';
 import ReservationConfirmation from './pages/R.F.Confirmation';
 import AppointmentConfirmed from './pages/ApptConfirmed';
 import AppointmentCancelled from './pages/ApptCancelled';
+import ForgotPassword from './pages/ForgotPassword';
 
 function App() { 
   const navigate = useNavigate();
@@ -98,6 +99,7 @@ function App() {
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/login" element={<Login setIsLoggedIn={handleLogin} />} />
           <Route path="/signup" element={<SignUp onCompleteSignup={handleCompleteSignUp} />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           {/* Protected Routes */}
           <Route path="/departments" element={<ProtectedRoute><DepartmentList onReserveGeneral={() => { setFormMode('fill'); navigate('/general-form'); }} onReserveSpecialty={() => { setFormMode('fill'); navigate('/specialty-form'); }} /></ProtectedRoute>} />
           <Route path="/account" element={<ProtectedRoute><Account userInfo={userInfo} onLogout={handleLogout} onUpdateProfile={setUserInfo} /></ProtectedRoute>} />

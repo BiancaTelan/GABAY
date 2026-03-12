@@ -2,7 +2,7 @@ import caintaBg from '../assets/caintaBg.png';
 import gabayLogo from '../assets/gabayLogo.png';
 import Button from '../components/button';
 import Input from '../components/input';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useState, useContext } from 'react';
 import { emailPattern } from '../utils/constants';
 import { AuthContext } from '../authContext';
@@ -150,10 +150,10 @@ export default function Login({ setIsLoggedIn }) {
                   Remember me
                 </span>
               </label>
-              <button type="button"
-                className="text-xs font-poppins font-medium text-gabay-blue hover:underline hover:text-gabay-navy transition-colors">
-                Forgot Password?
-              </button>
+              <Link to="/forgot-password"
+              className="text-xs font-poppins font-medium text-gabay-blue hover:underline hover:text-gabay-navy transition-colors">
+              Forgot Password?
+              </Link>
             </div>
           
             <div className="flex justify-center mt-6">
