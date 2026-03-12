@@ -3,7 +3,7 @@ import gabayLogo from '../assets/gabayLogo.png';
 import Button from '../components/button';
 import Input from '../components/input';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'; // 1. Hook is already here
 import { emailPattern, namePattern } from '../utils/constants';
 
 export default function SignUp({ onCompleteSignup }) {
@@ -84,10 +84,10 @@ export default function SignUp({ onCompleteSignup }) {
           throw new Error(data.detail || 'Failed to create account. Please try again.');
         }
 
-        setSuccessMsg("Account created successfully! Redirecting to login...");
+        setSuccessMsg("Account created successfully! Redirecting...");
         
         setTimeout(() => {
-           onNavigate('HospitalNumber');
+           navigate('/hospital-number'); 
         }, 2000);
 
       } catch (error) {
@@ -97,7 +97,7 @@ export default function SignUp({ onCompleteSignup }) {
     };
 
     return (
-      <div className="relative min-h-screen flex items-center justify-center font-sans">
+      <div className="relative min-h-screen flex items-center justify-center font-sans animate-in fade-in duration-500 text-left">
         <div 
           className="absolute inset-0 z-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${caintaBg})` }}
@@ -111,27 +111,25 @@ export default function SignUp({ onCompleteSignup }) {
 
         <div className="relative z-20 flex flex-col md:flex-row w-full max-w-5xl bg-white shadow-2xl overflow-hidden md:rounded-2sm mx-4">
           <div className="hidden md:flex flex-1 bg-gabay-blue p-12 flex-col justify-center text-white">
-            <h1 className="font-montserrat text-4xl font-bold leading-tight mb-6">
+            <h1 className="font-montserrat text-4xl font-bold leading-tight mb-6 text-left">
               General to Specialty Appointment & Booking Assistant for You
             </h1>
-            <h2 className="font-montserrat text-xl font-semibold mb-6">Your health, our priority.</h2>
-            <p className="font-poppins">
+            <h2 className="font-montserrat text-xl font-semibold mb-6 text-left">Your health, our priority.</h2>
+            <p className="font-poppins text-left">
               A helpful guide to reserve your appointment slots in Cainta Municipal Hospital.
             </p>
           </div>
 
-          <div className="flex-1 p-8 md:p-12 bg-white">
+          <div className="flex-1 p-8 md:p-12 bg-white text-left">
             <h3 className="font-montserrat text-3xl font-bold text-gabay-blue text-center mb-2">Sign Up</h3>
             <p className="font-poppins text-gray-500 text-center text-sm mb-6">Accomplish the form below to create an account</p>
             
-            {/* Server Error Message UI */}
             {serverError && (
               <div className="mb-4 p-3 text-sm text-red-700 bg-red-100 rounded-lg text-center font-poppins animate-pulse">
                 {serverError}
               </div>
             )}
 
-            {/* Success Message UI */}
             {successMsg && (
               <div className="mb-4 p-3 text-sm text-green-700 bg-green-100 rounded-lg text-center font-poppins">
                 {successMsg}
@@ -198,7 +196,7 @@ export default function SignUp({ onCompleteSignup }) {
               </div>
             </form>
 
-            <p className="font-poppins text-center text-sm mt-6">
+            <p className="font-poppins text-center text-sm mt-6 text-gray-600">
               Already have an account? 
               <button 
                 onClick={() => navigate('/login')} 
