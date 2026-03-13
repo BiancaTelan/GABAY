@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle } from 'lucide-react'; 
+import { useNavigate } from 'react-router-dom'; 
 
-const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast }) => {
+const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast, currentEmail }) => {
+  const navigate = useNavigate();
   const isEmailType = type === "email";
   
   const [showCurrent, setShowCurrent] = useState(false);
@@ -9,9 +11,10 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast }) => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
+  const [isSuccess, setIsSuccess] = useState(false); 
+  
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
-    currentEmail: 'juandelacruz@gmail.com', 
     newEmail: '',
     currentPassword: '',
     newPassword: '',
@@ -65,30 +68,44 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast }) => {
       setIsLoading(true);
       
       try {
-        // PUT BACKEND LOGIC HERE
-        // Replace '/api/update-account' with your actual endpoint
-        /*
-        const response = await fetch('/api/update-account', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: type, // Tells backend if it's an email or password update
-            ...formData
-          }),
-        });
-        
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message || "Failed to update");
-        */
+        let endpoint = '';
+        let payload = {};
 
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        console.log(`Submitting ${type} change...`, formData);
-        
-        if (setShowToast) {
-          setShowToast(true);
+        if (isEmailType) {
+          endpoint = '/api/auth/change-email';
+          payload = {
+            current_email: currentEmail,
+            new_email: formData.newEmail,
+            password: formData.currentPassword
+          };
+        } else {
+          endpoint = '/api/auth/change-password';
+          payload = {
+            email: currentEmail,
+            current_password: formData.currentPassword,
+            new_password: formData.newPassword
+          };
         }
-        onClose();
+
+        const response = await fetch(endpoint, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.detail || "Failed to update account.");
+        }
+
+        if (isEmailType) {
+          setIsSuccess(true);
+        } else {
+          if (setShowToast) setShowToast(true);
+          onClose();
+        }
+
       } catch (err) {
         setErrors({ server: err.message });
       } finally {
@@ -100,6 +117,28 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast }) => {
   const inputStyle = "w-full px-4 py-3 rounded-md border outline-none transition-all font-poppins text-gray-600 focus:border-gabay-teal pr-12";
   const labelStyle = "block text-gabay-navy font-poppins font-medium mb-2 text-lg";
   const errorTextStyle = "text-red-500 text-xs font-poppins mt-1 block min-h-[16px]";
+
+  if (isSuccess) {
+    return (
+      <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 animate-in fade-in duration-300">
+        <div className="bg-white w-full max-w-md rounded-xl p-10 shadow-2xl border border-gray-300 relative text-center animate-in zoom-in duration-300">
+          <CheckCircle size={70} className="text-gabay-teal mx-auto mb-6" />
+          <h2 className="text-2xl font-montserrat font-bold text-gabay-teal mb-4">
+            Email Updated!
+          </h2>
+          <p className="text-gray-500 font-poppins text-sm mb-8 leading-relaxed">
+            Your email has been successfully changed. For security reasons, your active session has ended. Please log in again using your new email address.
+          </p>
+          <button 
+            onClick={() => navigate('/login')}
+            className="w-full bg-gabay-teal hover:bg-teal-600 text-white font-montserrat font-bold py-3 px-6 rounded-full transition-all shadow-md uppercase tracking-wide"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
@@ -130,7 +169,7 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast }) => {
                 <label className={labelStyle}>Current Email</label>
                 <input 
                   type="text" 
-                  value={formData.currentEmail} 
+                  value={currentEmail} 
                   disabled 
                   className={`${inputStyle} bg-gray-50 border-gray-200 cursor-not-allowed`} 
                 />
@@ -169,6 +208,7 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast }) => {
             </>
           ) : (
             <>
+              {/* --- PASSWORD CHANGE INPUTS --- */}
               <div className="relative mb-6">
                 <label className={labelStyle}>Current Password <span className="text-red-500">*</span></label>
                 <input 
@@ -220,7 +260,7 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast }) => {
             <button 
               type="submit" 
               disabled={isLoading}
-              className={`bg-gabay-teal hover:bg-gabay-teal2 text-white font-montserrat font-bold py-3 px-12 rounded-full transition-all shadow-md uppercase tracking-wide flex items-center gap-2 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+              className={`bg-gabay-teal hover:bg-teal-600 text-white font-montserrat font-bold py-3 px-12 rounded-full transition-all shadow-md uppercase tracking-wide flex items-center gap-2 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
               {isLoading ? (
                 <>

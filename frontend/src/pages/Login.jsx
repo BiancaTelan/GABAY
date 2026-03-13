@@ -56,11 +56,20 @@ export default function Login({ setIsLoggedIn }) {
         body: urlEncodedData.toString(),
       });
       
+      const data = await response.json();
+      
       if (!response.ok) {
-        throw new Error('Invalid email or password');
+        const errorMessage = data.detail || 'Incorrect email or password';
+        
+        setErrors({
+          email: " ", 
+          password: errorMessage 
+        });
+        
+        throw new Error(errorMessage);
       }
 
-      const data = await response.json();
+
       const accessToken = data.access_token;
 
       const payload = JSON.parse(atob(accessToken.split('.')[1]));
@@ -68,17 +77,15 @@ export default function Login({ setIsLoggedIn }) {
 
       login(accessToken, userRole);
 
-      // --- React Router Logic ---
-      setIsLoggedIn(true);
       
-      // If the user was redirected here from a private page, send them back there.
-      // Otherwise, send them to the Home page ('/').
+      setIsLoggedIn(true);
+
       const origin = location.state?.from?.pathname || '/';
       navigate(origin);
 
     } catch (error) {
       console.error('Login failed:', error);
-      setServerError(error.message || 'An error occurred during login. Please try again.');
+      setServerError(error.message); 
     }
   };
 

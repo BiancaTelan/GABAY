@@ -19,6 +19,9 @@ const ForgotPassword = () => {
     confirmPassword: ''
   });
 
+  const [serverError, setServerError] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+
   useEffect(() => {
     let interval;
     if (step === 2 && timer > 0) {
@@ -32,11 +35,20 @@ const ForgotPassword = () => {
     return () => clearInterval(interval);
   }, [step, timer]);
 
-  const handleResendOTP = () => {
-    setTimer(60);
-    setCanResend(false);
-    // ADD RESET PASSWD API HERE
-    console.log("OTP Resent to:", formData.email);
+  const handleResendOTP = async () => {
+    setServerError('');
+    try {
+      await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email })
+      });
+      setTimer(60);
+      setCanResend(false);
+      console.log("OTP Resent!");
+    } catch (err) {
+      setServerError("Failed to resend OTP.");
+    }
   };
 
   const handleChange = (e) => {
@@ -87,17 +99,78 @@ const ForgotPassword = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleNextStep = (e) => {
+  const handleNextStep = async (e) => {
     e.preventDefault();
-    if (step === 1 && !validateStep1()) return;
-    if (step === 2 && !validateStep2()) return;
-    setStep(step + 1);
+    setServerError('');
+    
+    // --- STEP 1: SEND EMAIL, GET OTP ---
+    if (step === 1) {
+      if (!validateStep1()) return;
+      setIsProcessing(true);
+      try {
+        const response = await fetch('/api/auth/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: formData.email })
+        });
+        if (!response.ok) throw new Error("Failed to send OTP.");
+        setStep(2); // Move to OTP screen
+      } catch (err) {
+        setServerError(err.message);
+      } finally {
+        setIsProcessing(false);
+      }
+    } 
+    
+    // --- STEP 2: VERIFY OTP ---
+    else if (step === 2) {
+      if (!validateStep2()) return;
+      setIsProcessing(true);
+      try {
+        const response = await fetch('/api/auth/verify-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: formData.email, otp: formData.otp })
+        });
+        const data = await response.json();
+        
+        if (!response.ok) throw new Error(data.detail || "Invalid OTP.");
+        setStep(3); // Move to New Password screen
+      } catch (err) {
+        setServerError(err.message);
+      } finally {
+        setIsProcessing(false);
+      }
+    }
   };
 
-  const handleFinalSubmit = (e) => {
+  const handleFinalSubmit = async (e) => {
     e.preventDefault();
+    setServerError('');
+    
     if (!validateStep3()) return;
-    navigate('/login');
+    setIsProcessing(true);
+
+    try {
+      const response = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: formData.email, 
+          newPassword: formData.newPassword 
+        })
+      });
+      const data = await response.json();
+      
+      if (!response.ok) throw new Error(data.detail || "Failed to reset password.");
+      
+      // Success! Send them to login
+      navigate('/login');
+    } catch (err) {
+      setServerError(err.message);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const inputStyle = "w-full px-4 py-3 rounded-md border outline-none transition-all font-poppins text-gray-600 focus:border-gabay-teal pr-12";
@@ -116,6 +189,12 @@ const ForgotPassword = () => {
         <Link to="/login" className="flex items-center text-gabay-blue text-md font-poppins mb-10 hover:opacity-80 transition-opacity">
           <ChevronLeft size={20} className="mr-1" /> Back to Login
         </Link>
+
+        {serverError && (
+          <div className="mb-6 p-3 text-sm text-red-700 bg-red-100 rounded-lg text-center font-poppins font-semibold">
+            {serverError}
+          </div>
+        )}
 
         {step === 1 && (
           <form onSubmit={handleNextStep} noValidate className="animate-in fade-in duration-500">

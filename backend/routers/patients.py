@@ -58,7 +58,34 @@ def generate_hospital_number(request: HospitalNumberRequest, db: Session = Depen
         print(f"\n❌ ERROR GENERATING ID: {str(e)}\n")
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Server Error: {str(e)}")
-    
+
+
+@router.get("/profile/{email}")
+def get_patient_profile(email: str, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    patient = db.query(Patient).filter(Patient.userID == user.userID).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient profile not found")
+
+    formatted_dob = patient.dob.strftime("%m/%d/%Y") if patient.dob else ""
+
+    return {
+        "firstname": patient.firstname,
+        "surname": patient.surname,
+        "email": user.email,
+        "hospital_num": patient.hospital_num or "",
+        "dob": formatted_dob,
+        "gender": patient.gender or "Female",
+        "contactNumber": patient.contactNumber or "",
+        "address": patient.address or "",
+        "emergencyContact": patient.emergencyContact or "",
+        "emergencyContactNum": patient.emergencyContactNum or "",
+        "emergencyEmail": patient.emergencyEmail or ""
+    }
+
 @router.put("/update-profile")
 def update_patient_profile(profile_data: PatientProfileUpdate, db: Session = Depends(get_db)):
     try:
@@ -86,11 +113,16 @@ def update_patient_profile(profile_data: PatientProfileUpdate, db: Session = Dep
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid Date of Birth format. Use MM/DD/YYYY.")
 
+        patient.firstname = profile_data.firstname 
+        patient.surname = profile_data.surname
         patient.hospital_num = profile_data.hospital_num
         patient.contactNumber = profile_data.contactNumber
         patient.dob = formatted_dob
         patient.gender = profile_data.gender
         patient.address = profile_data.address
+        patient.emergencyContact = profile_data.emergencyContact
+        patient.emergencyContactNum = profile_data.emergencyContactNum
+        patient.emergencyEmail = profile_data.emergencyEmail
         
         db.commit()
         

@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Input from '../components/input';
 import { LogOut, Trash2, CheckCircle } from 'lucide-react';
 import { emailPattern, namePattern, phonePattern, dobPattern, minAgeRequirement } from '../utils/constants';
 import ConfirmationModal from '../components/confirmModal';
+import ChangeModal from '../components/changeModal';
+import { AuthContext } from '../authContext';
 
 export default function Account({ userInfo, onLogout, onUpdateProfile }) {
   const navigate = useNavigate();
+  const { token } = useContext(AuthContext);
   
   const [localUserInfo, setLocalUserInfo] = useState({
     firstname: "",
-    lastname: "",
+    surname: "",
     hospital_num: "",
     email: "",
     contactNumber: "",
@@ -28,13 +31,24 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
   const [showToast, setShowToast] = useState(false);
 
   useEffect(() => {
-    if (userInfo) {
-      setLocalUserInfo(prev => ({
-        ...prev,
-        ...userInfo
-      }));
-    }
-  }, [userInfo]);
+    const fetchProfile = async () => {
+      if (!token) return;
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const userEmail = payload.sub;
+
+        const response = await fetch(`/api/patients/profile/${userEmail}`);
+        if (response.ok) {
+          const data = await response.json();
+          setLocalUserInfo(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch profile data:", error);
+      }
+    };
+    
+    fetchProfile();
+  }, [token]);
 
   useEffect(() => {
     if (showToast) {
@@ -104,8 +118,8 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
     if (!localUserInfo.firstname.trim()) newErrors.firstname = "First name is required";
     else if (!namePattern.test(localUserInfo.firstname)) newErrors.firstname = "Name cannot contain numbers";
 
-    if (!localUserInfo.lastname.trim()) newErrors.lastname = "Last name is required";
-    else if (!namePattern.test(localUserInfo.lastname)) newErrors.lastname = "Name cannot contain numbers";
+    if (!localUserInfo.surname.trim()) newErrors.surname = "Last name is required";
+    else if (!namePattern.test(localUserInfo.surname)) newErrors.surname = "Name cannot contain numbers";
 
     if (!localUserInfo.email.trim()) newErrors.email = "Email address is required";
     else if (!emailPattern.test(localUserInfo.email)) newErrors.email = "Enter a valid email address";
@@ -145,15 +159,31 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
     setIsEditing(false);
   };
 
-  const handleSave = () => {
+const handleSave = async () => {
     if (validate()) {
-    console.log("Saving updated profile to global state:", localUserInfo);
-    
-      if (onUpdateProfile) {
-        onUpdateProfile(localUserInfo);
+      try {
+        const response = await fetch('/api/patients/update-profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(localUserInfo)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.detail || "Failed to save changes.");
+        }
+
+        if (onUpdateProfile) {
+          onUpdateProfile(localUserInfo);
+        }
+        setIsEditing(false);
+        setShowToast(true);
+
+      } catch (error) {
+        console.error("Save Error:", error);
+        alert(error.message); 
       }
-      setIsEditing(false);
-      setShowToast(true);
     }
   };
 
@@ -205,15 +235,16 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
               {isEditing ? (
                 <>
-                  <Input label="First Name" name="firstName" value={localUserInfo.firstName} onChange={handleInputChange} error={errors.firstName} isEditing={isEditing} required />
-                  <Input label="Last Name" name="lastName" value={localUserInfo.lastName} onChange={handleInputChange} error={errors.lastName} isEditing={isEditing} required />
+                  <Input label="First Name" name="firstname" value={localUserInfo.firstname} onChange={handleInputChange} error={errors.firstname} isEditing={isEditing} required />
+                  <Input label="Last Name" name="surname" value={localUserInfo.surname} onChange={handleInputChange} error={errors.surname} isEditing={isEditing} required />
                 </>
               ) : (
-                <Input label="Full Name" value={`${localUserInfo.firstName} ${localUserInfo.lastName}`} readOnly noHover />
+                <Input label="Full Name" value={`${localUserInfo.firstname} ${localUserInfo.surname}`} readOnly noHover />
               )}
               
-              <Input label="Hospital Number" value={localUserInfo.hospitalNumber} readOnly noHover />
-              <Input label="Email Address" name="email" value={localUserInfo.email} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} error={errors.email} isEditing={isEditing} required />
+
+              <Input label="Hospital Number" value={localUserInfo.hospital_num} readOnly noHover />
+              <Input label="Email Address" name="email" value={localUserInfo.email} readOnly={true} noHover={true} error={errors.email} isEditing={false} required />
               
               <div className="flex flex-col">
                 <label className="text-sm font-medium text-gabay-navy mb-1">Gender</label>
@@ -247,7 +278,7 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
               />
 
               <div className="md:col-span-1">
-                <Input label="Home Address" name="homeAddress" value={localUserInfo.homeAddress} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} required error={errors.homeAddress} />
+                <Input label="Home Address" name="address" value={localUserInfo.address} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} required error={errors.homeAddress} />
               </div>
               <Input label="Contact Number" name="contactNumber" value={localUserInfo.contactNumber} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} required error={errors.contactNumber} />
             </div>
