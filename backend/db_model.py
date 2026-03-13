@@ -110,6 +110,9 @@ class AppointmentStatus(Base):
     statusName: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     statusColor: Mapped[str] = mapped_column(String(7), default="#FFFFFF")
 
+    # === Relationship ===
+    appointments: Mapped[list["Appointment"]] = relationship(back_populates="status")
+
 
 class Appointment(Base):
     __tablename__ = "appointmentTable"
@@ -123,14 +126,18 @@ class Appointment(Base):
      
     purposeDetailed: Mapped[Optional[str]] = mapped_column(Text)
     type: Mapped[Optional[str]] = mapped_column(String(50))
-    referral_doc: Mapped[Optional[str]] = mapped_column(String(100)) 
-    preferredDate: Mapped[date] = mapped_column(Date, nullable=False)
+    referral_doc: Mapped[Optional[str]] = mapped_column(String(255)) 
+    hasPreviousRecord: Mapped[bool] = mapped_column(Boolean, default=False)
+    preferredStartDate: Mapped[date] = mapped_column(Date, nullable=False)
+    preferredEndDate: Mapped[Optional[date]] = mapped_column(Date)
     createdAt: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     # === Relationships ===
     patient: Mapped["Patient"] = relationship(back_populates="appointments")
     doctor: Mapped[Optional["Doctor"]] = relationship(back_populates="appointments")
     assignedSchedule: Mapped[Optional["Schedule"]] = relationship(back_populates="appointments")
+    department: Mapped["Department"] = relationship(back_populates="appointments")
+    status: Mapped["AppointmentStatus"] = relationship(back_populates="appointments")
 
 
 class Staff(Base): 
