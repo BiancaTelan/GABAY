@@ -73,6 +73,12 @@ function App() {
     }
   };
 
+  const handleNavigation = (destination, data = null) => {
+    if (destination === 'registerNumber') navigate('/register-number');
+    if (destination === 'generatedNumber') navigate('/generated-number', { state: data });
+    if (destination === 'account') navigate('/account');
+  };
+
   const ProtectedRoute = ({ children }) => {
     if (!isLoggedIn) {
       return <Navigate to="/login" state={{ from: location }} replace />;
@@ -103,9 +109,9 @@ function App() {
           {/* Protected Routes */}
           <Route path="/departments" element={<ProtectedRoute><DepartmentList onReserveGeneral={() => { setFormMode('fill'); navigate('/general-form'); }} onReserveSpecialty={() => { setFormMode('fill'); navigate('/specialty-form'); }} /></ProtectedRoute>} />
           <Route path="/account" element={<ProtectedRoute><Account userInfo={userInfo} onLogout={handleLogout} onUpdateProfile={setUserInfo} /></ProtectedRoute>} />
-          <Route path="/hospital-number" element={<ProtectedRoute><HospitalNumber /></ProtectedRoute>} />
+          <Route path="/hospital-number" element={<ProtectedRoute><HospitalNumber onNavigate={handleNavigation} /></ProtectedRoute>} />
           <Route path="/register-number" element={<ProtectedRoute><RegisterHospitalNumber initialData={registrationData} onFinalSubmit={handleFinalRegistration} /></ProtectedRoute>} />
-          <Route path="/generated-number" element={<ProtectedRoute><GeneratedHospitalNumber /></ProtectedRoute>} />
+          <Route path="/generated-number" element={<ProtectedRoute><GeneratedHospitalNumber onNavigate={handleNavigation} /></ProtectedRoute>} />
           <Route path="/prevAppt" element={<ProtectedRoute><AppointmentHistory /></ProtectedRoute>} />
           <Route path="/inbox" element={<ProtectedRoute><Inbox userInfo={userInfo} /></ProtectedRoute>} />
           <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />

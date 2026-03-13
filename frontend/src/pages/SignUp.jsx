@@ -2,12 +2,15 @@ import caintaBg from '../assets/caintaBg.png';
 import gabayLogo from '../assets/gabayLogo.png';
 import Button from '../components/button';
 import Input from '../components/input';
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // 1. Hook is already here
+import { useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AuthContext } from '../authContext'; // <-- Import your AuthContext
 import { emailPattern, namePattern } from '../utils/constants';
 
 export default function SignUp({ onCompleteSignup }) {
     const navigate = useNavigate();
+    const { login } = useContext(AuthContext); // <-- Grab the login function
+    
     const [formData, setFormData] = useState({
       firstName: '',
       lastName: '',
@@ -74,11 +77,10 @@ export default function SignUp({ onCompleteSignup }) {
       };
 
       try {
+        // --- 1. SIGN UP THE USER ---
         const response = await fetch('/api/auth/signup', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json', 
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
 
@@ -90,9 +92,33 @@ export default function SignUp({ onCompleteSignup }) {
 
         setSuccessMsg("Account created successfully! Redirecting...");
         
+        const urlEncodedData = new URLSearchParams();
+        urlEncodedData.append('username', payload.email); 
+        urlEncodedData.append('password', payload.password);
+
+        const loginResponse = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: urlEncodedData.toString(),
+        });
+        
+        if (!loginResponse.ok) {
+           throw new Error('Auto-login failed. Please go to the login page.');
+        }
+
+        const loginData = await loginResponse.json();
+        const accessToken = loginData.access_token;
+        const decodedPayload = JSON.parse(atob(accessToken.split('.')[1]));
+
+        login(accessToken, decodedPayload.role);
+
         setTimeout(() => {
-           navigate('/hospital-number'); 
-        }, 2000);
+           onCompleteSignup({
+             firstName: payload.firstname,
+             lastName: payload.surname,
+             email: payload.email
+           });
+        }, 1500);
 
       } catch (error) {
         console.error("Signup Error:", error);
@@ -203,6 +229,7 @@ export default function SignUp({ onCompleteSignup }) {
             <p className="font-poppins text-center text-sm mt-6 text-gray-600">
               Already have an account? 
               <button 
+                type="button"
                 onClick={() => navigate('/login')} 
                 className="text-gabay-blue font-bold ml-1 hover:underline"
               >

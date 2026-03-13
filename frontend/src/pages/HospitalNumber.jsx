@@ -2,13 +2,53 @@ import { useNavigate } from 'react-router-dom';
 import Button from '../components/button';
 import YesIcon from '../assets/personCheck.png';
 import NoIcon from '../assets/personCancel.png';
+import { useContext, useState } from 'react';
+import { AuthContext } from '../authContext';
 
-export default function HospitalNumber() {
+export default function HospitalNumber({ onNavigate }) {
+  const { token } = useContext(AuthContext);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [serverError, setServerError] = useState('');
+  
   const navigate = useNavigate();
 
-  const handleGet = () => {
-    console.log('Get hospital number');
-    navigate('/generated-number');
+  const handleGet = async () => {
+    setIsGenerating(true);
+    setServerError('');
+
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const userEmail = payload.sub;
+
+      const response = await fetch('/api/patients/generate-hospital-number', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: userEmail })
+      });
+
+      const rawText = await response.text();
+      let data = {};
+      try {
+          data = rawText ? JSON.parse(rawText) : {};
+      } catch (e) {
+          throw new Error("Backend server is offline or returned an invalid response.");
+      }
+
+      if (!response.ok) {
+        throw new Error(data.detail || 'Failed to generate hospital number');
+      }
+
+      onNavigate('generatedNumber', { 
+        hospital_num: data.hospital_num, 
+        patientName: data.patientName
+      });
+
+    } catch (error) {
+      console.error('Generation failed:', error);
+      setServerError(error.message); // This saves the error...
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -27,6 +67,12 @@ export default function HospitalNumber() {
           </p>
         </div>
       </div>
+
+      {serverError && (
+        <div className="mb-6 w-full max-w-4xl p-4 bg-red-100 text-red-700 text-center rounded-lg font-poppins font-semibold">
+          {serverError}
+        </div>
+      )}
 
       <div className="flex flex-col md:flex-row gap-6 w-full max-w-4xl">
         <div className="flex-1 bg-white rounded-xl shadow-md p-8 text-center">
@@ -50,8 +96,8 @@ export default function HospitalNumber() {
             I don't have a hospital number
           </h3>
           <img src={NoIcon} alt="No icon" className="w-20 h-20 mb-4 mt-4 mx-auto object-contain" />
-          <Button variant="teal" onClick={handleGet} className="w-65">
-            GET HOSPITAL NUMBER
+          <Button variant="teal" onClick={handleGet} className="w-65" disabled={isGenerating}>
+            {isGenerating ? "GENERATING..." : "GET HOSPITAL NUMBER"}
           </Button>
         </div>
       </div>
