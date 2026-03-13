@@ -92,6 +92,9 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
     });
   };
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalType, setModalType] = useState('password');
+
   const closeModal = () => setModalConfig({ ...modalConfig, isOpen: false });
 
   const validate = () => {
@@ -277,8 +280,17 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
           </button>
           {isEditing && (
             <>
-              <button className="text-gabay-blue hover:text-gabay-navy transition-colors hover:underline text-sm font-medium text-left">Change Email</button>
-              <button className="text-gabay-blue hover:text-gabay-navy transition-colors hover:underline text-sm font-medium text-left">Change Password</button>
+            
+              <button onClick={() => { setModalType('email'); setIsModalOpen(true); }}
+              className="text-gabay-blue hover:text-gabay-navy transition-colors hover:underline text-sm font-medium text-left">
+              Change Email
+              </button>
+
+              <button onClick={() => { setModalType('password'); setIsModalOpen(true); }}
+              className="text-gabay-blue hover:text-gabay-navy transition-colors hover:underline text-sm font-medium text-left">
+              Change Password
+              </button>
+              
               <button onClick={openDeleteModal} className="text-red-500 hover:text-red-700 text-sm font-semibold mt-10 underline w-full flex gap-2 text-left">
                 <Trash2 size={16} /> Delete Account
               </button>
@@ -294,6 +306,14 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
         title={modalConfig.title}
         message={modalConfig.message}
         type={modalConfig.type}
+      />
+
+      <ChangeModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        type={modalType} 
+        currentEmail={localUserInfo.email}
+        setShowToast={setShowToast}
       />
     </div>
   );

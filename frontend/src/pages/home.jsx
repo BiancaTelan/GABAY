@@ -65,7 +65,7 @@ export default function Home() {
           </p>
 
           <div className="flex flex-col md:flex-row gap-8 items-start mb-16">
-            <div className="font-poppins text-lg flex-1 space-y-8 indent-first text-gray-700">
+            <div className="font-poppins text-lg flex-1 space-y-8 indent-first">
               <p>
                 Access to vital healthcare services in the Philippines, especially in the municipality of Cainta, is often hindered by traditional appointment booking methods.
               </p>
@@ -77,7 +77,7 @@ export default function Home() {
               <img 
                 src={introimage1} 
                 alt="Traditional queuing" 
-                className="w-full h-auto rounded-lg shadow-lg object-cover"
+                className="w-full h-auto object-cover"
               />
             </div>
           </div>
@@ -87,10 +87,10 @@ export default function Home() {
               <img 
                 src={introimage2} 
                 alt="GABAY solution" 
-                className="w-full h-full rounded-lg shadow-lg object-cover"
+                className="w-full h-full rounded-lg object-cover"
               />
             </div>
-            <div className="font-poppins text-lg flex-1 space-y-8 order-1 md:order-2 indent-first text-gray-700">
+            <div className="font-poppins text-lg flex-1 space-y-8 order-1 md:order-2 indent-first">
               <p>
                 Given the continuous growth of technology, researchers will need to implement new systems that simplify people’s lives, especially in healthcare. Researchers will value the citizens’ lives, which is why they will propose a clear solution to this major problem: the long queue.
               </p>
@@ -107,7 +107,7 @@ export default function Home() {
           <h2 className="font-montserrat text-4xl lg:text-6xl font-bold text-gabay-blue leading-tight mb-4 mt-15 text-center">
             How to book a reservation?
           </h2>
-          <p className="font-poppins text-lg text-center max-w-4xl mx-auto mt-6 mb-20">
+          <p className="font-poppins text-gray-600 text-lg text-center max-w-4xl mx-auto mt-6 mb-20">
             Get started with your scheduled consultation at Cainta Municipal Hospital in three steps.
           </p>
 
@@ -159,7 +159,7 @@ export default function Home() {
           <h2 className="font-montserrat text-4xl lg:text-6xl font-bold text-gabay-blue leading-tight mb-4 mt-15 text-center">
             Healthcare made simple.
           </h2>
-          <p className="font-poppins text-lg text-center max-w-4xl mx-auto mt-6 mb-20">
+          <p className="font-poppins text-gray-600 text-lg text-center max-w-4xl mx-auto mt-6 mb-20">
             GABAY is an alternative option to Cainta Municipal’s manual booking process.
           </p>
 

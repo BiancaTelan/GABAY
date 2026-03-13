@@ -39,7 +39,7 @@ export default function GeneratedHospitalNumber({ onNavigate }) {
         </div>
 
         <div className="bg-gray-100 border-l-4 border-gray-400 p-4 mb-8 text-sm text-gray-700 rounded-r">
-          <p className="font-poppins font-bold text-[#33AFAE]">PAALALA:</p>
+          <p className="font-poppins font-bold text-gabay-teal">PAALALA:</p>
           <p className= "font-poppins">
             Ito na po ang inyong <strong className="font-bold">PERMANENTENG</strong> numero dito sa BCMH. Kailangan po na ito ay <strong className="font-bold">PALAGI NINYONG DALA</strong> sa tuwina ninyong pagpapakonsulta o pagpunta dito sa ospital.
           </p>
