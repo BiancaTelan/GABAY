@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import DatePicker from "react-datepicker";
 import { CalendarDays, AlertCircle } from 'lucide-react';
 
 export default function RescheduleForm({ userInfo }) {
   const { appointmentId } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
 
   // FETCH DATA ID

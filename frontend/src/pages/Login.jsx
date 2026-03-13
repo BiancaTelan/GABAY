@@ -2,9 +2,10 @@ import caintaBg from '../assets/caintaBg.png';
 import gabayLogo from '../assets/gabayLogo.png';
 import Button from '../components/button';
 import Input from '../components/input';
-import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useState, useContext } from 'react';
 import { emailPattern } from '../utils/constants';
+import { AuthContext } from '../authContext';
 
 export default function Login({ setIsLoggedIn }) {
   const navigate = useNavigate();
@@ -16,9 +17,15 @@ export default function Login({ setIsLoggedIn }) {
   });
 
   const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState('');
 
-  const handleSubmit = async (e) => {
+  const { login } = useContext(AuthContext);
+
+  const handleLogin = async (e) => {
     e.preventDefault();
+    setErrors({});
+    setServerError('');
+
     let newErrors = {};
 
     if (!formData.email.trim()) {
@@ -35,28 +42,60 @@ export default function Login({ setIsLoggedIn }) {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      return;
+      return; 
     }
 
-    setErrors({});
-    console.log("Login Attempt:", formData);
+    const urlEncodedData = new URLSearchParams();
+    urlEncodedData.append('username', formData.email); 
+    urlEncodedData.append('password', formData.password);
 
-    const userData = { email: formData.email, name: 'Test User' };
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: urlEncodedData.toString(),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Invalid email or password');
+      }
 
-    setIsLoggedIn(userData);
+      const data = await response.json();
+      const accessToken = data.access_token;
+
+      const payload = JSON.parse(atob(accessToken.split('.')[1]));
+      const userRole = payload.role;
+
+      login(accessToken, userRole);
+
+      // --- React Router Logic ---
+      setIsLoggedIn(true);
+      
+      // If the user was redirected here from a private page, send them back there.
+      // Otherwise, send them to the Home page ('/').
+      const origin = location.state?.from?.pathname || '/';
+      navigate(origin);
+
+    } catch (error) {
+      console.error('Login failed:', error);
+      setServerError(error.message || 'An error occurred during login. Please try again.');
+    }
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center font-sans">
+    <div className="relative min-h-screen flex items-center justify-center font-sans animate-in fade-in duration-500 text-left">
       <div 
         className="absolute inset-0 z-0 bg-cover bg-center"
         style={{ backgroundImage: `url(${caintaBg})` }}
       />
+      
+      {/* GABAY Logo Link */}
       <div 
         className="absolute top-6 left-6 z-30 cursor-pointer hover:opacity-80 transition"
         onClick={() => navigate('/')}>
         <img src={gabayLogo} alt="GABAY Logo" className="h-10 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]" />
       </div>
+      
       <div className="absolute inset-0 z-10 bg-black opacity-50" />
 
       <div className="relative z-20 flex flex-col md:flex-row w-full max-w-5xl bg-white shadow-2xl overflow-hidden md:rounded-2sm mx-4 text-left">
@@ -74,7 +113,13 @@ export default function Login({ setIsLoggedIn }) {
           <h3 className="font-montserrat text-3xl font-bold text-gabay-blue text-center mb-2">Log In</h3>
           <p className="font-poppins text-gray-500 text-center text-sm mb-8">Accomplish the form below to access your account</p>
           
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {serverError && (
+            <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-6">
+              <p className="text-red-700 text-xs font-medium">{serverError}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} className="space-y-6">
             <Input 
               label="Email Address" 
               type="email" 
@@ -105,10 +150,10 @@ export default function Login({ setIsLoggedIn }) {
                   Remember me
                 </span>
               </label>
-              <button type="button"
-                className="text-xs font-poppins font-medium text-gabay-blue hover:underline hover:text-gabay-navy transition-colors">
-                Forgot Password?
-              </button>
+              <Link to="/forgot-password"
+              className="text-xs font-poppins font-medium text-gabay-blue hover:underline hover:text-gabay-navy transition-colors">
+              Forgot Password?
+              </Link>
             </div>
           
             <div className="flex justify-center mt-6">
@@ -118,7 +163,7 @@ export default function Login({ setIsLoggedIn }) {
             </div>
           </form>
 
-          <p className="font-poppins text-center text-sm mt-6">
+          <p className="font-poppins text-center text-sm mt-6 text-gray-600">
             Don't have an account? 
             <button 
               onClick={() => navigate('/signup')} 

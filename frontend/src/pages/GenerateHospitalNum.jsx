@@ -25,8 +25,8 @@ export default function GeneratedHospitalNumber() {
         </div>
 
         <div className="mb-6">
-          <p className="font-montserrat text-4xl text-[#2E5EB5] text-center font-bold">Hospital Number</p>
-          <p className="font-montserrat font-bold text-3xl text-[#33AFAE] text-center mt-1">
+          <p className="font-montserrat text-4xl text-gabay-blue text-center font-bold">Hospital Number</p>
+          <p className="font-montserrat font-bold text-3xl text-gabay-teal text-center mt-1">
             26-154928
           </p>
           <p className="font-poppins text-center mt-2 mb-10">
@@ -35,7 +35,7 @@ export default function GeneratedHospitalNumber() {
         </div>
 
         <div className="bg-gray-100 border-l-4 border-gray-400 p-4 mb-8 text-sm text-gray-700 rounded-r">
-          <p className="font-poppins font-bold text-[#33AFAE]">PAALALA:</p>
+          <p className="font-poppins font-bold text-gabay-teal">PAALALA:</p>
           <p className= "font-poppins">
             Ito na po ang inyong <strong className="font-bold">PERMANENTENG</strong> numero dito sa BCMH. Kailangan po na ito ay <strong className="font-bold">PALAGI NINYONG DALA</strong> sa tuwina ninyong pagpapakonsulta o pagpunta dito sa ospital.
           </p>
@@ -44,7 +44,7 @@ export default function GeneratedHospitalNumber() {
         <div className="flex justify-end">
           <button 
             onClick={handleConfirm}
-            className="font-poppins flex items-center text-gabay-blue font-semibold text-lg hover:underline group"
+            className="font-poppins flex items-center text-gabay-blue font-medium text-lg hover:underline group"
           >
             CONFIRM
             <span className="ml-2 transform group-hover:translate-x-1 transition-transform">
