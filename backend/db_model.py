@@ -78,6 +78,9 @@ class Patient(Base):
     contactNumber: Mapped[Optional[str]] = mapped_column(String(15), nullable=True)
     gender: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     hospital_num: Mapped[Optional[str]] = mapped_column(String(50), unique=True, nullable=True) 
+    emergencyContact: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    emergencyContactNum: Mapped[Optional[str]] = mapped_column(String(15), nullable=True)
+    emergencyEmail: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     
     # === Relationships ===
     user_account: Mapped[Optional["User"]] = relationship(back_populates="patient_profile")

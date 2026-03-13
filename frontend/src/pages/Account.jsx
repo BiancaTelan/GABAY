@@ -9,14 +9,14 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
   const navigate = useNavigate();
   
   const [localUserInfo, setLocalUserInfo] = useState({
-    firstName: "",
-    lastName: "",
-    hospitalNumber: "",
+    firstname: "",
+    lastname: "",
+    hospital_num: "",
     email: "",
     contactNumber: "",
     dob: "",
     gender: "Female",
-    homeAddress: "",
+    address: "",
     emergencyContact: "",
     emergencyContactNum: "",
     emergencyEmail: ""
@@ -98,11 +98,11 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
     let newErrors = {};
     const today = new Date(); 
 
-    if (!localUserInfo.firstName.trim()) newErrors.firstName = "First name is required";
-    else if (!namePattern.test(localUserInfo.firstName)) newErrors.firstName = "Name cannot contain numbers";
+    if (!localUserInfo.firstname.trim()) newErrors.firstname = "First name is required";
+    else if (!namePattern.test(localUserInfo.firstname)) newErrors.firstname = "Name cannot contain numbers";
 
-    if (!localUserInfo.lastName.trim()) newErrors.lastName = "Last name is required";
-    else if (!namePattern.test(localUserInfo.lastName)) newErrors.lastName = "Name cannot contain numbers";
+    if (!localUserInfo.lastname.trim()) newErrors.lastname = "Last name is required";
+    else if (!namePattern.test(localUserInfo.lastname)) newErrors.lastname = "Name cannot contain numbers";
 
     if (!localUserInfo.email.trim()) newErrors.email = "Email address is required";
     else if (!emailPattern.test(localUserInfo.email)) newErrors.email = "Enter a valid email address";
@@ -123,7 +123,7 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
       }
     }
 
-    if (!localUserInfo.homeAddress.trim()) newErrors.homeAddress = "Home address is required";
+    if (!localUserInfo.address.trim()) newErrors.address = "Home address is required";
     if (!localUserInfo.contactNumber.trim()) newErrors.contactNumber = "Contact number is required";
     else if (!phonePattern.test(localUserInfo.contactNumber)) newErrors.contactNumber = "Must be a valid 11-digit number";
 
