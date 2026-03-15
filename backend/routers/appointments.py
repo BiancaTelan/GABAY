@@ -1,6 +1,6 @@
 import os
 import shutil
-
+from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
@@ -11,6 +11,13 @@ from py_schema import PatientResponse
 from db_connection import get_db
 from db_model import User, Patient, Appointment, Department, Doctor, AppointmentStatus,roleEnum
 
+class StatusUpdate(BaseModel):
+    status: str
+
+class RescheduleRequest(BaseModel):
+    preferredStartDate: str 
+    preferredEndDate: Optional[str] = None
+    reason: str
 
 router = APIRouter(prefix="/api/appointments", tags=["Appointments"])
 
@@ -196,11 +203,73 @@ def get_appointment_history(email: str, db: Session = Depends(get_db)):
                 "status": status.statusName if status else "Pending Approval",
                 "type": appt.type,
                 "reason": appt.purposeDetailed or "No reason provided.",
-                "referral": appt.referral_doc or None
+                "referral": appt.referral_doc or None,
+
+                "createdAt": appt.createdAt.strftime("%m/%d/%Y") if appt.createdAt else "Recently"
             })
+
 
         return {"appointments": history}
         
     except Exception as e:
         print(f"Error fetching history: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch appointment history.")
+
+# ---------------------------------------------------------
+    # ROUTE 5: Update Appointment Status Patient side
+# ---------------------------------------------------------
+
+@router.put("/{appointment_id}/status")
+def update_appointment_status(appointment_id: int, request: StatusUpdate, db: Session = Depends(get_db)):
+    try:
+        appointment = db.query(Appointment).filter(Appointment.appointmentID == appointment_id).first()
+        if not appointment:
+            raise HTTPException(status_code=404, detail="Appointment not found.")
+
+        status_obj = db.query(AppointmentStatus).filter(AppointmentStatus.statusName == request.status).first()
+
+        if not status_obj:
+            status_obj = AppointmentStatus(statusName=request.status, statusColor="#e5e7eb")
+            db.add(status_obj)
+            db.commit()
+            db.refresh(status_obj)
+
+        appointment.statusID = status_obj.statusID
+        db.commit()
+
+        return {"message": f"Appointment successfully updated to {request.status}!"}
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+# ---------------------------------------------------------
+# ROUTE 3: Main Reservation Endpoint 
+# ---------------------------------------------------------
+
+@router.put("/{appointment_id}/reschedule")
+def reschedule_appointment(appointment_id: int, request: RescheduleRequest, db: Session = Depends(get_db)):
+    try:
+        appointment = db.query(Appointment).filter(Appointment.appointmentID == appointment_id).first()
+        if not appointment:
+            raise HTTPException(status_code=404, detail="Appointment not found.")
+
+        start_date = datetime.strptime(request.preferredStartDate, "%Y-%m-%d").date()
+        end_date = datetime.strptime(request.preferredEndDate, "%Y-%m-%d").date() if request.preferredEndDate else None
+
+        appointment.preferredStartDate = start_date
+        appointment.preferredEndDate = end_date
+        appointment.purposeDetailed = f"[RESCHEDULED] New Reason: {request.reason} | Original Reason: {appointment.purposeDetailed}"
+        
+        pending_status = db.query(AppointmentStatus).filter(AppointmentStatus.statusName.like("%Pending%")).first()
+        if pending_status:
+            appointment.statusID = pending_status.statusID
+
+        db.commit()
+
+        return {"message": "Appointment successfully rescheduled and is pending approval."}
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
