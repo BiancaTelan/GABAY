@@ -155,7 +155,7 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
         <div className="flex-1 space-y-6">
 
           <div className="flex flex-col">
-            <label className="text-gabay-blue font-semibold mb-1 text-base uppercase tracking-wide">Specialty Department</label>
+            <label className="text-gabay-blue font-semibold mb-1 text-lg uppercase tracking-wide">Specialty Department</label>
             <div className="relative">
               <select 
                 name="department"
@@ -163,7 +163,7 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
                 onChange={handleInputChange}
                 disabled={isReadOnly}
                 className={`hide-chevron w-full p-2 text-base rounded-md border outline-none transition-all pr-10 ${
-                  isReadOnly ? 'bg-gray-50 border-gray-300 text-gray-700 cursor-default' : 
+                  isReadOnly ? 'bg-gray-100 border-gray-300 text-gray-700 cursor-default' : 
                   errors.department ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 focus:ring-1 focus:ring-gabay-teal'
                 }`}
               >
@@ -179,7 +179,7 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
           </div>
 
           <div className="flex flex-col">
-            <label className="text-gabay-blue font-semibold mb-1 text-base uppercase tracking-wide">
+            <label className="text-gabay-blue font-semibold mb-1 text-lg uppercase tracking-wide">
                 Assigned Doctor
             </label>
             <div className="relative">
@@ -190,7 +190,7 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
                 disabled={!formData.hasPreviousRecord || isReadOnly}
                 className={`hide-chevron w-full p-2 text-base rounded-md border outline-none transition-all pr-10 ${
                     isReadOnly || !formData.hasPreviousRecord
-                    ? 'bg-gray-100 text-gray-500 border-gray-300 cursor-default' 
+                    ? 'bg-gray-100 text-gray-700 border-gray-300 cursor-default' 
                     : 'border-gray-300 focus:ring-1 focus:ring-gabay-teal'
                 }`}
                 >
@@ -208,10 +208,10 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
           </div>
 
           <div className="flex flex-col">
-            <label className="text-gabay-blue font-semibold mb-1 text-base uppercase tracking-wide">Preferred Appointment Date</label>
+            <label className="text-gabay-blue font-semibold mb-1 text-lg uppercase tracking-wide">Preferred Appointment Date</label>
             <div className="relative custom-datepicker-container">
               {isReadOnly ? (
-                <div className="p-2 bg-gray-50 border border-gray-300 rounded-md text-gray-700">
+                <div className="p-2 bg-gray-100 border border-gray-300 rounded-md text-gray-500">
                   {startDate?.toLocaleDateString()} {endDate ? `- ${endDate?.toLocaleDateString()}` : ""}
                 </div>
               ) : (
@@ -238,14 +238,14 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
           </div>
 
           <div className="flex flex-col">
-            <label className="text-gabay-blue font-semibold mb-1 text-base uppercase tracking-wide">Reason for Specialty Consultation</label>
+            <label className="text-gabay-blue font-semibold mb-1 text-lg uppercase tracking-wide">Reason for Specialty Consultation</label>
             <textarea 
               name="reason"
               rows="4"
               value={formData.reason}
               onChange={handleInputChange}
               readOnly={isReadOnly}
-              className={`p-3 text-base rounded-md border outline-none resize-none transition-all ${isReadOnly ? 'bg-gray-50 border-gray-300 text-gray-700 cursor-default' : errors.reason ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 focus:ring-1 focus:ring-gabay-teal'}`}
+              className={`p-3 text-base rounded-md border outline-none resize-none transition-all ${isReadOnly ? 'bg-gray-100 border-gray-300 text-gray-500 cursor-default' : errors.reason ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 focus:ring-1 focus:ring-gabay-teal'}`}
               placeholder="Briefly explain the condition requiring a specialist..."
             />
             {errors.reason && <p className="text-red-500 text-[11px] mt-1 font-medium uppercase">{errors.reason}</p>}
@@ -254,7 +254,7 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
 
         <div className="w-full md:w-1/3 space-y-8 pt-5">
           <div className={`flex items-center justify-between py-3 px-4 rounded-md transition-all ${isReadOnly ? 'bg-gray-100' : 'bg-gray-50 border border-gray-200'}`}>
-            <span className="text-gabay-blue text-lg font-semibold">Has previous OPD record?</span>
+            <span className="text-gabay-blue text-lg uppercase font-semibold">Has previous OPD record?</span>
             <label className={`relative inline-flex items-center ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}>
               <input type="checkbox" name="hasPreviousRecord" checked={formData.hasPreviousRecord} onChange={handleInputChange} disabled={isReadOnly} className="sr-only peer" />
               <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gabay-teal"></div>
@@ -262,7 +262,7 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
           </div>
 
           <div className="flex flex-col">
-            <label className="text-gabay-blue font-semibold mb-3 text-base uppercase tracking-wide flex items-center gap-2">
+            <label className="text-gabay-blue font-semibold mb-3 text-lg uppercase tracking-wide flex items-center gap-2">
               <FileText size={16} /> Medical Referral (Required)
             </label>
             

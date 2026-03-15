@@ -231,7 +231,7 @@ const handleSave = async () => {
       <div className="flex flex-col md:flex-row gap-12">
         <div className="flex-1 space-y-10">
           <section>
-            <h2 className="text-base font-semibold text-gabay-blue mb-6 tracking-wider uppercase">Personal Information</h2>
+            <h2 className="text-lg font-semibold text-gabay-blue mb-6 tracking-wider uppercase">Personal Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
               {isEditing ? (
                 <>
@@ -285,7 +285,7 @@ const handleSave = async () => {
           </section>
 
           <section>
-            <h2 className="text-base font-semibold text-gabay-blue mb-6 tracking-wider uppercase">Emergency Contact Information</h2>
+            <h2 className="text-lg font-semibold text-gabay-blue mb-6 tracking-wider uppercase">Emergency Contact Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
               <Input label="Emergency Contact" name="emergencyContact" value={localUserInfo.emergencyContact} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} error={errors.emergencyContact} />
               <Input label="Emergency Contact Number" name="emergencyContactNum" value={localUserInfo.emergencyContactNum} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} error={errors.emergencyContactNum} />
@@ -297,8 +297,8 @@ const handleSave = async () => {
 
           {isEditing && (
             <div className="flex gap-3.5 pt-1">
-              <button onClick={handleCancel} className="px-8 py-1.5 rounded-full border border-gabay-teal text-sm text-gabay-teal font-medium hover:bg-teal-50 transition-all">Cancel</button>
-              <button onClick={handleSave} className="px-8 py-1.5 rounded-full bg-gabay-teal text-sm text-white font-medium hover:bg-teal-600 shadow-md transition-all">Save Changes</button>
+              <button onClick={handleCancel} className="px-8 py-1.5 rounded-full border border-gabay-teal text-sm text-gabay-teal font-semibold hover:bg-teal-50 transition-all">CANCEL</button>
+              <button onClick={handleSave} className="px-8 py-1.5 rounded-full bg-gabay-teal text-sm text-white font-semibold hover:bg-teal-600 shadow-md transition-all">SAVE CHANGES</button>
             </div>
           )}
         </div>
