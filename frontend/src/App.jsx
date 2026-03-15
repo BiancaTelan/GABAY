@@ -38,9 +38,7 @@ function App() {
   const handleLogin = (userFromDb) => {
     setIsLoggedIn(true);
     if (userFromDb) setUserInfo(userFromDb);
-    
-    const origin = location.state?.from?.pathname || '/';
-    navigate(origin);
+    navigate('/home');
   };
 
   const handleCompleteSignUp = (data) => {

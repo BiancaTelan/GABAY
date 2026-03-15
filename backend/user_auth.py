@@ -87,7 +87,7 @@ def register_patient(patient_data: PatientSignUp, db: Session = Depends(get_db))
         
         db.commit()
 
-        return {"message": "Account created successfully. You can now log in."}
+        return {"message": "Account created successfully. Logging you in"}
 
     except HTTPException:
         raise 

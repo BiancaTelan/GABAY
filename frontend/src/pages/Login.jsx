@@ -56,13 +56,13 @@ export default function Login({ setIsLoggedIn }) {
         body: urlEncodedData.toString(),
       });
       
-      const textResponse = await response.text();
+    const textResponse = await response.text();
       let data;
       
       try {
         data = textResponse ? JSON.parse(textResponse) : {};
       } catch (parseError) {
-        throw new Error("The server encountered an error. Please check the backend terminal.");
+        throw new Error("The server encountered an error. Please try again later.");
       }
       
       if (!response.ok) {
@@ -72,8 +72,7 @@ export default function Login({ setIsLoggedIn }) {
           email: " ", 
           password: errorMessage 
         });
-        
-        throw new Error(errorMessage);
+        return; 
       }
 
       const accessToken = data.access_token;
@@ -83,11 +82,9 @@ export default function Login({ setIsLoggedIn }) {
 
       login(accessToken, userRole);
 
-      
       setIsLoggedIn(true);
 
-      const origin = location.state?.from?.pathname || '/';
-      navigate(origin);
+      navigate('/home');
 
     } catch (error) {
       console.error('Login failed:', error);
