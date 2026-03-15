@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react'; 
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
-
+import { AuthContext } from './authContext';
 import Header from './components/header';
 import Home from './pages/home';
 import Help from './pages/Help';
@@ -27,6 +27,7 @@ import ForgotPassword from './pages/ForgotPassword';
 function App() { 
   const navigate = useNavigate();
   const location = useLocation();
+  const { token } = useContext(AuthContext);
 
   const [isLoggedIn, setIsLoggedIn] = useState(false); 
   const [registrationData, setRegistrationData] = useState(null);
@@ -61,15 +62,63 @@ function App() {
     navigate('/');
   };
 
-  const handleFormSubmission = (data, nextStep) => {
-    if (nextStep === "confirm") {
-      setFormMode('confirm');
-    } else if (nextStep === "fill") {
-      setFormMode('fill');
-    } else if (nextStep === "submit") {
-      console.log("Saving Appointment:", data);
+  const handleFormSubmission = async (data, appointmentType) => {
+    try {
+      const payloadToken = JSON.parse(atob(token.split('.')[1]));
+      const userEmail = payloadToken.sub;
+
+      const payload = new FormData();
+      payload.append('email', userEmail);
+      payload.append('department', data.department);
+      payload.append('doctor_name', data.doctor || "NONE");
+
+      const formatSafeDate = (dateObj) => {
+        const d = new Date(dateObj);
+        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+        return d.toISOString().split('T')[0];
+      };
+
+      payload.append('preferredStartDate', formatSafeDate(data.startDate));
+      if (data.endDate) {
+        payload.append('preferredEndDate', formatSafeDate(data.endDate));
+      }
+
+      payload.append('reason', data.reason);
+      payload.append('hasPreviousRecord', data.hasPreviousRecord);
+      payload.append('appointment_type', appointmentType);
+
+      if (data.referralImage) {
+        payload.append('referral_file', data.referralImage);
+      }
+
+      const response = await fetch('/api/appointments/book', {
+        method: 'POST',
+        body: payload
+      });
+
+      const textResponse = await response.text();
+      let result;
+      try {
+        result = textResponse ? JSON.parse(textResponse) : {};
+      } catch (err) {
+        throw new Error("Server encountered an error. Check the Python backend terminal.");
+      }
+
+      if (!response.ok) {
+        const errorMessage = Array.isArray(result.detail) 
+          ? JSON.stringify(result.detail, null, 2) 
+          : result.detail || "Failed to submit reservation.";
+          
+        throw new Error(errorMessage);
+      }
+      // ------------------------------
+
       setFormMode('fill');
       navigate('/reservation-confirmation'); 
+
+    } catch (error) {
+      console.error("Booking Error:", error);
+      alert(error.message); 
     }
   };
 

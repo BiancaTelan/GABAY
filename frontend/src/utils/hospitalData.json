@@ -2,13 +2,13 @@
   "departments": [
     {
       "id": "internal-med",
-      "name": "Internal Medicine",
+      "name": "General Internal Medicine",
       "type": "general",
       "doctors": ["Dr. Ritchie Cruz", "Dr. Sarah Gomez", "Dr. Mark Velez"]
     },
     {
       "id": "pediatrics",
-      "name": "Pediatrics",
+      "name": "General Pediatrics",
       "type": "general",
       "doctors": ["Dr. Maria Santos", "Dr. Juan Dela Cruz"]
     },

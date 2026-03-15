@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import hospitalData from '../utils/hospitalData.json';
+import React, { useState, useEffect } from 'react';
 import { ChevronDown, CalendarDays } from 'lucide-react';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -36,23 +35,45 @@ const GabayInput = React.forwardRef(({ value, onClick, onChange, ...props }, ref
   );
 });
 
-export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
+export default function GeneralForm({ userInfo, onConfirm }) {
   const navigate = useNavigate();
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
+  const [mode, setMode] = useState("fill");
+  const isReadOnly = mode === "confirm";
   
   const [formData, setFormData] = useState({
-    firstName: userInfo?.firstName || "",
-    lastName: userInfo?.lastName || "",
-    hospitalNumber: userInfo?.hospitalNumber || "",
+    firstname: userInfo?.firstname || "",
+    surname: userInfo?.surname || "",
+    hospital_num: userInfo?.hospital_num || "",
     department: "",
     doctor: "NONE",
     reason: "",
     hasPreviousRecord: false
   });
 
+  const [hospitalData, setHospitalData] = useState({ departments: [] });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchHospitalData = async () => {
+      try {
+        const response = await fetch('/api/appointments/departments-and-doctors');
+        if (response.ok) {
+          const data = await response.json();
+          setHospitalData(data); 
+        }
+      } catch (error) {
+        console.error("Failed to fetch hospital data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchHospitalData();
+  }, []);
+
   const [errors, setErrors] = useState({});
-  const isReadOnly = mode === "confirm";
 
   const today = new Date();
   const maxDate = new Date();
@@ -93,6 +114,14 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
     d => d.name === formData.department
   )?.doctors || [];
 
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[50vh]">
+        <div className="w-8 h-8 border-4 border-gabay-teal border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto p-10 font-poppins text-left animate-in fade-in duration-500">
       <h1 className="text-3xl font-montserrat font-bold text-gabay-teal mb-1">
@@ -119,10 +148,9 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
                 }`}
               >
                 <option value="">Select Department</option>
-                {hospitalData.departments
-                  .filter(dept => dept.type === 'general')
-                  .map(dept => (
-                    <option key={dept.id} value={dept.name}>{dept.name}</option>
+                
+                {generalDepts.map(dept => (
+                  <option key={dept.id} value={dept.name}>{dept.name}</option>
                 ))}
               </select>
               {!isReadOnly && <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />}
@@ -240,14 +268,14 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
           <>
             <button 
               type="button"
-              onClick={() => onConfirm(formData, "fill")}
+              onClick={() => setMode("fill")} 
               className="flex-1 md:flex-none border-2 border-gabay-teal text-gabay-teal px-8 py-2 rounded-full font-bold transition-all hover:bg-teal-50 active:scale-95 text-base"
             >
               EDIT DETAILS
             </button>
             <button 
               type="button"
-              onClick={() => onConfirm({ ...formData, startDate, endDate }, "submit")}
+              onClick={() => onConfirm({ ...formData, startDate, endDate }, "General")} 
               className="flex-1 md:flex-none bg-gabay-teal hover:bg-teal-700 text-white px-8 py-2 rounded-full font-bold transition-all shadow-lg active:scale-95 text-base"
             >
               SUBMIT RESERVATION
@@ -264,7 +292,7 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
             </button>
             <button 
               type="button"
-              onClick={() => validateForm() && onConfirm(formData, "confirm")}
+              onClick={() => { if (validateForm()) setMode("confirm") }} 
               className="flex-1 md:flex-none px-8 py-2 rounded-full bg-gabay-teal font-poppins text-base text-white font-bold hover:bg-teal-600 shadow-md transition-all active:scale-95"
             >
               CONFIRM

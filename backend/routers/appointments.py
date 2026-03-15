@@ -47,6 +47,29 @@ router = APIRouter(prefix="/appointments", tags=["Appointments"])
 UPLOAD_DIR = "uploads/referrals"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+@router.get("/departments-and-doctors")
+def get_departments_and_doctors(db: Session = Depends(get_db)):
+    try:
+        # 1. Fetch all departments from the database
+        departments = db.query(Department).all()
+        
+        result = []
+        for dept in departments:
+            doctors = db.query(Doctor).filter(Doctor.deptID == dept.deptID).all()
+            
+            result.append({
+                "id": dept.deptID,
+                "name": dept.department,
+                "type": dept.type, 
+                "doctors": [doc.firstname + " " + doc.surname for doc in doctors] 
+            })
+            
+        return {"departments": result}
+        
+    except Exception as e:
+        print(f"Error fetching departments: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch hospital data.")
+
 @router.post("/book")
 async def book_appointment(
     email: str = Form(...),
@@ -73,7 +96,7 @@ async def book_appointment(
 
         doc_id = None
         if doctor_name != "NONE":
-            doctor = db.query(Doctor).filter(Doctor.firstname + ' ' + Doctor.surname== doctor_name).first()
+            doctor = db.query(Doctor).filter(Doctor.firstname + ' ' + Doctor.surname == doctor_name).first()
             if doctor:
                 doc_id = doctor.docID
 
@@ -119,7 +142,7 @@ async def book_appointment(
         print(f"To: {user.email}")
         print(f"Subject: Appointment Request Received - Cainta Municipal Hospital\n")
         print(f"Dear {patient.firstname} {patient.surname},")
-        print(f"We have successfully received your appointment request for the {department_name} department.")
+        print(f"We have successfully received your appointment request for the {department.department} department.")
         print(f"It is currently PENDING APPROVAL by our hospital staff.\n")
         print("📝 RESERVATION DETAILS:")
         print(f"  - Type: {appointment_type} OPD")

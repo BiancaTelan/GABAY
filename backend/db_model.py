@@ -57,11 +57,14 @@ class Department(Base):
 
     deptID: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     department: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
-    referral_only: Mapped[bool] = mapped_column(Boolean, default=False)
+    type: Mapped[str] = mapped_column(String(50), nullable=False)
 
     doctors: Mapped[List["Doctor"]] = relationship(back_populates="department")
     staff: Mapped[List["Staff"]] = relationship(back_populates="department")
 
+    # === Relationship ===
+    appointments: Mapped[list["Appointment"]] = relationship(back_populates="department")
+    doctors: Mapped[list["Doctor"]] = relationship(back_populates="department")
 
 class Patient(Base):
     __tablename__ = "patientTable"
@@ -138,6 +141,7 @@ class Appointment(Base):
     assignedSchedule: Mapped[Optional["Schedule"]] = relationship(back_populates="appointments")
     department: Mapped["Department"] = relationship(back_populates="appointments")
     status: Mapped["AppointmentStatus"] = relationship(back_populates="appointments")
+    department: Mapped["Department"] = relationship(back_populates="appointments")
 
 
 class Staff(Base): 
@@ -165,7 +169,7 @@ class Schedule(Base):
     weekDay: Mapped[weekDayEnum] = mapped_column(SQLEnum(weekDayEnum), nullable=False) 
     startTime: Mapped[time] = mapped_column(Time, nullable=False)
     endTime: Mapped[time] = mapped_column(Time, nullable=False)
-    maxPatients: Mapped[int] = mapped_column(Integer, nullable=False) # Fixed Integer syntax
+    maxPatients: Mapped[int] = mapped_column(Integer, nullable=False) 
     current_patient: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     
     # === Relationships ===

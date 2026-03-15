@@ -56,7 +56,14 @@ export default function Login({ setIsLoggedIn }) {
         body: urlEncodedData.toString(),
       });
       
-      const data = await response.json();
+      const textResponse = await response.text();
+      let data;
+      
+      try {
+        data = textResponse ? JSON.parse(textResponse) : {};
+      } catch (parseError) {
+        throw new Error("The server encountered an error. Please check the backend terminal.");
+      }
       
       if (!response.ok) {
         const errorMessage = data.detail || 'Incorrect email or password';
@@ -68,7 +75,6 @@ export default function Login({ setIsLoggedIn }) {
         
         throw new Error(errorMessage);
       }
-
 
       const accessToken = data.access_token;
 
