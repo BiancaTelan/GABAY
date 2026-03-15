@@ -159,3 +159,48 @@ async def book_appointment(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+# ---------------------------------------------------------
+# ROUTE 4: Appointment History Endpoint
+# ---------------------------------------------------------
+
+@router.get("/history/{email}")
+def get_appointment_history(email: str, db: Session = Depends(get_db)):
+    try:
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found.")
+            
+        patient = db.query(Patient).filter(Patient.userID == user.userID).first()
+        if not patient:
+            raise HTTPException(status_code=404, detail="Patient profile not found.")
+
+        appointments = (
+            db.query(Appointment)
+            .filter(Appointment.patientID == patient.patientID)
+            .order_by(Appointment.createdAt.desc())
+            .all()
+        )
+
+        history = []
+        for appt in appointments:
+            dept = db.query(Department).filter(Department.deptID == appt.deptID).first()
+            doc = db.query(Doctor).filter(Doctor.docID == appt.docID).first() if appt.docID else None
+            status = db.query(AppointmentStatus).filter(AppointmentStatus.statusID == appt.statusID).first()
+
+            history.append({
+                "id": appt.appointmentID,
+                "date": appt.preferredStartDate.strftime("%m/%d/%Y"), 
+                "doctor": doc.firstname + ' ' + doc.surname if doc else "None Assigned",
+                "department": dept.department if dept else "Unknown",
+                "status": status.statusName if status else "Pending Approval",
+                "type": appt.type,
+                "reason": appt.purposeDetailed or "No reason provided.",
+                "referral": appt.referral_doc or None
+            })
+
+        return {"appointments": history}
+        
+    except Exception as e:
+        print(f"Error fetching history: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch appointment history.")
