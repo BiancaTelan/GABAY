@@ -12,8 +12,8 @@ export default function SignUp({ onCompleteSignup }) {
     const { login } = useContext(AuthContext); 
     
     const [formData, setFormData] = useState({
-      firstName: '',
-      lastName: '',
+      firstname: '',
+      surname: '',
       email: '',
       password: '',
       confirmPassword: ''
@@ -29,16 +29,16 @@ export default function SignUp({ onCompleteSignup }) {
       setSuccessMsg('');
       let newErrors = {};
       
-      if (!formData.firstName.trim()) {
-        newErrors.firstName = "First name is required";
-      } else if (!namePattern.test(formData.firstName)) {
-        newErrors.firstName = "Names should only contain letters";
+      if (!formData.firstname.trim()) {
+        newErrors.firstname = "First name is required";
+      } else if (!namePattern.test(formData.firstname)) {
+        newErrors.firstname = "Names should only contain letters";
       }
 
-      if (!formData.lastName.trim()) {
-        newErrors.lastName = "Last name is required";
-      } else if (!namePattern.test(formData.lastName)) {
-        newErrors.lastName = "Names should only contain letters";
+      if (!formData.surname.trim()) {
+        newErrors.surname = "Last name is required";
+      } else if (!namePattern.test(formData.surname)) {
+        newErrors.surname = "Names should only contain letters";
       }
 
       if (!formData.email.trim()) {
@@ -69,8 +69,8 @@ export default function SignUp({ onCompleteSignup }) {
       setErrors({});
 
       const payload = {
-        firstname: formData.firstName.trim(),
-        surname: formData.lastName.trim(),
+        firstname: formData.firstname.trim(),
+        surname: formData.surname.trim(),
         email: formData.email.trim(),
         password: formData.password,
         confirm_password: formData.confirmPassword
@@ -113,8 +113,8 @@ export default function SignUp({ onCompleteSignup }) {
 
         setTimeout(() => {
            onCompleteSignup({
-             firstName: payload.firstname,
-             lastName: payload.surname,
+             firstname: payload.firstname,
+             surname: payload.surname,
              email: payload.email
            });
         }, 1500);
@@ -170,18 +170,18 @@ export default function SignUp({ onCompleteSignup }) {
                 <Input 
                   label="First Name" 
                   placeholder="Enter your first name" 
-                  value={formData.firstName}
-                  error={errors.firstName}
-                  onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                  value={formData.firstname}
+                  error={errors.firstname}
+                  onChange={(e) => setFormData({...formData, firstname: e.target.value})}
                   required
                   isEditing={true}
                 />
                 <Input
                   label="Last Name" 
                   placeholder="Enter your last name" 
-                  value={formData.lastName}
-                  error={errors.lastName}
-                  onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                  value={formData.surname}
+                  error={errors.surname}
+                  onChange={(e) => setFormData({...formData, surname: e.target.value})}
                   required
                   isEditing={true}
                 />

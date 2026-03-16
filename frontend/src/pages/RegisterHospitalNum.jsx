@@ -109,7 +109,10 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
 
       } catch (error) {
         console.error("Profile Update Error:", error);
-        setServerError(error.message);
+        const displayError = typeof error.message === 'string' 
+          ? error.message 
+          : JSON.stringify(error.message);
+        setServerError(displayError);
       } finally {
         setIsSubmitting(false);
       }
