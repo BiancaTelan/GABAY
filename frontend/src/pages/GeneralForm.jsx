@@ -131,7 +131,7 @@ export default function GeneralForm({ userInfo, onConfirm }) {
         {isReadOnly ? "Please double-check your details before confirming." : "Complete the form to reserve your appointment."}
       </p>
 
-      <div className="flex flex-col md:flex-row gap-16">
+      <div className="flex flex-col border-2 border-gabay-teal rounded-2xl p-5 md:flex-row gap-16">
         <div className="flex-1 space-y-6">
          
           <div className="flex flex-col">
