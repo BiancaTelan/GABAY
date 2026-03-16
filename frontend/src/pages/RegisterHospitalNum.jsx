@@ -201,17 +201,9 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
           />
         </div>
 
-        <div className="md:col-span-2 flex justify-between items-center mt-6">
+        <div className="md:col-span-2 flex justify-end items-center mt-6">
 
-          <button 
-            type="button" 
-            onClick={() => navigate('/')} 
-            className="text-gray-400 hover:text-gray-600 text-sm font-medium"
-          >
-            Cancel and Return Home
-          </button>
-
-          <Button variant="teal" type="submit" className="w-55 py-3 text-base font-semibold tracking-normal">
+          <Button variant="teal" type="submit" className="w-55 py-3 text-[16px] font-semibold tracking-normal">
             UPDATE MY ACCOUNT
           </Button>
         </div>

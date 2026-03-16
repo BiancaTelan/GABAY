@@ -35,6 +35,7 @@ function App() {
   const [showBlockerModal, setShowBlockerModal] = useState(false);
   const [formMode, setFormMode] = useState('fill');
 
+
   const handleLogin = (userFromDb) => {
     setIsLoggedIn(true);
     if (userFromDb) setUserInfo(userFromDb);
