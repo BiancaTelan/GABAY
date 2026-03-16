@@ -4,12 +4,12 @@ import Button from '../components/button';
 import Input from '../components/input';
 import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../authContext'; // <-- Import your AuthContext
+import { AuthContext } from '../authContext'; 
 import { emailPattern, namePattern } from '../utils/constants';
 
 export default function SignUp({ onCompleteSignup }) {
     const navigate = useNavigate();
-    const { login } = useContext(AuthContext); // <-- Grab the login function
+    const { login } = useContext(AuthContext); 
     
     const [formData, setFormData] = useState({
       firstName: '',
@@ -77,7 +77,6 @@ export default function SignUp({ onCompleteSignup }) {
       };
 
       try {
-        // --- 1. SIGN UP THE USER ---
         const response = await fetch('/api/auth/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

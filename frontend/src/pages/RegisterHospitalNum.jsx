@@ -9,8 +9,8 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
   const navigate = useNavigate(); 
   
   const [formData, setFormData] = useState({
-    firstName: initialData?.firstName || "",
-    lastName: initialData?.lastName || "",
+    firstname: initialData?.firstname || "",
+    surname: initialData?.surname || "",
     email: initialData?.email || "",
     hospital_num: "",
     contactNumber: "",
@@ -128,7 +128,7 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
       )}
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-5">
-        <Input label="Full Name" value={`${formData.firstName} ${formData.lastName}`} readOnly noHover />
+        <Input label="Full Name" value={`${formData.firstname} ${formData.surname}`} readOnly noHover />
         <Input label="Email Address" value={formData.email} readOnly noHover />
         
         <Input 
