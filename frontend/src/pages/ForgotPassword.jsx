@@ -185,7 +185,7 @@ const ForgotPassword = () => {
         input::-ms-clear { display: none; }
       `}</style>
 
-      <div className="bg-white w-full max-w-xl rounded-xl p-12 shadow-md border border-gray-300 relative">
+      <div className="bg-white w-full max-w-lg rounded-xl p-12 shadow-md border border-gray-300 relative">
         <Link to="/login" className="flex items-center text-gabay-blue text-md font-poppins mb-10 hover:opacity-80 transition-opacity">
           <ChevronLeft size={20} className="mr-1" /> Back to Login
         </Link>
@@ -198,7 +198,7 @@ const ForgotPassword = () => {
 
         {step === 1 && (
           <form onSubmit={handleNextStep} noValidate className="animate-in fade-in duration-500">
-            <h1 className="text-4xl font-montserrat font-bold text-gabay-teal mb-4">Forgot Password?</h1>
+            <h1 className="text-3xl font-montserrat font-bold text-gabay-teal mb-4">Forgot Password?</h1>
             <p className="text-gray-400 text-base mb-10 font-poppins leading-relaxed max-w-lg">
               Enter your registered email and we'll send you a verification code.
             </p>
@@ -217,7 +217,7 @@ const ForgotPassword = () => {
 
         {step === 2 && (
           <form onSubmit={handleNextStep} noValidate className="animate-in fade-in duration-500 text-center">
-            <h1 className="text-4xl font-montserrat font-bold text-gabay-teal mb-4 text-left">Verify OTP</h1>
+            <h1 className="text-3xl font-montserrat font-bold text-gabay-teal mb-4 text-left">Verify OTP</h1>
             <p className="text-gray-400 text-base mb-10 font-poppins leading-relaxed text-left">
               Please enter the 6-digit code sent to your email.
             </p>
@@ -247,7 +247,7 @@ const ForgotPassword = () => {
 
         {step === 3 && (
           <form onSubmit={handleFinalSubmit} noValidate className="animate-in fade-in duration-500">
-            <h1 className="text-4xl font-montserrat font-bold text-gabay-teal mb-4">New Password</h1>
+            <h1 className="text-3xl font-montserrat font-bold text-gabay-teal mb-4">New Password</h1>
             <p className="text-gray-400 text-base mb-10 font-poppins leading-relaxed">
               Create a strong password for your GABAY account (at least 8 characters, 1 digit, and 1 special character).
             </p>
