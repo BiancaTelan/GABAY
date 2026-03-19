@@ -165,7 +165,7 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast, current
 
           {isEmailType ? (
             <>
-              <div className="mb-6">
+              <div className="mb-5">
                 <label className={labelStyle}>Current Email</label>
                 <input 
                   type="text" 
@@ -175,7 +175,7 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast, current
                 />
               </div>
 
-              <div className="mb-6">
+              <div className="mb-5">
                 <label className={labelStyle}>Enter New Email <span className="text-red-500">*</span></label>
                 <input 
                   type="email" 
@@ -187,7 +187,7 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast, current
                 <span className={errorTextStyle}>{errors.newEmail}</span>
               </div>
 
-              <div className="relative mb-10">
+              <div className="relative mb-5">
                 <label className={labelStyle}>Enter Password to Confirm Changes <span className="text-red-500">*</span></label>
                 <input 
                   type={showCurrent ? "text" : "password"} 
@@ -260,7 +260,7 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast, current
             <button 
               type="submit" 
               disabled={isLoading}
-              className={`bg-gabay-teal hover:bg-teal-600 text-white font-montserrat font-bold py-3 px-8 rounded-full transition-all shadow-md uppercase tracking-wide flex items-center gap-2 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+              className={`bg-gabay-teal hover:bg-teal-600 text-white font-montserrat font-bold py-2 px-10 rounded-full transition-all shadow-md uppercase tracking-wide flex items-center gap-2 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
               {isLoading ? (
                 <>
