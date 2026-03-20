@@ -24,6 +24,11 @@ import AppointmentConfirmed from './pages/ApptConfirmed';
 import AppointmentCancelled from './pages/ApptCancelled';
 import ForgotPassword from './pages/ForgotPassword';
 
+import AdminLogin from './pages/admin/AdminLogin';
+import AdminLayout from './components/AdminLayout';
+import AdminSidebar from './components/AdminSidebar';
+import AdminDashboard from './pages/admin/AdminDashboard';
+
 function App() { 
   const navigate = useNavigate();
   const location = useLocation();
@@ -34,6 +39,8 @@ function App() {
   const [userInfo, setUserInfo] = useState(null);
   const [showBlockerModal, setShowBlockerModal] = useState(false);
   const [formMode, setFormMode] = useState('fill');
+
+  const isAdminPage = location.pathname.startsWith('/admin');
 
 
   const handleLogin = (userFromDb) => {
@@ -138,13 +145,13 @@ function App() {
 
   return (
     <div className="min-h-screen bg-white font-sans relative">
-      {showHeader && (
+      {showHeader && !isAdminPage && (
         <Header 
           isLoggedIn={isLoggedIn} 
           currentPage={location.pathname} 
         />
       )}
-
+      
       <main className={showHeader ? "pt-0" : ""}>
         <Routes>
           {/* Public Routes */}
@@ -191,6 +198,30 @@ function App() {
           } />
 
           <Route path="*" element={<Navigate to="/" />} />
+
+        {/* --- ADMIN ROUTES --- */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
+        {/* <Route path="users" element={<UserMgmt />} />
+        <Route path="personnel" element={<PersonnelMgmt />} />
+        <Route path="departments-mgmt" element={<DepartmentsMgmt />} />
+        <Route path="appointments-mgmt" element={<AppointmentssMgmt />} /> 
+        
+        <Route path="audit-logs" element={<AuditLogs />} />
+        <Route path="system-logs" element={<SystemLogs />} />
+        <Route path="reports" element={<Reports />} />
+        
+        <Route path="a-settings" element={<AdminSettings />} />
+        <Route path="a-help" element={<AdminHelp />} />
+        <Route path="a-account" element={<AdminAccount />} />
+        <Route path="a-notifs" element={<AdminNotifications />} />
+        <Route path="a-calendar" element={<AdminCalendar />} />
+        <Route path="a-tools" element={<AdminTools />} />*/}
+        
+        </Route>
+
+
         </Routes>
 
         <ConfirmationModal 
