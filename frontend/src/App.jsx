@@ -234,7 +234,7 @@ function App() {
           type="warning"
         />
       </main>
-      {showHeader && <Footer />}
+      {showHeader && !isAdminPage && <Footer />}
     </div>
   );
 }

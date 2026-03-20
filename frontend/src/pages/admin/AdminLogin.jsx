@@ -115,7 +115,7 @@ export default function AdminLogin({ setIsLoggedIn }) {
           </h1>
           <h2 className="font-montserrat text-xl font-semibold mb-6">Your health, our priority.</h2>
           <p className="font-poppins text-gray-300">
-            GABAY's Administrative Portal. AUITHORIZED ACCESS ONLY. Please use your issued credentials to view and manage the system.
+            GABAY's Administrative Portal. AUTHORIZED ACCESS ONLY. Please use your issued credentials to view and manage the system.
           </p>
         </div>
 
