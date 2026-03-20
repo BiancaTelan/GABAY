@@ -23,6 +23,7 @@ import ReservationConfirmation from './pages/R.F.Confirmation';
 import AppointmentConfirmed from './pages/ApptConfirmed';
 import AppointmentCancelled from './pages/ApptCancelled';
 import ForgotPassword from './pages/ForgotPassword';
+import Footer from './components/footer';
 
 function App() { 
   const navigate = useNavigate();
@@ -202,6 +203,7 @@ function App() {
           type="warning"
         />
       </main>
+      {showHeader && <Footer />}
     </div>
   );
 }
