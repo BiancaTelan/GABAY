@@ -8,9 +8,11 @@ export default {
         'gabay-teal': '#33AFAE',
         'gabay-teal2': '#227e7e',
         'gabay-navy': '#1B335F',
+        'gabay-violet': '#8145c1',
         'gray-outline': '#929292',
         'gabay-green': '#59CF6E',
         'gabay-green2': '#439352',
+        'gabay-orange': '#f18811',
         'gabay-red': '#D13C3C',
         'gabay-red2': '#9b2d2d'
       },
