@@ -27,7 +27,6 @@ import Footer from './components/footer';
 
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminLayout from './components/AdminLayout';
-import AdminSidebar from './components/AdminSidebar';
 import AdminDashboard from './pages/admin/AdminDashboard';
 
 function App() { 
@@ -201,7 +200,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" />} />
 
         {/* --- ADMIN ROUTES --- */}
-        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/login" element={<AdminLogin setIsLoggedIn={setIsLoggedIn} />}/>
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
         {/* <Route path="users" element={<UserMgmt />} />

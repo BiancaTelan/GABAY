@@ -171,6 +171,16 @@ export default function AdminLogin({ setIsLoggedIn }) {
                 LOGIN
               </Button>
             </div>
+            <button 
+              type="button"
+              onClick={() => {
+                setIsLoggedIn(true);
+                navigate('/admin');
+              }}
+              className="mt-4 text-[10px] text-gray-400 hover:text-slate-900 transition-colors block mx-auto underline"
+            >
+              (Dev Mode: Skip to Dashboard)
+            </button>
           </form>
 
           <p className="font-poppins text-center text-[10px] mt-8 text-gray-400 italic">
