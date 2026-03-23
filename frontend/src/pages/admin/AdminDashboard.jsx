@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  FileCheck, ClipboardX, ShieldPlus, ClipboardList, 
+  FileCheck, Stethoscope, ShieldPlus, ClipboardList, 
   Plus, DownloadCloud, ExternalLink 
 } from 'lucide-react';
 import StatCard from '../../components/StatCard';
@@ -29,10 +29,10 @@ export default function AdminDashboard() {
 
       {/* STATISTICS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-        <StatCard title="Appointments Completed" value="127" icon={FileCheck} color="green" />
+        <StatCard title="Appointments Completed" value="127" icon={FileCheck} color="teal" />
         <StatCard title="Slot Capacity" value="12/25" icon={ClipboardList} color="orange" />
-        <StatCard title="System Health" value="95%" icon={ShieldPlus} color="red" />
-        <StatCard title="Appointments For Approval" value="12" icon={ClipboardX} color="blue" />
+        <StatCard title="System Health" value="95%" icon={ShieldPlus} color="blue" />
+        <StatCard title="Active Personnel" value="12" icon={Stethoscope} color="green" />
       </div>
 
       {/* MAIN */}
