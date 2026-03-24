@@ -10,26 +10,26 @@ export default function AdminSidebar({ isCollapsed, setIsCollapsed }) {
     {
       title: "MAIN MENU",
       items: [
-        { name: 'Dashboard', path: '/admin', icon: <LayoutDashboard size={23} /> },
-        { name: 'Users', path: '/admin/users', icon: <Users size={23} /> },
-        { name: 'Personnel', path: '/admin/personnel', icon: <UserRoundCog size={23} /> },
-        { name: 'Departments', path: '/admin/departments', icon: <Building2 size={23} /> },
-        { name: 'Appointment', path: '/admin/appointments', icon: <CalendarCheck size={23} /> },
+        { name: 'Dashboard', path: '/admin', icon: <LayoutDashboard size={22} /> },
+        { name: 'Users', path: '/admin/users', icon: <Users size={22} /> },
+        { name: 'Personnel', path: '/admin/personnel', icon: <UserRoundCog size={22} /> },
+        { name: 'Departments', path: '/admin/departments', icon: <Building2 size={22} /> },
+        { name: 'Appointment', path: '/admin/appointments', icon: <CalendarCheck size={22} /> },
       ]
     },
     {
       title: "SYSTEM",
       items: [
-        { name: 'Audit Logs', path: '/admin/audit', icon: <Activity size={23} /> },
-        { name: 'System Logs', path: '/admin/system-logs', icon: <Terminal size={23} /> },
-        { name: 'Reports', path: '/admin/reports', icon: <FileBarChart size={23} /> },
+        { name: 'Audit Logs', path: '/admin/audit', icon: <Activity size={22} /> },
+        { name: 'System Logs', path: '/admin/system-logs', icon: <Terminal size={22} /> },
+        { name: 'Reports', path: '/admin/reports', icon: <FileBarChart size={22} /> },
       ]
     }
   ];
 
   return (
     <aside className="flex flex-col h-full py-6 transition-all duration-300">
-      {/* Menu Toggle - Now the main focus of the top sidebar */}
+      {/* Menu Toggle */}
       <div className={`px-6 mb-8 flex items-center ${isCollapsed ? 'justify-center' : 'justify-end'}`}>
         <Menu 
           className="text-gray-400 cursor-pointer hover:text-[#3B82F6] transition-colors" 
@@ -70,13 +70,13 @@ export default function AdminSidebar({ isCollapsed, setIsCollapsed }) {
         ))}
       </div>
 
-      <div className="px-4 mt-auto pt-6 border-t border-gray-100 space-y-1">
+      <div className="px-4 mt-auto pt-5 border-t border-gray-100 space-y-1">
         <button className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2 w-full font-poppins text-gray-500 hover:text-gray-900 text-sm transition-all`}>
-          <Settings size={23} /> 
+          <Settings size={22} /> 
           {!isCollapsed && <span>Settings</span>}
         </button>
         <button className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2 w-full font-poppins text-gabay-teal hover:bg-teal-50 rounded-lg text-sm transition-all font-semibold`}>
-          <LogOut size={23} /> 
+          <LogOut size={22} /> 
           {!isCollapsed && <span>Log Out</span>}
         </button>
       </div>
