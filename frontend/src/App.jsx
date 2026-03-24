@@ -32,6 +32,8 @@ import Users from './pages/admin/Users';
 import Personnel from './pages/admin/Personnel';
 import Departments from './pages/admin/Departments';
 import Appointments from './pages/admin/Appointments';
+import AuditLogs from './pages/admin/AuditLogs';
+import SystemLogs from './pages/admin/SystemLogs';
 
 function App() { 
   const navigate = useNavigate();
@@ -212,9 +214,9 @@ function App() {
         <Route path="departments" element={<Departments />} />
         <Route path="appointments" element={<Appointments />} /> 
         
-        {/* <Route path="audit-logs" element={<AuditLogs />} />
+        <Route path="audit-logs" element={<AuditLogs />} />
         <Route path="system-logs" element={<SystemLogs />} />
-        <Route path="reports" element={<Reports />} />
+        {/*<Route path="reports" element={<Reports />} />
         
         <Route path="a-settings" element={<AdminSettings />} />
         <Route path="a-help" element={<AdminHelp />} />

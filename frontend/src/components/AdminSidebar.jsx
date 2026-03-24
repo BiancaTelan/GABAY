@@ -20,7 +20,7 @@ export default function AdminSidebar({ isCollapsed, setIsCollapsed }) {
     {
       title: "SYSTEM",
       items: [
-        { name: 'Audit Logs', path: '/admin/audit', icon: <Activity size={22} /> },
+        { name: 'Audit Logs', path: '/admin/audit-logs', icon: <Activity size={22} /> },
         { name: 'System Logs', path: '/admin/system-logs', icon: <Terminal size={22} /> },
         { name: 'Reports', path: '/admin/reports', icon: <FileBarChart size={22} /> },
       ]
@@ -51,18 +51,20 @@ export default function AdminSidebar({ isCollapsed, setIsCollapsed }) {
                 <NavLink
                   key={item.name}
                   to={item.path}
-                  title={isCollapsed ? item.name : ""} 
+                  title={isCollapsed ? item.name : ""}
                   end={item.path === '/admin'}
                   className={({ isActive }) =>
-                    `flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2.5 rounded-lg transition-all text-sm font-poppins font-medium ${
-                      isActive 
-                      ? 'bg-[#EBF2FF] text-[#3B82F6]' 
-                      : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                    }`
-                  }
-                >
-                  {item.icon}
-                  {!isCollapsed && <span>{item.name}</span>}
+                    `flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2.5 rounded-lg transition-all duration-300 text-sm font-poppins font-medium ${
+                      isActive ? 'bg-[#EBF2FF] text-[#3B82F6]' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}>
+                  <div className="flex-shrink-0 w-5 flex justify-center">
+                    {item.icon}
+                  </div>
+
+                  <span 
+                    className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out
+                      ${isCollapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100 delay-100'}`}>
+                    {item.name}
+                  </span>
                 </NavLink>
               ))}
             </div>
