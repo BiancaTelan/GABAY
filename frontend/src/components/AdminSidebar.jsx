@@ -10,19 +10,19 @@ export default function AdminSidebar({ isCollapsed, setIsCollapsed }) {
     {
       title: "MAIN MENU",
       items: [
-        { name: 'Dashboard', path: '/admin', icon: <LayoutDashboard size={20} /> },
-        { name: 'Users', path: '/admin/users', icon: <Users size={20} /> },
-        { name: 'Personnel', path: '/admin/personnel', icon: <UserRoundCog size={20} /> },
-        { name: 'Departments', path: '/admin/departments', icon: <Building2 size={20} /> },
-        { name: 'Appointment', path: '/admin/appointments', icon: <CalendarCheck size={20} /> },
+        { name: 'Dashboard', path: '/admin', icon: <LayoutDashboard size={23} /> },
+        { name: 'Users', path: '/admin/users', icon: <Users size={23} /> },
+        { name: 'Personnel', path: '/admin/personnel', icon: <UserRoundCog size={23} /> },
+        { name: 'Departments', path: '/admin/departments', icon: <Building2 size={23} /> },
+        { name: 'Appointment', path: '/admin/appointments', icon: <CalendarCheck size={23} /> },
       ]
     },
     {
       title: "SYSTEM",
       items: [
-        { name: 'Audit Logs', path: '/admin/audit', icon: <Activity size={20} /> },
-        { name: 'System Logs', path: '/admin/system-logs', icon: <Terminal size={20} /> },
-        { name: 'Reports', path: '/admin/reports', icon: <FileBarChart size={20} /> },
+        { name: 'Audit Logs', path: '/admin/audit', icon: <Activity size={23} /> },
+        { name: 'System Logs', path: '/admin/system-logs', icon: <Terminal size={23} /> },
+        { name: 'Reports', path: '/admin/reports', icon: <FileBarChart size={23} /> },
       ]
     }
   ];
@@ -41,7 +41,6 @@ export default function AdminSidebar({ isCollapsed, setIsCollapsed }) {
       <div className="flex-1 overflow-y-auto px-4 space-y-8">
         {menuGroups.map((group) => (
           <div key={group.title}>
-            {/* Hide group titles when collapsed */}
             {!isCollapsed && (
               <p className="text-[11px] font-bold text-gray-400 tracking-widest mb-4 px-2">
                 {group.title}
@@ -52,10 +51,10 @@ export default function AdminSidebar({ isCollapsed, setIsCollapsed }) {
                 <NavLink
                   key={item.name}
                   to={item.path}
-                  title={isCollapsed ? item.name : ""} // Show tooltip on hover when collapsed
+                  title={isCollapsed ? item.name : ""} 
                   end={item.path === '/admin'}
                   className={({ isActive }) =>
-                    `flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2.5 rounded-lg transition-all text-sm font-medium ${
+                    `flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2.5 rounded-lg transition-all text-sm font-poppins font-medium ${
                       isActive 
                       ? 'bg-[#EBF2FF] text-[#3B82F6]' 
                       : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
@@ -72,12 +71,12 @@ export default function AdminSidebar({ isCollapsed, setIsCollapsed }) {
       </div>
 
       <div className="px-4 mt-auto pt-6 border-t border-gray-100 space-y-1">
-        <button className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2 w-full text-gray-500 hover:text-gray-900 text-sm transition-all`}>
-          <Settings size={20} /> 
+        <button className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2 w-full font-poppins text-gray-500 hover:text-gray-900 text-sm transition-all`}>
+          <Settings size={23} /> 
           {!isCollapsed && <span>Settings</span>}
         </button>
-        <button className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2 w-full text-[#14B8A6] hover:bg-teal-50 rounded-lg text-sm transition-all font-semibold`}>
-          <LogOut size={20} /> 
+        <button className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2 w-full font-poppins text-gabay-teal hover:bg-teal-50 rounded-lg text-sm transition-all font-semibold`}>
+          <LogOut size={23} /> 
           {!isCollapsed && <span>Log Out</span>}
         </button>
       </div>
