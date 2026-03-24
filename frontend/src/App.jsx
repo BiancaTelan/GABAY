@@ -28,6 +28,10 @@ import Footer from './components/footer';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminLayout from './components/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import Users from './pages/admin/Users';
+import Personnel from './pages/admin/Personnel';
+import Departments from './pages/admin/Departments';
+import Appointments from './pages/admin/Appointments';
 
 function App() { 
   const navigate = useNavigate();
@@ -199,16 +203,16 @@ function App() {
 
           <Route path="*" element={<Navigate to="/" />} />
 
-        {/* --- ADMIN ROUTES --- */}
+        {/* ADMIN ROUTES */}
         <Route path="/admin/login" element={<AdminLogin setIsLoggedIn={setIsLoggedIn} />}/>
         <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<AdminDashboard />} />
-        {/* <Route path="users" element={<UserMgmt />} />
-        <Route path="personnel" element={<PersonnelMgmt />} />
-        <Route path="departments-mgmt" element={<DepartmentsMgmt />} />
-        <Route path="appointments-mgmt" element={<AppointmentssMgmt />} /> 
+        <Route index element={<AdminDashboard />} />
+        <Route path="users" element={<Users />} />
+        <Route path="personnel" element={<Personnel />} />
+        <Route path="departments" element={<Departments />} />
+        <Route path="appointments" element={<Appointments />} /> 
         
-        <Route path="audit-logs" element={<AuditLogs />} />
+        {/* <Route path="audit-logs" element={<AuditLogs />} />
         <Route path="system-logs" element={<SystemLogs />} />
         <Route path="reports" element={<Reports />} />
         
@@ -218,7 +222,6 @@ function App() {
         <Route path="a-notifs" element={<AdminNotifications />} />
         <Route path="a-calendar" element={<AdminCalendar />} />
         <Route path="a-tools" element={<AdminTools />} />*/}
-        
         </Route>
 
 

@@ -59,7 +59,7 @@ export default function AdminDashboard() {
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
              <div className="flex justify-between items-center mb-6">
               <h4 className="font-montserrat text-lg font-bold text-gabay-blue flex items-center gap-2">
-                Online Users <ExternalLink size={16} className="text-gray-400" />
+                Online Staff <ExternalLink size={16} className="text-gray-400" />
               </h4>
               <button className="text-sm text-gray-outline font-medium font-poppins hover:underline">See all</button>
             </div>
