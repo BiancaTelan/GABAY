@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { 
-  Search, FileDown, ListFilter, Plus, 
+  Search, Download, Funnel, Plus, 
   Edit3, MinusCircle, ChevronLeft, ChevronRight, Check 
 } from 'lucide-react';
 import GeneralForm from '../GeneralForm';
@@ -59,11 +59,21 @@ export default function Personnel() {
       });
     }
 
-    // Apply Sorting (Name takes priority, then ID)
+    // SORTING
     result.sort((a, b) => {
-      const nameCompare = filters.nameSort === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
-      if (nameCompare !== 0) return nameCompare;
-      return filters.idSort === 'asc' ? a.id.localeCompare(b.id) : b.id.localeCompare(a.id);
+      // SORT BY EMPLOYEE ID
+      const idCompare = a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' });
+      
+      if (filters.idSort === 'asc') {
+        if (idCompare !== 0) return idCompare;
+      } else {
+        if (idCompare !== 0) return -idCompare;
+      }
+
+      // SORT BY NAME
+      return filters.nameSort === 'asc' 
+        ? a.name.localeCompare(b.name) 
+        : b.name.localeCompare(a.name);
     });
 
     return result;
@@ -109,17 +119,17 @@ export default function Personnel() {
         </div>
 
         <div className="flex flex-wrap gap-2 w-full lg:w-auto">
-          <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium">
-            <FileDown size={16} /> Export
+          <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium">
+            <Download size={16} /> Export
           </button>
           
           {/* MULTI-FILTER DROPDOWN */}
           <div className="relative flex-1 lg:flex-none">
             <button 
               onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium"
             >
-              <ListFilter size={16} /> Filter ({filters.roles.length + filters.statuses.length + filters.deptType.length})
+              <Funnel size={16} /> Filter ({filters.roles.length + filters.statuses.length + filters.deptType.length})
             </button>
             
             {showFilterDropdown && (
@@ -164,7 +174,7 @@ export default function Personnel() {
           <label key={type} className="flex items-center gap-2 text-sm font-poppins cursor-pointer group">
             <input 
               type="checkbox" 
-              className="w-4 h-4 rounded accent-gabay-teal"
+              className="w-4 h-4 rounded bg-gabay-blue"
               checked={filters.deptType.includes(type)}
               onChange={(e) => {
                 const newTypes = e.target.checked ? [...filters.deptType, type] : filters.deptType.filter(x => x !== type);
@@ -185,7 +195,7 @@ export default function Personnel() {
           <label key={r} className="flex items-center gap-2 text-sm cursor-pointer group">
             <input 
               type="checkbox" 
-              className="w-4 h-4 rounded accent-gabay-teal"
+              className="w-4 h-4 rounded bg-gabay-blue"
               checked={filters.roles.includes(r)}
               onChange={(e) => {
                 const newRoles = e.target.checked ? [...filters.roles, r] : filters.roles.filter(x => x !== r);
@@ -206,7 +216,7 @@ export default function Personnel() {
           <label key={s} className="flex items-center gap-2 text-sm cursor-pointer group">
             <input 
               type="checkbox" 
-              className="w-4 h-4 rounded accent-gabay-teal"
+              className="w-4 h-4 rounded bg-gabay-blue"
               checked={filters.statuses.includes(s)}
               onChange={(e) => {
                 const newStatus = e.target.checked ? [...filters.statuses, s] : filters.statuses.filter(x => x !== s);
@@ -238,7 +248,7 @@ export default function Personnel() {
 )}
           </div>
 
-          <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-gabay-teal text-white rounded-lg text-sm font-poppins font-medium">
+          <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 rounded-full bg-gabay-teal text-white font-medium font-poppins text-sm hover:bg-gabay-teal2 transition">
             <Plus size={16} /> Add Personnel
           </button>
         </div>
@@ -256,7 +266,7 @@ export default function Personnel() {
                     type="checkbox" 
                     onChange={handleSelectAll}
                     checked={selectedIds.length === pagedData.length && pagedData.length > 0}
-                    className="w-4 h-4 accent-gabay-teal"
+                    className="w-4 h-4 bg-gabay-blue"
                   />
                 </th>
                 <th className="px-4 py-4 text-[12px] md:text-xs font-poppins font-bold uppercase tracking-wider">Employee ID</th>
@@ -281,12 +291,12 @@ export default function Personnel() {
                       type="checkbox" 
                       checked={selectedIds.includes(person.id)}
                       onChange={() => toggleSelection(person.id)}
-                      className="w-4 h-4 accent-gabay-teal"
+                      className="w-4 h-4 bg-gabay-blue"
                     />
                   </td>
                   <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gray-700 font-medium">{person.id}</td>
                   <td className="px-4 py-4">
-                     <span className={`px-3 py-0.5 rounded-full text-[11px] md:text-[10px] font-poppins font-bold ${
+                     <span className={`px-3 py-0.5 rounded-full text-[12px] md:text-[11px] font-poppins font-bold ${
                        person.role === 'DOCTOR' ? 'bg-teal-100 text-teal-700' : 
                        person.role === 'ADMIN' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
                      }`}>
@@ -298,7 +308,7 @@ export default function Personnel() {
                   <td className="px-4 py-4 text-xs font-poppins md:text-sm text-gray-700">{person.schedule}</td>
                   <td className="px-4 py-4 text-xs font-poppins md:text-sm text-gray-500">{person.email}</td>
                   <td className="px-4 py-4">
-                    <div className="flex items-center gap-1.5 text-[11px] uppercase md:text-xs font-poppins font-medium text-gray-700">
+                    <div className="flex items-center gap-1.5 text-[11px] uppercase md:text-[12px] font-poppins font-medium text-gray-700">
                       <div className={`w-2 h-2 rounded-full ${
                         person.status === 'Active' ? 'bg-gabay-green' : 
                         person.status === 'Deactivated' ? 'bg-gabay-orange' :
