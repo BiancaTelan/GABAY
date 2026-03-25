@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Search, Download, Funnel, Plus, 
-  Edit3, MinusCircle, ChevronLeft, ChevronRight, Check 
+  Edit3, MinusCircle, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Check 
 } from 'lucide-react';
 import GeneralForm from '../GeneralForm';
 
@@ -33,7 +33,7 @@ export default function Personnel() {
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   
   const [filters, setFilters] = useState({
-    nameSort: 'asc', // 'asc' or 'desc'
+    nameSort: 'asc',
     idSort: 'asc',
     deptType: ['General', 'Specialty'],  
     roles: ['STAFF', 'DOCTOR', 'ADMIN'], 
@@ -49,7 +49,7 @@ export default function Personnel() {
       item.id.toLowerCase().includes(search.toLowerCase())
     );
 
-    // Apply Checkbox Filters
+    // Apply Filters
     if (filters.roles.length > 0) result = result.filter(i => filters.roles.includes(i.role));
     if (filters.statuses.length > 0) result = result.filter(i => filters.statuses.includes(i.status));
     if (filters.deptType.length > 0) {
@@ -112,8 +112,8 @@ export default function Personnel() {
             type="text" 
             value={search}
             onChange={(e) => {setSearch(e.target.value); setCurrentPage(1);}}
-            placeholder="Search Name or ID..." 
-            className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-gabay-blue/20"
+            placeholder="Search..." 
+            className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg font-poppins outline-none focus:ring-2 focus:ring-gabay-blue/20"
           />
           <Search className="absolute right-3 top-2.5 text-gray-400" size={18} />
         </div>
