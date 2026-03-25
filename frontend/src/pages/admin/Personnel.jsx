@@ -1,9 +1,359 @@
+import React, { useState, useMemo, useEffect } from 'react';
+import { 
+  Search, FileDown, ListFilter, Plus, 
+  Edit3, MinusCircle, ChevronLeft, ChevronRight, Check 
+} from 'lucide-react';
+import GeneralForm from '../GeneralForm';
+
+// --- SAMPLE DATA ---
+const rawData = [
+  { id: 'DOC001', role: 'DOCTOR', name: 'Zack Arias', dept: 'General IM', isSpecialty: false, schedule: 'M, W, F', email: 'zack@gmail.com', status: 'Active' },
+  { id: 'STF001', role: 'STAFF', name: 'Ana Batungbakal', dept: 'General IM', isSpecialty: false, schedule: 'T, TH', email: 'ana@gmail.com', status: 'Offline' },
+  { id: 'DOC002', role: 'DOCTOR', name: 'Bernice Castro', dept: 'Dermatology', isSpecialty: true, schedule: 'M, W, TH', email: 'bernice@gmail.com', status: 'Inactive' },
+  { id: 'STF002', role: 'STAFF', name: 'Carlos Dala', dept: 'IM - Pulmonology', isSpecialty: true, schedule: 'W, F', email: 'carlos@gmail.com', status: 'Deactivated' },
+  { id: 'ADM001', role: 'ADMIN', name: 'Dante Estacio', dept: 'N/A', isSpecialty: false, schedule: 'M, T, W', email: 'dante@gmail.com', status: 'Active' },
+  { id: 'DOC003', role: 'DOCTOR', name: 'Elena Fajardo', dept: 'General IM', isSpecialty: false, schedule: 'F', email: 'elena@gmail.com', status: 'Active' },
+  { id: 'STF003', role: 'STAFF', name: 'Gina Gomez', dept: 'Pediatrics', isSpecialty: true, schedule: 'M, T', email: 'gina@gmail.com', status: 'Active' },
+  { id: 'DOC004', role: 'DOCTOR', name: 'Harvey Isip', dept: 'Cardiology', isSpecialty: true, schedule: 'W, TF', email: 'harvey@gmail.com', status: 'Offline' },
+  { id: 'STF004', role: 'STAFF', name: 'Irene Javier', dept: 'General IM', isSpecialty: false, schedule: 'M-F', email: 'irene@gmail.com', status: 'Active' },
+  { id: 'DOC005', role: 'DOCTOR', name: 'Jojo Kasilag', dept: 'Neurology', isSpecialty: true, schedule: 'T, TH, S', email: 'jojo@gmail.com', status: 'Inactive' },
+  // ... PAGE 2
+  { id: 'DOC006', role: 'DOCTOR', name: 'Michael Gomez', dept: 'Pediatrics', isSpecialty: false, schedule: 'F', email: 'michael@gmail.com', status: 'Deactivated' },
+  { id: 'STF005', role: 'STAFF', name: 'Alex Simon', dept: 'Pediatrics', isSpecialty: true, schedule: 'M, T', email: 'alex@gmail.com', status: 'Inactive' },
+  { id: 'DOC007', role: 'DOCTOR', name: 'Inigo Bautista', dept: 'Dermatology', isSpecialty: true, schedule: 'T, TH', email: 'inigo@gmail.com', status: 'Offline' },
+  { id: 'ADM002', role: 'ADMIN', name: 'Rachel Mawac', dept: 'N/A', isSpecialty: false, schedule: 'M-F', email: 'rachel@gmail.com', status: 'Active' },
+  { id: 'ADM003', role: 'ADMIN', name: 'Chelly Redondo', dept: 'N/A', isSpecialty: false, schedule: 'TH, F', email: 'chelly@gmail.com', status: 'Active' },
+];
+
 export default function Personnel() {
-    return (
+  // --- STATES ---
+  const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  
+  const [filters, setFilters] = useState({
+    nameSort: 'asc', // 'asc' or 'desc'
+    idSort: 'asc',
+    deptType: ['General', 'Specialty'],  
+    roles: ['STAFF', 'DOCTOR', 'ADMIN'], 
+    statuses: ['Active', 'Offline', 'Inactive', 'Deactivated']
+  });
+
+  const itemsPerPage = 10;
+
+  // --- LOGIC: FILTERING & SORTING ---
+  const filteredData = useMemo(() => {
+    let result = rawData.filter(item => 
+      item.name.toLowerCase().includes(search.toLowerCase()) || 
+      item.id.toLowerCase().includes(search.toLowerCase())
+    );
+
+    // Apply Checkbox Filters
+    if (filters.roles.length > 0) result = result.filter(i => filters.roles.includes(i.role));
+    if (filters.statuses.length > 0) result = result.filter(i => filters.statuses.includes(i.status));
+    if (filters.deptType.length > 0) {
+      result = result.filter(i => {
+        const type = i.isSpecialty ? 'Specialty' : 'General';
+        return filters.deptType.includes(type);
+      });
+    }
+
+    // Apply Sorting (Name takes priority, then ID)
+    result.sort((a, b) => {
+      const nameCompare = filters.nameSort === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
+      if (nameCompare !== 0) return nameCompare;
+      return filters.idSort === 'asc' ? a.id.localeCompare(b.id) : b.id.localeCompare(a.id);
+    });
+
+    return result;
+  }, [search, filters]);
+
+  // --- LOGIC: PAGINATION ---
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const pagedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const entryStart = (currentPage - 1) * itemsPerPage + 1;
+  const entryEnd = Math.min(currentPage * itemsPerPage, filteredData.length);
+
+  // --- LOGIC: SELECTION ---
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedIds(pagedData.map(i => i.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const toggleSelection = (id) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  return (
     <div className="space-y-6">
-      <h1 className="font-montserrat text-3xl font-bold text-gabay-blue">Personnel Management</h1>
-      <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
-        <p className="text-gray-500 italic text-sm">Table for doctors and staff will go here...</p>
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl md:text-3xl font-montserrat font-bold text-gabay-blue">Personnel List</h1>
+        <p className="text-xs md:text-sm font-poppins text-gray-500">Main Menu &gt; Personnel</p>
+      </div>
+
+      {/* TOOLBAR */}
+      <div className="flex flex-col lg:flex-row justify-between gap-4 items-center">
+        <div className="relative w-full lg:w-96">
+          <input 
+            type="text" 
+            value={search}
+            onChange={(e) => {setSearch(e.target.value); setCurrentPage(1);}}
+            placeholder="Search Name or ID..." 
+            className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-gabay-blue/20"
+          />
+          <Search className="absolute right-3 top-2.5 text-gray-400" size={18} />
+        </div>
+
+        <div className="flex flex-wrap gap-2 w-full lg:w-auto">
+          <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium">
+            <FileDown size={16} /> Export
+          </button>
+          
+          {/* MULTI-FILTER DROPDOWN */}
+          <div className="relative flex-1 lg:flex-none">
+            <button 
+              onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium"
+            >
+              <ListFilter size={16} /> Filter ({filters.roles.length + filters.statuses.length + filters.deptType.length})
+            </button>
+            
+            {showFilterDropdown && (
+  <div className="absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-2xl z-[100] p-5 space-y-5 max-h-[500px] overflow-y-auto scrollbar-thin">
+    
+    {/* 1. SORTING SECTION */}
+    <div>
+      <p className="text-[10px] font-bold font-poppins text-gray-400 uppercase tracking-widest mb-3">Sorting</p>
+      <div className="space-y-2">
+        <div>
+          <label className="text-[11px] font-poppins text-gray-500 font-medium">By Name</label>
+          <select 
+            value={filters.nameSort}
+            className="w-full text-sm font-poppins border border-gray-200 rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-gabay-blue/10"
+            onChange={(e) => setFilters({...filters, nameSort: e.target.value})}
+          >
+            <option value="asc">Name: Ascending (A-Z)</option>
+            <option value="desc">Name: Descending (Z-A)</option>
+          </select>
+        </div>
+        <div>
+          <label className="text-[11px] text-gray-500 font-poppins font-medium">By Employee ID</label>
+          <select 
+            value={filters.idSort}
+            className="w-full text-sm font-poppins border border-gray-200 rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-gabay-blue/10"
+            onChange={(e) => setFilters({...filters, idSort: e.target.value})}
+          >
+            <option value="asc">ID: Ascending (001...)</option>
+            <option value="desc">ID: Descending (...999)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <hr className="border-gray-100" />
+
+    {/* 2. DEPARTMENT TYPE */}
+    <div>
+      <p className="text-[10px] font-bold font-poppins text-gray-400 uppercase tracking-widest mb-3">Department Type</p>
+      <div className="grid grid-cols-2 gap-2">
+        {['General', 'Specialty'].map(type => (
+          <label key={type} className="flex items-center gap-2 text-sm font-poppins cursor-pointer group">
+            <input 
+              type="checkbox" 
+              className="w-4 h-4 rounded accent-gabay-teal"
+              checked={filters.deptType.includes(type)}
+              onChange={(e) => {
+                const newTypes = e.target.checked ? [...filters.deptType, type] : filters.deptType.filter(x => x !== type);
+                setFilters({...filters, deptType: newTypes});
+              }}
+            /> 
+            <span className="text-gray-600 font-poppins group-hover:text-gabay-blue transition-colors">{type}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+
+    {/* 3. ROLE SECTION */}
+    <div>
+      <p className="text-[10px] font-bold font-poppins text-gray-400 uppercase tracking-widest mb-3">Role</p>
+      <div className="grid grid-cols-2 gap-2">
+        {['DOCTOR', 'STAFF', 'ADMIN'].map(r => (
+          <label key={r} className="flex items-center gap-2 text-sm cursor-pointer group">
+            <input 
+              type="checkbox" 
+              className="w-4 h-4 rounded accent-gabay-teal"
+              checked={filters.roles.includes(r)}
+              onChange={(e) => {
+                const newRoles = e.target.checked ? [...filters.roles, r] : filters.roles.filter(x => x !== r);
+                setFilters({...filters, roles: newRoles});
+              }}
+            /> 
+            <span className="text-gray-600 font-poppins group-hover:text-gabay-blue transition-colors">{r}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+
+    {/* 4. STATUS SECTION */}
+    <div>
+      <p className="text-[10px] font-poppins font-bold text-gray-400 uppercase tracking-widest mb-3">Status</p>
+      <div className="grid grid-cols-2 gap-2">
+        {['Active', 'Offline', 'Inactive', 'Deactivated'].map(s => (
+          <label key={s} className="flex items-center gap-2 text-sm cursor-pointer group">
+            <input 
+              type="checkbox" 
+              className="w-4 h-4 rounded accent-gabay-teal"
+              checked={filters.statuses.includes(s)}
+              onChange={(e) => {
+                const newStatus = e.target.checked ? [...filters.statuses, s] : filters.statuses.filter(x => x !== s);
+                setFilters({...filters, statuses: newStatus});
+              }}
+            /> 
+            <span className="text-gray-600 font-poppins group-hover:text-gabay-blue transition-colors">{s}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+
+    {/* ACTIONS */}
+    <div className="pt-2 flex gap-2">
+      <button 
+        onClick={() => setFilters({ nameSort: 'asc', idSort: 'asc', deptType: [], roles: [], statuses: [] })}
+        className="flex-1 py-2 text-xs font-poppins font-medium text-gray-400 hover:text-red-500 transition-colors"
+      >
+        Reset All
+      </button>
+      <button 
+        onClick={() => setShowFilterDropdown(false)}
+        className="flex-1 py-2 bg-gabay-blue text-white rounded-lg text-xs font-poppins font-medium shadow-md hover:bg-opacity-90 transition-all"
+      >
+        Apply
+      </button>
+    </div>
+  </div>
+)}
+          </div>
+
+          <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-gabay-teal text-white rounded-lg text-sm font-poppins font-medium">
+            <Plus size={16} /> Add Personnel
+          </button>
+        </div>
+      </div>
+
+      {/* TABLE */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        {/* Swipe container: overflow-x-auto allows touch swiping natively */}
+        <div className="overflow-x-auto cursor-default">
+          <table className="w-full text-left min-w-[1000px]">
+            <thead className="bg-gabay-blue font-poppins text-white select-none">
+              <tr>
+                <th className="px-4 py-4 text-center">
+                  <input 
+                    type="checkbox" 
+                    onChange={handleSelectAll}
+                    checked={selectedIds.length === pagedData.length && pagedData.length > 0}
+                    className="w-4 h-4 accent-gabay-teal"
+                  />
+                </th>
+                <th className="px-4 py-4 text-[12px] md:text-xs font-poppins font-bold uppercase tracking-wider">Employee ID</th>
+                <th className="px-4 py-4 text-[12px] md:text-xs font-poppins font-bold uppercase tracking-wider">Role</th>
+                <th className="px-4 py-4 text-[12px] md:text-xs font-poppins font-bold uppercase tracking-wider">Name</th>
+                <th className="px-4 py-4 text-[12px] md:text-xs font-poppins font-bold uppercase tracking-wider">Department</th>
+                <th className="px-4 py-4 text-[12px] md:text-xs font-poppins font-bold uppercase tracking-wider">Schedule</th>
+                <th className="px-4 py-4 text-[12px] md:text-xs font-poppins font-bold uppercase tracking-wider">Email</th>
+                <th className="px-4 py-4 text-[12px] md:text-xs font-poppins font-bold uppercase tracking-wider">Status</th>
+                <th className="px-4 py-4 text-[12px] md:text-xs font-poppins font-bold uppercase tracking-wider text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {pagedData.map((person) => (
+                <tr 
+                  key={person.id} 
+                  className={`hover:bg-gray-50 transition-colors ${selectedIds.includes(person.id) ? 'bg-blue-50/50' : ''}`}
+                  onClick={() => toggleSelection(person.id)}
+                >
+                  <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}>
+                    <input 
+                      type="checkbox" 
+                      checked={selectedIds.includes(person.id)}
+                      onChange={() => toggleSelection(person.id)}
+                      className="w-4 h-4 accent-gabay-teal"
+                    />
+                  </td>
+                  <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gray-700 font-medium">{person.id}</td>
+                  <td className="px-4 py-4">
+                     <span className={`px-3 py-0.5 rounded-full text-[11px] md:text-[10px] font-poppins font-bold ${
+                       person.role === 'DOCTOR' ? 'bg-teal-100 text-teal-700' : 
+                       person.role === 'ADMIN' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+                     }`}>
+                       {person.role}
+                     </span>
+                  </td>
+                  <td className="px-4 py-4 text-xs font-poppins md:text-sm text-gray-700">{person.name}</td>
+                  <td className="px-4 py-4 text-xs font-poppins md:text-sm text-gray-700">{person.dept}</td>
+                  <td className="px-4 py-4 text-xs font-poppins md:text-sm text-gray-700">{person.schedule}</td>
+                  <td className="px-4 py-4 text-xs font-poppins md:text-sm text-gray-500">{person.email}</td>
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-1.5 text-[11px] uppercase md:text-xs font-poppins font-medium text-gray-700">
+                      <div className={`w-2 h-2 rounded-full ${
+                        person.status === 'Active' ? 'bg-gabay-green' : 
+                        person.status === 'Deactivated' ? 'bg-gabay-orange' :
+                        person.status === 'Offline' ? 'bg-gray-outline' : 'bg-gabay-red'
+                      }`} />
+                      {person.status}
+                    </div>
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="flex justify-center gap-2">
+                      <button className="p-1.5 text-gabay-teal hover:bg-teal-50 rounded-lg transition-colors"><Edit3 size={18}/></button>
+                      <button className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition-colors"><MinusCircle size={18}/></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* PAGINATION */}
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <button 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => p - 1)}
+              className="p-1.5 rounded-lg hover:bg-white border border-transparent hover:border-gray-200 disabled:opacity-30 transition-all"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <div className="flex gap-1">
+              {[...Array(totalPages)].map((_, i) => (
+                <button 
+                  key={i}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`w-8 h-8 rounded-lg text-xs font-poppins font-bold transition-all ${
+                    currentPage === i + 1 ? 'bg-gabay-blue text-white shadow-md' : 'hover:bg-white border border-transparent hover:border-gray-200 text-gray-500'
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+            <button 
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => p + 1)}
+              className="p-1.5 rounded-lg hover:bg-white border border-transparent hover:border-gray-200 disabled:opacity-30 transition-all"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+          <p className="text-[10px] md:text-xs text-gray-400 font-poppins font-medium">
+            Showing {entryStart} - {entryEnd} of {filteredData.length} entries
+          </p>
+        </div>
       </div>
     </div>
   );

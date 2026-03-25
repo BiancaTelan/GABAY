@@ -19,12 +19,12 @@ export default function AdminDashboard() {
         <div className="flex gap-4">
           <button className="px-4 py-2 bg-white border border-gray-200 text-gray-700 font-medium font-poppins text-sm rounded-lg hover:bg-gray-50 transition">
             Filter By: This Month
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gabay-teal text-gabay-teal font-medium font-poppins text-sm rounded-lg hover:bg-teal-50 transition">
+          </button> 
+          <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-gabay-teal text-white font-medium font-poppins text-sm hover:bg-gabay-teal2 transition">
             <Plus size={18} />
             Generate Reports
           </button>
-        </div>
+        </div> 
       </div>
 
       {/* STATISTICS */}
