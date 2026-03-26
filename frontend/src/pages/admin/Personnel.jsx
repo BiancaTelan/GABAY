@@ -120,7 +120,7 @@ export default function Personnel() {
 
         <div className="flex flex-wrap gap-2 w-full lg:w-auto">
           <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium">
-            <Download size={16} /> Export
+            <Download size={16} /> Export as CSV
           </button>
           
           {/* MULTI-FILTER DROPDOWN */}

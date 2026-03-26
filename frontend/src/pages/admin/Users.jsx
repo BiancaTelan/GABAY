@@ -111,7 +111,7 @@ export default function Users() {
               onClick={() => setShowFilterDropdown(!showFilterDropdown)}
               className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium"
             >
-              <Funnel size={16} /> Filter: A to Z
+              <Funnel size={16} /> Filter ({filters.nameSort.length + filters.hospitalNumSort.length + filters.genders.length + filters.statuses.length})
             </button>
             
             {showFilterDropdown && (
@@ -138,7 +138,7 @@ export default function Users() {
                         <input type="checkbox" checked={filters.genders.includes(g)} onChange={(e) => {
                           const newGenders = e.target.checked ? [...filters.genders, g] : filters.genders.filter(x => x !== g);
                           setFilters({...filters, genders: newGenders});
-                        }} className="accent-gabay-blue" /> {g}
+                        }} className="w-4 h-4 rounded bg-gabay-blue" /> {g}
                       </label>
                     ))}
                   </div>
@@ -152,14 +152,16 @@ export default function Users() {
                         <input type="checkbox" checked={filters.statuses.includes(s)} onChange={(e) => {
                           const newStatus = e.target.checked ? [...filters.statuses, s] : filters.statuses.filter(x => x !== s);
                           setFilters({...filters, statuses: newStatus});
-                        }} className="accent-gabay-blue" /> {s}
+                        }} className="w-4 h-4 rounded bg-gabay-blue" /> {s}
                       </label>
                     ))}
                   </div>
                 </div>
 
-                <div className="pt-2 flex gap-2">
-                  <button onClick={() => setFilters({ nameSort: 'asc', hospitalNumSort: 'asc', genders: ['Male', 'Female'], statuses: ['Active', 'Offline', 'Inactive', 'Deactivated'] })} className="flex-1 py-2 text-xs font-poppins text-gray-400 hover:text-red-500">Reset</button>
+                <div className="pt-2 flex gap-2"> 
+                  <button onClick={() => 
+                    setFilters({ nameSort: 'asc', hospitalNumSort: 'asc', genders: [], statuses: [] })} 
+                    className="flex-1 py-2 text-xs font-poppins text-gray-400 hover:text-red-500">Reset</button>
                   <button onClick={() => setShowFilterDropdown(false)} className="flex-1 py-2 bg-gabay-blue text-white rounded-lg text-xs font-poppins font-medium">Apply</button>
                 </div>
               </div>
@@ -192,7 +194,7 @@ export default function Users() {
             <tbody className="divide-y divide-gray-100">
               {pagedData.map((user) => (
                 <tr key={user.id} className={`hover:bg-gray-50 transition-colors ${selectedIds.includes(user.id) ? 'bg-blue-50/50' : ''}`} onClick={() => toggleSelection(user.id)}>
-                  <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}><input type="checkbox" checked={selectedIds.includes(user.id)} onChange={() => toggleSelection(user.id)} /></td>
+                  <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}><input type="checkbox" className="w-4 h-4 rounded bg-gabay-blue" checked={selectedIds.includes(user.id)} onChange={() => toggleSelection(user.id)} /></td>
                   <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gray-700">{user.id}</td>
                   <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gabay-blue font-medium">{user.name}</td>
                   <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gray-700">{user.email}</td>
