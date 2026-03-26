@@ -4,7 +4,7 @@ import {
   Edit3, MinusCircle, ChevronLeft, ChevronRight 
 } from 'lucide-react';
 
-// --- MOCK DATA (10 Examples) ---
+// --- MOCK DATA ---
 const rawUsersData = [
   { id: '26-154928', name: 'Juan Dela Cruz', email: 'juandelacruz@gmail.com', gender: 'Male', phone: '09191234567', status: 'Active', joinDate: '02/25/2026' },
   { id: '26-123456', name: 'Maria Dela Cruz', email: 'maria.delacruz@gmail.com', gender: 'Female', phone: '09191234567', status: 'Offline', joinDate: '03/10/2026' },
@@ -26,9 +26,9 @@ export default function Users() {
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   
   const [filters, setFilters] = useState({
-    nameSort: 'asc',
-    hospitalNumSort: 'asc',
-    emailFilter: '', // For backend dev: can be partial string or domain
+    sortKey: 'name',
+    sortOrder: 'asc',
+    emailFilter: '', // FOR BACKEND: can be partial string or domain
     genders: ['Male', 'Female'], 
     statuses: ['Active', 'Offline', 'Inactive', 'Deactivated']
   });
@@ -42,25 +42,22 @@ export default function Users() {
       item.id.toLowerCase().includes(search.toLowerCase())
     );
 
-    // Apply Gender & Status Filters
     if (filters.genders.length > 0) result = result.filter(i => filters.genders.includes(i.gender));
     if (filters.statuses.length > 0) result = result.filter(i => filters.statuses.includes(i.status));
 
     // SORTING
     result.sort((a, b) => {
-      // SORT BY HOSPITAL NUMBER (Numerical sort for the suffix after the dash)
-      const idCompare = a.id.localeCompare(b.id, undefined, { numeric: true });
-      if (filters.hospitalNumSort === 'asc') {
-        if (idCompare !== 0) return idCompare;
-      } else {
-        if (idCompare !== 0) return -idCompare;
-      }
+    let valA = a[filters.sortKey];
+    let valB = b[filters.sortKey];
 
-      // SORT BY NAME
-      return filters.nameSort === 'asc' 
-        ? a.name.localeCompare(b.name) 
-        : b.name.localeCompare(a.name);
+    // logic for numeric strings or dates
+    const comparison = valA.localeCompare(valB, undefined, { 
+      numeric: true, 
+      sensitivity: 'base' 
     });
+
+    return filters.sortOrder === 'asc' ? comparison : -comparison;
+  });
 
     return result;
   }, [search, filters]);
@@ -90,18 +87,26 @@ export default function Users() {
 
       {/* TOOLBAR */}
       <div className="flex flex-col lg:flex-row justify-between gap-4 items-center">
-        <div className="relative w-full lg:w-96">
-          <input 
-            type="text" 
-            value={search}
-            onChange={(e) => {setSearch(e.target.value); setCurrentPage(1);}}
-            placeholder="Search..." 
-            className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg font-poppins outline-none focus:ring-2 focus:ring-gabay-blue/20"
-          />
-          <Search className="absolute right-3 top-2.5 text-gray-400" size={18} />
+        {/* LEFT GROUP */}
+        <div className="flex flex-row items-center gap-3 w-full lg:w-auto">
+          <div className="relative flex-1 lg:w-96">
+            <input 
+              type="text" 
+              value={search}
+              onChange={(e) => {setSearch(e.target.value); setCurrentPage(1);}}
+              placeholder="Search..." 
+              className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg font-poppins outline-none focus:ring-2 focus:ring-gabay-blue/20"
+            />
+            <Search className="absolute right-3 top-2.5 text-gray-400" size={18} />
+          </div>
+          
+          <button className="whitespace-nowrap flex items-center justify-center gap-2 px-5 py-2 rounded-full bg-gabay-teal text-white font-medium font-poppins text-sm hover:bg-opacity-90 transition shadow-sm">
+            <Plus size={16} /> <span className="hidden sm:inline"> New User</span><span className="sm:hidden">New User</span>
+          </button>
         </div>
 
-        <div className="flex flex-wrap gap-2 w-full lg:w-auto">
+        {/* RIGHT GROUP */}
+        <div className="flex flex-row gap-2 w-full lg:w-auto">
           <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium">
             <Download size={16} /> Export as CSV
           </button>
@@ -111,21 +116,33 @@ export default function Users() {
               onClick={() => setShowFilterDropdown(!showFilterDropdown)}
               className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium"
             >
-              <Funnel size={16} /> Filter ({filters.nameSort.length + filters.hospitalNumSort.length + filters.genders.length + filters.statuses.length})
+              <Funnel size={16} /> Filter ({filters.genders.length + filters.statuses.length})
             </button>
             
             {showFilterDropdown && (
               <div className="absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-2xl z-[100] p-5 space-y-5">
                 <div>
-                  <p className="text-[10px] font-bold font-poppins text-gray-400 uppercase tracking-widest mb-3">Sorting</p>
-                  <div className="space-y-2">
-                    <select className="w-full text-sm font-poppins border rounded-lg p-2 outline-none" onChange={(e) => setFilters({...filters, nameSort: e.target.value})}>
-                      <option value="asc">Name: A-Z</option>
-                      <option value="desc">Name: Z-A</option>
+                  <p className="text-[10px] font-bold font-poppins text-gray-400 uppercase tracking-widest mb-3">Sort By</p>
+                  <div className="flex flex-col gap-2">
+                    {/* 1ST DROPDOWN */}
+                    <select 
+                      value={filters.sortKey}
+                      className="w-full text-sm font-poppins border rounded-lg p-2 outline-none"
+                      onChange={(e) => setFilters({...filters, sortKey: e.target.value})}
+                    >
+                      <option value="name">Name</option>
+                      <option value="id">Hospital Number</option>
+                      <option value="joinDate">Date Joined</option>
                     </select>
-                    <select className="w-full text-sm font-poppins border rounded-lg p-2 outline-none" onChange={(e) => setFilters({...filters, hospitalNumSort: e.target.value})}>
-                      <option value="asc">Hospital #: Ascending</option>
-                      <option value="desc">Hospital #: Descending</option>
+
+                    {/* SECOND DROPDOWN */}
+                    <select 
+                      value={filters.sortOrder}
+                      className="w-full text-sm font-poppins border rounded-lg p-2 outline-none"
+                      onChange={(e) => setFilters({...filters, sortOrder: e.target.value})}
+                    >
+                      <option value="asc">Ascending (A-Z / Oldest)</option>
+                      <option value="desc">Descending (Z-A / Newest)</option>
                     </select>
                   </div>
                 </div>
@@ -160,17 +177,13 @@ export default function Users() {
 
                 <div className="pt-2 flex gap-2"> 
                   <button onClick={() => 
-                    setFilters({ nameSort: 'asc', hospitalNumSort: 'asc', genders: [], statuses: [] })} 
-                    className="flex-1 py-2 text-xs font-poppins text-gray-400 hover:text-red-500">Reset</button>
-                  <button onClick={() => setShowFilterDropdown(false)} className="flex-1 py-2 bg-gabay-blue text-white rounded-lg text-xs font-poppins font-medium">Apply</button>
+                    setFilters({ sortKey: 'name', sortOrder: 'asc', genders: [], statuses: [] })} 
+                    className="flex-1 py-2 text-xs border border-gray-400 rounded-lg font-poppins font-medium text-gray-400 hover:text-red-500">Reset All</button>
+                  <button onClick={() => setShowFilterDropdown(false)} className="flex-1 py-2 bg-gabay-blue text-white rounded-lg text-xs font-poppins font-medium hover:bg-opacity-90">Apply</button>
                 </div>
               </div>
             )}
           </div>
-
-          <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-gabay-teal text-white font-medium font-poppins text-sm hover:bg-opacity-90 transition">
-            <Plus size={16} /> Add New User
-          </button>
         </div>
       </div>
 
@@ -195,7 +208,7 @@ export default function Users() {
               {pagedData.map((user) => (
                 <tr key={user.id} className={`hover:bg-gray-50 transition-colors ${selectedIds.includes(user.id) ? 'bg-blue-50/50' : ''}`} onClick={() => toggleSelection(user.id)}>
                   <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}><input type="checkbox" className="w-4 h-4 rounded bg-gabay-blue" checked={selectedIds.includes(user.id)} onChange={() => toggleSelection(user.id)} /></td>
-                  <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gray-700">{user.id}</td>
+                  <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gray-700 font-medium">{user.id}</td>
                   <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gabay-blue font-medium">{user.name}</td>
                   <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gray-700">{user.email}</td>
                   <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gray-700">{user.gender}</td>
@@ -219,7 +232,7 @@ export default function Users() {
           </table>
         </div>
 
-        {/* PAGINATION */}
+        {/* PAGE RESULTS */}
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="disabled:opacity-30"><ChevronLeft size={20}/></button>

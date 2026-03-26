@@ -33,8 +33,8 @@ export default function Personnel() {
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   
   const [filters, setFilters] = useState({
-    nameSort: 'asc',
-    idSort: 'asc',
+    sortKey: 'name', // 'name', 'id'
+    sortOrder: 'asc',
     deptType: ['General', 'Specialty'],  
     roles: ['STAFF', 'DOCTOR', 'ADMIN'], 
     statuses: ['Active', 'Offline', 'Inactive', 'Deactivated']
@@ -61,19 +61,16 @@ export default function Personnel() {
 
     // SORTING
     result.sort((a, b) => {
-      // SORT BY EMPLOYEE ID
-      const idCompare = a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' });
-      
-      if (filters.idSort === 'asc') {
-        if (idCompare !== 0) return idCompare;
-      } else {
-        if (idCompare !== 0) return -idCompare;
-      }
+      const valA = a[filters.sortKey];
+      const valB = b[filters.sortKey];
 
-      // SORT BY NAME
-      return filters.nameSort === 'asc' 
-        ? a.name.localeCompare(b.name) 
-        : b.name.localeCompare(a.name);
+      // numeric: true = DOC001 vs DOC010 
+      const comparison = valA.localeCompare(valB, undefined, { 
+        numeric: true, 
+        sensitivity: 'base' 
+      });
+
+      return filters.sortOrder === 'asc' ? comparison : -comparison;
     });
 
     return result;
@@ -107,6 +104,7 @@ export default function Personnel() {
 
       {/* TOOLBAR */}
       <div className="flex flex-col lg:flex-row justify-between gap-4 items-center">
+        <div className="flex flex-row items-center gap-3 w-full lg:w-auto">
         <div className="relative w-full lg:w-96">
           <input 
             type="text" 
@@ -117,8 +115,12 @@ export default function Personnel() {
           />
           <Search className="absolute right-3 top-2.5 text-gray-400" size={18} />
         </div>
+        <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-5 py-2 rounded-full bg-gabay-teal text-white font-medium font-poppins text-sm hover:bg-gabay-teal2 transition">
+            <Plus size={16} /> <span className="hidden sm:inline">New Personnel</span><span className="sm:hidden">Personnel</span> 
+          </button>
+        </div>
 
-        <div className="flex flex-wrap gap-2 w-full lg:w-auto">
+        <div className="flex flex-row gap-2 w-full lg:w-auto">
           <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium">
             <Download size={16} /> Export as CSV
           </button>
@@ -135,128 +137,127 @@ export default function Personnel() {
             {showFilterDropdown && (
   <div className="absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-2xl z-[100] p-5 space-y-5 max-h-[500px] overflow-y-auto scrollbar-thin">
     
-    {/* 1. SORTING SECTION */}
-    <div>
-      <p className="text-[10px] font-bold font-poppins text-gray-400 uppercase tracking-widest mb-3">Sorting</p>
-      <div className="space-y-2">
-        <div>
-          <label className="text-[11px] font-poppins text-gray-500 font-medium">By Name</label>
-          <select 
-            value={filters.nameSort}
-            className="w-full text-sm font-poppins border border-gray-200 rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-gabay-blue/10"
-            onChange={(e) => setFilters({...filters, nameSort: e.target.value})}
-          >
-            <option value="asc">Name: Ascending (A-Z)</option>
-            <option value="desc">Name: Descending (Z-A)</option>
-          </select>
-        </div>
-        <div>
-          <label className="text-[11px] text-gray-500 font-poppins font-medium">By Employee ID</label>
-          <select 
-            value={filters.idSort}
-            className="w-full text-sm font-poppins border border-gray-200 rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-gabay-blue/10"
-            onChange={(e) => setFilters({...filters, idSort: e.target.value})}
-          >
-            <option value="asc">ID: Ascending (001...)</option>
-            <option value="desc">ID: Descending (...999)</option>
-          </select>
-        </div>
-      </div>
-    </div>
+          {/* SORTING SECTION */}
+          <div>
+            <p className="text-[10px] font-bold font-poppins text-gray-400 uppercase tracking-widest mb-3">Sort By</p>
+            <div className="space-y-3">
+              {/* FIRST DROPDOWN */}
+              <div>
+                <label className="text-[11px] font-poppins text-gray-500 font-medium">Data Type</label>
+                <select 
+                  value={filters.sortKey}
+                  className="w-full text-sm font-poppins border border-gray-200 rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-gabay-blue/10"
+                  onChange={(e) => setFilters({...filters, sortKey: e.target.value})}
+                >
+                  <option value="name">Name</option>
+                  <option value="id">Employee ID</option>
+                </select>
+              </div>
 
-    <hr className="border-gray-100" />
-
-    {/* 2. DEPARTMENT TYPE */}
-    <div>
-      <p className="text-[10px] font-bold font-poppins text-gray-400 uppercase tracking-widest mb-3">Department Type</p>
-      <div className="grid grid-cols-2 gap-2">
-        {['General', 'Specialty'].map(type => (
-          <label key={type} className="flex items-center gap-2 text-sm font-poppins cursor-pointer group">
-            <input 
-              type="checkbox" 
-              className="w-4 h-4 rounded bg-gabay-blue"
-              checked={filters.deptType.includes(type)}
-              onChange={(e) => {
-                const newTypes = e.target.checked ? [...filters.deptType, type] : filters.deptType.filter(x => x !== type);
-                setFilters({...filters, deptType: newTypes});
-              }}
-            /> 
-            <span className="text-gray-600 font-poppins group-hover:text-gabay-blue transition-colors">{type}</span>
-          </label>
-        ))}
-      </div>
-    </div>
-
-    {/* 3. ROLE SECTION */}
-    <div>
-      <p className="text-[10px] font-bold font-poppins text-gray-400 uppercase tracking-widest mb-3">Role</p>
-      <div className="grid grid-cols-2 gap-2">
-        {['DOCTOR', 'STAFF', 'ADMIN'].map(r => (
-          <label key={r} className="flex items-center gap-2 text-sm cursor-pointer group">
-            <input 
-              type="checkbox" 
-              className="w-4 h-4 rounded bg-gabay-blue"
-              checked={filters.roles.includes(r)}
-              onChange={(e) => {
-                const newRoles = e.target.checked ? [...filters.roles, r] : filters.roles.filter(x => x !== r);
-                setFilters({...filters, roles: newRoles});
-              }}
-            /> 
-            <span className="text-gray-600 font-poppins group-hover:text-gabay-blue transition-colors">{r}</span>
-          </label>
-        ))}
-      </div>
-    </div>
-
-    {/* 4. STATUS SECTION */}
-    <div>
-      <p className="text-[10px] font-poppins font-bold text-gray-400 uppercase tracking-widest mb-3">Status</p>
-      <div className="grid grid-cols-2 gap-2">
-        {['Active', 'Offline', 'Inactive', 'Deactivated'].map(s => (
-          <label key={s} className="flex items-center gap-2 text-sm cursor-pointer group">
-            <input 
-              type="checkbox" 
-              className="w-4 h-4 rounded bg-gabay-blue"
-              checked={filters.statuses.includes(s)}
-              onChange={(e) => {
-                const newStatus = e.target.checked ? [...filters.statuses, s] : filters.statuses.filter(x => x !== s);
-                setFilters({...filters, statuses: newStatus});
-              }}
-            /> 
-            <span className="text-gray-600 font-poppins group-hover:text-gabay-blue transition-colors">{s}</span>
-          </label>
-        ))}
-      </div>
-    </div>
-
-    {/* ACTIONS */}
-    <div className="pt-2 flex gap-2">
-      <button 
-        onClick={() => setFilters({ nameSort: 'asc', idSort: 'asc', deptType: [], roles: [], statuses: [] })}
-        className="flex-1 py-2 text-xs font-poppins font-medium text-gray-400 hover:text-red-500 transition-colors"
-      >
-        Reset All
-      </button>
-      <button 
-        onClick={() => setShowFilterDropdown(false)}
-        className="flex-1 py-2 bg-gabay-blue text-white rounded-lg text-xs font-poppins font-medium shadow-md hover:bg-opacity-90 transition-all"
-      >
-        Apply
-      </button>
-    </div>
-  </div>
-)}
+              {/* SECOND DROPDOWN */}
+              <div>
+                <label className="text-[11px] text-gray-500 font-poppins font-medium">Order</label>
+                <select 
+                  value={filters.sortOrder}
+                  className="w-full text-sm font-poppins border border-gray-200 rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-gabay-blue/10"
+                  onChange={(e) => setFilters({...filters, sortOrder: e.target.value})}
+                >
+                  <option value="asc">Ascending (A-Z / 0-9)</option>
+                  <option value="desc">Descending (Z-A / 9-0)</option>
+                </select>
+              </div>
+            </div>
           </div>
 
-          <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 rounded-full bg-gabay-teal text-white font-medium font-poppins text-sm hover:bg-gabay-teal2 transition">
-            <Plus size={16} /> Add Personnel
-          </button>
+          <hr className="border-gray-100" />
+
+          {/* DEPARTMENT */}
+          <div>
+            <p className="text-[10px] font-bold font-poppins text-gray-400 uppercase tracking-widest mb-3">Department Type</p>
+            <div className="grid grid-cols-2 gap-2">
+              {['General', 'Specialty'].map(type => (
+                <label key={type} className="flex items-center gap-2 text-sm font-poppins cursor-pointer group">
+                  <input 
+                    type="checkbox" 
+                    className="w-4 h-4 rounded bg-gabay-blue"
+                    checked={filters.deptType.includes(type)}
+                    onChange={(e) => {
+                      const newTypes = e.target.checked ? [...filters.deptType, type] : filters.deptType.filter(x => x !== type);
+                      setFilters({...filters, deptType: newTypes});
+                    }}
+                  /> 
+                  <span className="text-gray-600 font-poppins group-hover:text-gabay-blue transition-colors">{type}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* ROLES */}
+          <div>
+            <p className="text-[10px] font-bold font-poppins text-gray-400 uppercase tracking-widest mb-3">Role</p>
+            <div className="grid grid-cols-2 gap-2">
+              {['DOCTOR', 'STAFF', 'ADMIN'].map(r => (
+                <label key={r} className="flex items-center gap-2 text-sm cursor-pointer group">
+                  <input 
+                    type="checkbox" 
+                    className="w-4 h-4 rounded bg-gabay-blue"
+                    checked={filters.roles.includes(r)}
+                    onChange={(e) => {
+                      const newRoles = e.target.checked ? [...filters.roles, r] : filters.roles.filter(x => x !== r);
+                      setFilters({...filters, roles: newRoles});
+                    }}
+                  /> 
+                  <span className="text-gray-600 font-poppins group-hover:text-gabay-blue transition-colors">{r}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* STATUS SECTION */}
+          <div>
+            <p className="text-[10px] font-poppins font-bold text-gray-400 uppercase tracking-widest mb-3">Status</p>
+            <div className="grid grid-cols-2 gap-2">
+              {['Active', 'Offline', 'Inactive', 'Deactivated'].map(s => (
+                <label key={s} className="flex items-center gap-2 text-sm cursor-pointer group">
+                  <input 
+                    type="checkbox" 
+                    className="w-4 h-4 rounded bg-gabay-blue"
+                    checked={filters.statuses.includes(s)}
+                    onChange={(e) => {
+                      const newStatus = e.target.checked ? [...filters.statuses, s] : filters.statuses.filter(x => x !== s);
+                      setFilters({...filters, statuses: newStatus});
+                    }}
+                  /> 
+                  <span className="text-gray-600 font-poppins group-hover:text-gabay-blue transition-colors">{s}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="pt-2 flex gap-2">
+            <button 
+              onClick={() => setFilters({ sortKey: 'name', sortOrder: 'asc', deptType: [], roles: [], statuses: [] })}
+              className="flex-1 py-2 text-xs font-poppins font-medium border border-gray-400 rounded-lg text-gray-400 hover:text-red-500 transition-colors"
+            >
+              Reset All
+            </button>
+            <button 
+              onClick={() => setShowFilterDropdown(false)}
+              className="flex-1 py-2 bg-gabay-blue text-white rounded-lg text-xs font-poppins font-medium shadow-md hover:bg-opacity-90 transition-all"
+            >
+              Apply
+            </button>
+          </div>
+        </div>
+      )}
+          </div>
+
         </div>
       </div>
 
       {/* TABLE */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        {/* Swipe container: overflow-x-auto allows touch swiping natively */}
+        {/* Native swipe container*/}
         <div className="overflow-x-auto cursor-default">
           <table className="w-full text-left min-w-[1000px]">
             <thead className="bg-gabay-blue font-poppins text-white select-none">
@@ -329,7 +330,7 @@ export default function Personnel() {
           </table>
         </div>
 
-        {/* PAGINATION */}
+        {/* PAGE RESULTS */}
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <button 
