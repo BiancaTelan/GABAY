@@ -94,7 +94,7 @@ export default function Users() {
               type="text" 
               value={search}
               onChange={(e) => {setSearch(e.target.value); setCurrentPage(1);}}
-              placeholder="Search..." 
+              placeholder="Search Users..." 
               className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg font-poppins outline-none focus:ring-2 focus:ring-gabay-blue/20"
             />
             <Search className="absolute right-3 top-2.5 text-gray-400" size={18} />
@@ -124,7 +124,7 @@ export default function Users() {
                 <div>
                   <p className="text-[10px] font-bold font-poppins text-gray-400 uppercase tracking-widest mb-3">Sort By</p>
                   <div className="flex flex-col gap-2">
-                    {/* 1ST DROPDOWN */}
+                    {/* FIRST DROPDOWN */}
                     <select 
                       value={filters.sortKey}
                       className="w-full text-sm font-poppins border rounded-lg p-2 outline-none"

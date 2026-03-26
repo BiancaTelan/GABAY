@@ -14,7 +14,7 @@ export default function AdminSidebar({ isCollapsed, setIsCollapsed }) {
         { name: 'Users', path: '/admin/users', icon: <Users size={22} /> },
         { name: 'Personnel', path: '/admin/personnel', icon: <UserRoundCog size={22} /> },
         { name: 'Departments', path: '/admin/departments', icon: <Building2 size={22} /> },
-        { name: 'Appointment', path: '/admin/appointments', icon: <CalendarCheck size={22} /> },
+        { name: 'Appointments', path: '/admin/appointments', icon: <CalendarCheck size={22} /> },
       ]
     },
     {
