@@ -7,7 +7,7 @@ const colorMap = {
   orange: { border: 'border-gabay-orange', text: 'text-gabay-orange', bg: 'bg-orange-50' },
   blue: { border: 'border-gabay-blue', text: 'text-gabay-blue', bg: 'bg-blue-50' },
   red: { border: 'border-red-500', text: 'text-gabay-red', bg: 'bg-red-50' },
-  gray: { border: 'border-gray-400', text: 'text-gray-400', bg: 'bg-gray-50' },
+  gray: { border: 'border-gray-400', text: 'text-gray-500', bg: 'bg-gray-50' },
 };
 
 export default function StatCard({ 

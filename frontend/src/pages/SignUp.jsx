@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../authContext'; 
 import { emailPattern, namePattern } from '../utils/constants';
 
-export default function SignUp({ onCompleteSignup }) {
+export default function SignUp() {
     const navigate = useNavigate();
     const { login } = useContext(AuthContext); 
     
@@ -20,8 +20,7 @@ export default function SignUp({ onCompleteSignup }) {
     });
 
     const [errors, setErrors] = useState({});
-    const [serverError, setServerError] = useState('');    
-    const [successMsg, setSuccessMsg] = useState('');       
+    const [serverError, setServerError] = useState('');           
 
     const handleSubmit = async (e) => {
       e.preventDefault();
@@ -109,15 +108,14 @@ export default function SignUp({ onCompleteSignup }) {
         const accessToken = loginData.access_token;
         const decodedPayload = JSON.parse(atob(accessToken.split('.')[1]));
 
-        login(accessToken, decodedPayload.role);
+        const userData = {
+          firstname: payload.firstname,
+          surname: payload.surname,
+          email: payload.email,
+        };
 
-        setTimeout(() => {
-           onCompleteSignup({
-             firstname: payload.firstname,
-             surname: payload.surname,
-             email: payload.email
-           });
-        }, 1500);
+        login(accessToken, decodedPayload.role, userData);
+        navigate('/hospital-number');
 
       } catch (error) {
         console.error("Signup Error:", error);

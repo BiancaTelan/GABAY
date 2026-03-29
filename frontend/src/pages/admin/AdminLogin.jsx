@@ -2,13 +2,14 @@ import caintaBg from '../../assets/caintaBg.png';
 import gabayLogo from '../../assets/gabayLogo.png'; 
 import Button from '../../components/button'; 
 import Input from '../../components/input';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useState, useContext } from 'react';
 import { emailPattern } from '../../utils/constants'; 
 import { AuthContext } from '../../authContext';
 
-export default function AdminLogin({ setIsLoggedIn }) {
+export default function AdminLogin() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -42,6 +43,31 @@ export default function AdminLogin({ setIsLoggedIn }) {
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return; 
+    }
+
+    // --- MOCK CREDENTIALS ---
+    if (formData.email === 'staff@example.com' && formData.password === 'password') {
+      const fakeToken = btoa(JSON.stringify({ role: 'staff', sub: formData.email, exp: Date.now() + 86400000 }));
+      login(fakeToken, 'staff');
+      const intended = location.state?.from?.pathname;
+      if (intended) {
+        navigate(intended, { replace: true });
+      } else {
+        navigate('/staff/dashboard', { replace: true });
+      }
+      return;
+    }
+
+    if (formData.email === 'admin@example.com' && formData.password === 'password') {
+      const fakeToken = btoa(JSON.stringify({ role: 'admin', sub: formData.email, exp: Date.now() + 86400000 }));
+      login(fakeToken, 'admin');
+      const intended = location.state?.from?.pathname;
+      if (intended) {
+        navigate(intended, { replace: true });
+      } else {
+        navigate('/admin', { replace: true });
+      }
+      return;
     }
 
     const urlEncodedData = new URLSearchParams();
@@ -79,11 +105,17 @@ export default function AdminLogin({ setIsLoggedIn }) {
 
       // SECURITY CHECK: ADMIN ONLY
       if (userRole === 'admin' || userRole === 'staff') {
-        login(accessToken, userRole);
-        setIsLoggedIn(true);
-        navigate('/admin');
-      } else {
         setServerError("Access Denied: This portal is for authorized personnel only.");
+        return;
+      }
+
+      login(accessToken, userRole);
+      const intended = location.state?.from?.pathname;
+      if (intended) {
+        navigate(intended, { replace: true });
+      } else {
+        const redirectTo = userRole === 'staff' ? '/staff/dashboard' : '/admin';
+        navigate(redirectTo, { replace: true });
       }
 
     } catch (error) {
@@ -171,16 +203,6 @@ export default function AdminLogin({ setIsLoggedIn }) {
                 LOGIN
               </Button>
             </div>
-            <button 
-              type="button"
-              onClick={() => {
-                setIsLoggedIn(true);
-                navigate('/admin');
-              }}
-              className="mt-4 text-[10px] text-gray-400 hover:text-slate-900 transition-colors block mx-auto underline"
-            >
-              (Dev Mode: Skip to Dashboard)
-            </button>
           </form>
 
           <p className="font-poppins text-center text-[10px] mt-8 text-gray-400 italic">

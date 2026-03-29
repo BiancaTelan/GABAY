@@ -7,7 +7,7 @@ import { useState, useContext } from 'react';
 import { emailPattern } from '../utils/constants';
 import { AuthContext } from '../authContext';
 
-export default function Login({ setIsLoggedIn }) {
+export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -80,11 +80,16 @@ export default function Login({ setIsLoggedIn }) {
       const payload = JSON.parse(atob(accessToken.split('.')[1]));
       const userRole = payload.role;
 
+      if (userRole === 'staff') {
+        setErrors({ email: " ", password: "Staff members cannot log in here. Please use the staff login page." });
+        return;
+      }
+
       login(accessToken, userRole);
 
-      setIsLoggedIn(true);
-
-      navigate('/home');
+      const from = location.state?.from?.pathname || '/';
+      
+      navigate(from, { replace: true });
 
     } catch (error) {
       console.error('Login failed:', error);
