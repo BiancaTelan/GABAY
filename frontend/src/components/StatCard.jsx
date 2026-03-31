@@ -15,12 +15,13 @@ export default function StatCard({
   value, 
   icon: Icon, 
   color = 'gray', 
-  isSelected = false 
+  isSelected = false,
+  onClick, 
 }) {
   const styles = colorMap[color] || colorMap.gray;
 
-  return (
-    <div className={`bg-white p-6 rounded-xl shadow-sm border ${isSelected ? 'border-[#3B82F6] ring-2 ring-[#3B82F6]/20' : 'border-gray-100'}`}>
+  const cardContent = (
+    <div className={`bg-white p-6 rounded-xl shadow-sm border ${isSelected ? 'border-[#3B82F6] ring-2 ring-[#3B82F6]/20' : 'border-gray-100'} transition-all duration-200 ${onClick ? 'cursor-pointer hover:shadow-md' : ''}`}>
       <div className="flex items-center justify-between mb-2">
         {/* Data */}
         <h3 className={`font-montserrat text-4xl font-bold ${styles.text}`}>
@@ -39,4 +40,14 @@ export default function StatCard({
       </p>
     </div>
   );
+
+  if (onClick) {
+    return (
+      <button onClick={onClick} className="w-full text-left focus:outline-none">
+        {cardContent}
+      </button>
+    );
+  }
+
+  return cardContent;
 }
