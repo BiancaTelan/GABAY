@@ -92,7 +92,7 @@ export default function Departments() {
             <Search className="absolute right-3 top-2.5 text-gray-400" size={18} />
           </div>
           <button className="whitespace-nowrap flex items-center justify-center gap-2 px-5 py-2 rounded-full bg-gabay-teal text-white font-medium font-poppins text-sm hover:bg-opacity-90 transition shadow-sm">
-            <Plus size={16} /> Add Department
+            <Plus size={16} /><span className="hidden sm:inline">New Department</span><span className="sm:hidden">Department</span> 
           </button>
         </div>
 
@@ -186,10 +186,10 @@ export default function Departments() {
                   <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                     <input type="checkbox" checked={selectedIds.includes(dept.id)} onChange={() => toggleSelection(dept.id)} className="w-4 h-4" />
                   </td>
-                  <td className="px-4 py-4 text-xs font-poppins text-gray-500">{dept.id}</td>
+                  <td className="px-4 py-4 text-sm font-poppins">{dept.id}</td>
                   <td className="px-4 py-4 text-sm font-poppins font-medium text-gabay-blue">{dept.name}</td>
                   <td className="px-4 py-4 text-center">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-wider ${
+                    <span className={`px-3 py-0.5 rounded-full text-[11px] font-poppins font-bold tracking-wider ${
                       dept.type === 'SPECIALTY' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
                     }`}>
                       {dept.type}
