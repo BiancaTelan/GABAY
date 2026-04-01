@@ -4,7 +4,7 @@ import {
   Edit3, MinusCircle, ChevronLeft, ChevronRight, ChevronDown 
 } from 'lucide-react';
 
-// --- MOCK DATA (10 Rows) ---
+// --- SAMPLE DATA ---
 const rawDeptData = [
   { id: 'GEN001', name: 'General IM', type: 'GENERAL', doctors: 11, staff: 5, usedSlots: 7, totalSlots: 25 },
   { id: 'SPEC001', name: 'IM - Cardiology', type: 'SPECIALTY', doctors: 5, staff: 2, usedSlots: 3, totalSlots: 25 },
@@ -16,6 +16,11 @@ const rawDeptData = [
   { id: 'GEN004', name: 'Obstetrics', type: 'GENERAL', doctors: 10, staff: 8, usedSlots: 15, totalSlots: 25 },
   { id: 'SPEC005', name: 'Oncology', type: 'SPECIALTY', doctors: 6, staff: 3, usedSlots: 1, totalSlots: 25 },
   { id: 'GEN005', name: 'Orthopedics', type: 'GENERAL', doctors: 12, staff: 5, usedSlots: 10, totalSlots: 25 },
+  { id: 'GEN006', name: 'Pediatrics', type: 'GENERAL', doctors: 15, staff: 6, usedSlots: 20, totalSlots: 25 },
+  { id: 'SPEC006', name: 'Neurology', type: 'SPECIALTY', doctors: 4, staff: 2, usedSlots: 5, totalSlots: 25 },
+  { id: 'GEN007', name: 'Obstetrics', type: 'GENERAL', doctors: 10, staff: 8, usedSlots: 15, totalSlots: 25 },
+  { id: 'SPEC007', name: 'Oncology', type: 'SPECIALTY', doctors: 6, staff: 3, usedSlots: 1, totalSlots: 25 },
+  { id: 'GEN008', name: 'Orthopedics', type: 'GENERAL', doctors: 12, staff: 5, usedSlots: 10, totalSlots: 25 },
 ];
 
 export default function Departments() {
@@ -66,9 +71,20 @@ export default function Departments() {
   const entryStart = (currentPage - 1) * itemsPerPage + 1;
   const entryEnd = Math.min(currentPage * itemsPerPage, filteredData.length);
 
-  const toggleSelection = (id) => {
-    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
-  };
+  // --- LOGIC: SELECTION ---
+const handleSelectAll = (e) => {
+  if (e.target.checked) {
+    setSelectedIds(pagedData.map(i => i.id));
+  } else {
+    setSelectedIds([]);
+  }
+};
+
+const toggleSelection = (id) => {
+  setSelectedIds(prev => 
+    prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+  );
+};
 
   return (
     <div className="space-y-6">
@@ -147,7 +163,7 @@ export default function Departments() {
                             const newTypes = e.target.checked ? [...filters.deptType, type] : filters.deptType.filter(x => x !== type);
                             setFilters({...filters, deptType: newTypes});
                           }}
-                          className="w-4 h-4 rounded accent-gabay-blue"
+                          className="w-4 h-4 rounded bg-gabay-blue"
                         /> {type}
                       </label>
                     ))}
@@ -155,8 +171,10 @@ export default function Departments() {
                 </div>
 
                 <div className="pt-2 flex gap-2">
-                  <button onClick={() => setFilters({ sortKey: 'name', sortOrder: 'asc', deptType: [] })} className="flex-1 py-2 text-xs text-gray-400 font-poppins">Reset</button>
-                  <button onClick={() => setShowFilterDropdown(false)} className="flex-1 py-2 bg-gabay-blue text-white rounded-lg text-xs font-poppins">Apply</button>
+                  <button onClick={() => setFilters({ sortKey: 'name', sortOrder: 'asc', deptType: [] })} 
+                  className="flex-1 py-2 text-xs font-poppins font-medium border border-gray-400 rounded-lg text-gray-400 hover:text-red-500 transition-colors">Reset All</button>
+                  <button onClick={() => setShowFilterDropdown(false)} 
+                  className="flex-1 py-2 bg-gabay-blue text-white rounded-lg text-xs font-poppins font-medium shadow-md hover:bg-opacity-90 transition-all">Apply</button>
                 </div>
               </div>
             )}
@@ -170,7 +188,14 @@ export default function Departments() {
           <table className="w-full text-left min-w-[1000px]">
             <thead className="bg-gabay-blue font-poppins text-white select-none">
               <tr>
-                <th className="px-4 py-4 text-center"><input type="checkbox" className="w-4 h-4" /></th>
+                <th className="px-4 py-4 text-center">
+                  <input 
+                    type="checkbox" 
+                    onChange={handleSelectAll}
+                    checked={selectedIds.length === pagedData.length && pagedData.length > 0}
+                    className="w-4 h-4 accent-gabay-blue"
+                  />
+                </th>
                 <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider">Department ID</th>
                 <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider">Department Name</th>
                 <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-center">Department Type</th>
@@ -184,9 +209,10 @@ export default function Departments() {
               {pagedData.map((dept) => (
                 <tr key={dept.id} className="hover:bg-gray-50 transition-colors" onClick={() => toggleSelection(dept.id)}>
                   <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}>
-                    <input type="checkbox" checked={selectedIds.includes(dept.id)} onChange={() => toggleSelection(dept.id)} className="w-4 h-4" />
+                    <input type="checkbox" checked={selectedIds.includes(dept.id)} 
+                    onChange={() => toggleSelection(dept.id)} className="w-4 h-4 accent-gabay-blue" />
                   </td>
-                  <td className="px-4 py-4 text-sm font-poppins">{dept.id}</td>
+                  <td className="px-4 py-4 text-sm text-gray-700 font-medium font-poppins">{dept.id}</td>
                   <td className="px-4 py-4 text-sm font-poppins font-medium text-gabay-blue">{dept.name}</td>
                   <td className="px-4 py-4 text-center">
                     <span className={`px-3 py-0.5 rounded-full text-[11px] font-poppins font-bold tracking-wider ${
@@ -195,8 +221,8 @@ export default function Departments() {
                       {dept.type}
                     </span>
                   </td>
-                  <td className="px-4 py-4 text-center text-sm font-poppins">{dept.doctors}</td>
-                  <td className="px-4 py-4 text-center text-sm font-poppins">{dept.staff}</td>
+                  <td className="px-4 py-4 text-center text-sm text-gray-700 font-poppins">{dept.doctors}</td>
+                  <td className="px-4 py-4 text-center text-sm text-gray-700 font-poppins">{dept.staff}</td>
                   <td className="px-4 py-4 text-center text-sm font-poppins font-semibold text-gray-600">
                     {dept.usedSlots}/{dept.totalSlots}
                   </td>

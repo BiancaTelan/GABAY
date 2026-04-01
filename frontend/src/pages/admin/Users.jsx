@@ -4,7 +4,7 @@ import {
   Edit3, MinusCircle, ChevronLeft, ChevronRight 
 } from 'lucide-react';
 
-// --- MOCK DATA ---
+// --- SAMPLE DATA ---
 const rawUsersData = [
   { id: '26-154928', name: 'Juan Dela Cruz', email: 'juandelacruz@gmail.com', gender: 'Male', phone: '09191234567', status: 'Active', joinDate: '02/25/2026' },
   { id: '26-123456', name: 'Maria Dela Cruz', email: 'maria.delacruz@gmail.com', gender: 'Female', phone: '09191234567', status: 'Offline', joinDate: '03/10/2026' },
@@ -19,7 +19,6 @@ const rawUsersData = [
 ];
 
 export default function Users() {
-  // --- STATES ---
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState([]);

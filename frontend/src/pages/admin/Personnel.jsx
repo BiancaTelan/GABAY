@@ -26,7 +26,6 @@ const rawData = [
 ];
 
 export default function Personnel() {
-  // --- STATES ---
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState([]);
@@ -143,7 +142,6 @@ export default function Personnel() {
             <div className="space-y-3">
               {/* FIRST DROPDOWN */}
               <div>
-                <label className="text-[11px] font-poppins text-gray-500 font-medium">Data Type</label>
                 <select 
                   value={filters.sortKey}
                   className="w-full text-sm font-poppins border border-gray-200 rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-gabay-blue/10"
@@ -156,7 +154,6 @@ export default function Personnel() {
 
               {/* SECOND DROPDOWN */}
               <div>
-                <label className="text-[11px] text-gray-500 font-poppins font-medium">Order</label>
                 <select 
                   value={filters.sortOrder}
                   className="w-full text-sm font-poppins border border-gray-200 rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-gabay-blue/10"
@@ -168,8 +165,6 @@ export default function Personnel() {
               </div>
             </div>
           </div>
-
-          <hr className="border-gray-100" />
 
           {/* DEPARTMENT */}
           <div>
@@ -304,7 +299,7 @@ export default function Personnel() {
                        {person.role}
                      </span>
                   </td>
-                  <td className="px-4 py-4 text-xs font-poppins md:text-sm text-gray-700">{person.name}</td>
+                  <td className="px-4 py-4 text-xs font-poppins md:text-sm text-gabay-blue font-medium">{person.name}</td>
                   <td className="px-4 py-4 text-xs font-poppins md:text-sm text-gray-700">{person.dept}</td>
                   <td className="px-4 py-4 text-xs font-poppins md:text-sm text-gray-700">{person.schedule}</td>
                   <td className="px-4 py-4 text-xs font-poppins md:text-sm text-gray-500">{person.email}</td>
