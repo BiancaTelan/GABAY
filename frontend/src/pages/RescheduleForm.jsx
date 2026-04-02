@@ -81,14 +81,14 @@ export default function RescheduleForm({ userInfo }) {
         
         <div className="space-y-4 opacity-75">
           <div className="flex flex-col">
-            <label className="text-xs font-bold text-gray-400 uppercase mb-1">Department (Locked)</label>
+            <label className="text-xs font-bold text-gray-400 uppercase mb-1">Department</label>
             <div className="p-3 bg-gray-100 rounded-lg border border-gray-200 text-gray-600 font-medium">
               {department}
             </div>
           </div>
 
           <div className="flex flex-col">
-            <label className="text-xs font-bold text-gray-400 uppercase mb-1">Doctor (Locked)</label>
+            <label className="text-xs font-bold text-gray-400 uppercase mb-1">Doctor</label>
             <div className="p-3 bg-gray-100 rounded-lg border border-gray-200 text-gray-600 font-medium">
               {doctor}
             </div>

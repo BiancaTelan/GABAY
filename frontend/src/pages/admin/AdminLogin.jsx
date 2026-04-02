@@ -1,13 +1,13 @@
-import caintaBg from '../assets/caintaBg.png';
-import gabayLogo from '../assets/gabayLogo.png';
-import Button from '../components/button';
-import Input from '../components/input';
+import caintaBg from '../../assets/caintaBg.png'; 
+import gabayLogo from '../../assets/gabayLogo.png'; 
+import Button from '../../components/button'; 
+import Input from '../../components/input';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useState, useContext } from 'react';
-import { emailPattern } from '../utils/constants';
-import { AuthContext } from '../authContext';
+import { emailPattern } from '../../utils/constants'; 
+import { AuthContext } from '../../authContext';
 
-export default function Login() {
+export default function AdminLogin() {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -45,6 +45,31 @@ export default function Login() {
       return; 
     }
 
+    // --- MOCK CREDENTIALS ---
+    if (formData.email === 'staff@example.com' && formData.password === 'password') {
+      const fakeToken = btoa(JSON.stringify({ role: 'staff', sub: formData.email, exp: Date.now() + 86400000 }));
+      login(fakeToken, 'staff');
+      const intended = location.state?.from?.pathname;
+      if (intended) {
+        navigate(intended, { replace: true });
+      } else {
+        navigate('/staff/dashboard', { replace: true });
+      }
+      return;
+    }
+
+    if (formData.email === 'admin@example.com' && formData.password === 'password') {
+      const fakeToken = btoa(JSON.stringify({ role: 'admin', sub: formData.email, exp: Date.now() + 86400000 }));
+      login(fakeToken, 'admin');
+      const intended = location.state?.from?.pathname;
+      if (intended) {
+        navigate(intended, { replace: true });
+      } else {
+        navigate('/admin', { replace: true });
+      }
+      return;
+    }
+
     const urlEncodedData = new URLSearchParams();
     urlEncodedData.append('username', formData.email); 
     urlEncodedData.append('password', formData.password);
@@ -56,7 +81,7 @@ export default function Login() {
         body: urlEncodedData.toString(),
       });
       
-    const textResponse = await response.text();
+      const textResponse = await response.text();
       let data;
       
       try {
@@ -67,7 +92,6 @@ export default function Login() {
       
       if (!response.ok) {
         const errorMessage = data.detail || 'Incorrect email or password';
-        
         setErrors({
           email: " ", 
           password: errorMessage 
@@ -76,20 +100,23 @@ export default function Login() {
       }
 
       const accessToken = data.access_token;
-
       const payload = JSON.parse(atob(accessToken.split('.')[1]));
       const userRole = payload.role;
 
-      if (userRole === 'staff') {
-        setErrors({ email: " ", password: "Staff members cannot log in here. Please use the staff login page." });
+      // SECURITY CHECK: ADMIN ONLY
+      if (userRole === 'admin' || userRole === 'staff') {
+        setServerError("Access Denied: This portal is for authorized personnel only.");
         return;
       }
 
       login(accessToken, userRole);
-
-      const from = location.state?.from?.pathname || '/';
-      
-      navigate(from, { replace: true });
+      const intended = location.state?.from?.pathname;
+      if (intended) {
+        navigate(intended, { replace: true });
+      } else {
+        const redirectTo = userRole === 'staff' ? '/staff/dashboard' : '/admin';
+        navigate(redirectTo, { replace: true });
+      }
 
     } catch (error) {
       console.error('Login failed:', error);
@@ -103,30 +130,30 @@ export default function Login() {
         className="absolute inset-0 z-0 bg-cover bg-center"
         style={{ backgroundImage: `url(${caintaBg})` }}
       />
-      
-      {/* GABAY Logo Link */}
+
       <div 
         className="absolute top-6 left-6 z-30 cursor-pointer hover:opacity-80 transition"
         onClick={() => navigate('/')}>
         <img src={gabayLogo} alt="GABAY Logo" className="h-10 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]" />
       </div>
       
-      <div className="absolute inset-0 z-10 bg-black opacity-50" />
+      <div className="absolute inset-0 z-10 bg-black opacity-60" /> 
 
       <div className="relative z-20 flex flex-col md:flex-row w-full max-w-5xl bg-white shadow-2xl overflow-hidden md:rounded-2sm mx-4 text-left">
-        <div className="hidden md:flex flex-1 bg-gabay-blue p-12 flex-col justify-center text-white text-left">
+        
+        <div className="hidden md:flex flex-1 bg-gabay-navy p-12 flex-col justify-center text-white text-left">
           <h1 className="font-montserrat text-4xl font-bold leading-tight mb-6">
             General to Specialty Appointment & Booking Assistant for You
           </h1>
           <h2 className="font-montserrat text-xl font-semibold mb-6">Your health, our priority.</h2>
-          <p className="font-poppins">
-            A helpful guide to reserve your appointment slots in Cainta Municipal Hospital.
+          <p className="font-poppins text-gray-300">
+            GABAY's Administrative Portal. AUTHORIZED ACCESS ONLY. Please use your issued credentials to view and manage the system.
           </p>
         </div>
 
         <div className="flex-1 p-8 md:p-12 bg-white">
-          <h3 className="font-montserrat text-3xl font-bold text-gabay-blue text-center mb-2">Log In</h3>
-          <p className="font-poppins text-gray-500 text-center text-sm mb-8">Accomplish the form below to access your account</p>
+          <h3 className="font-montserrat text-3xl font-bold text-gabay-navy text-center mb-2">Admin Log In</h3>
+          <p className="font-poppins text-gray-500 text-center text-sm mb-8">Login to access your authorized GABAY account.</p>
           
           {serverError && (
             <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-6">
@@ -136,9 +163,9 @@ export default function Login() {
 
           <form onSubmit={handleLogin} className="space-y-6">
             <Input 
-              label="Email Address" 
+              label="Personnel Email" 
               type="email" 
-              placeholder="emailaddress@gmail.com" 
+              placeholder="admin@gabay.com" 
               value={formData.email}
               error={errors.email}
               onChange={(e) => setFormData({...formData, email: e.target.value})}
@@ -148,7 +175,7 @@ export default function Login() {
             <Input 
               label="Password" 
               type="password" 
-              placeholder="Enter your password" 
+              placeholder="••••••••" 
               value={formData.password}
               error={errors.password}
               onChange={(e) => setFormData({...formData, password: e.target.value})}
@@ -159,9 +186,9 @@ export default function Login() {
             <div className="flex items-center justify-between mt-1 mb-6">
               <label className="flex items-center cursor-pointer group">
                 <input type="checkbox" 
-                  className="w-4 h-4 border-gray-300 rounded text-gabay-teal focus:ring-gabay-teal cursor-pointer"
+                  className="w-4 h-4 border-gray-300 rounded text-slate-900 focus:ring-slate-900 cursor-pointer"
                 />
-                <span className="ml-2 text-xs font-poppins text-gray-600 group-hover:text-gabay-blue transition-colors">
+                <span className="ml-2 text-xs font-poppins text-gray-600 group-hover:text-slate-900 transition-colors">
                   Remember me
                 </span>
               </label>
@@ -172,20 +199,14 @@ export default function Login() {
             </div>
           
             <div className="flex justify-center mt-6">
-              <Button variant="teal" type="submit" className="w-48">
+              <Button variant="blue" type="submit" className="w-48">
                 LOGIN
               </Button>
             </div>
           </form>
 
-          <p className="font-poppins text-center text-sm mt-6 text-gray-600">
-            Don't have an account? 
-            <button 
-              onClick={() => navigate('/signup')} 
-              className="text-gabay-blue font-bold ml-1 hover:underline"
-            >
-              Sign Up
-            </button>
+          <p className="font-poppins text-center text-[10px] mt-8 text-gray-400 italic">
+            Contact a system admin if you have trouble accessing your personnel account.
           </p>
         </div>
       </div>

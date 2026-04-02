@@ -9,8 +9,8 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
   const navigate = useNavigate(); 
   
   const [formData, setFormData] = useState({
-    firstName: initialData?.firstName || "",
-    lastName: initialData?.lastName || "",
+    firstname: initialData?.firstname || "",
+    surname: initialData?.surname || "",
     email: initialData?.email || "",
     hospital_num: "",
     contactNumber: "",
@@ -109,7 +109,10 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
 
       } catch (error) {
         console.error("Profile Update Error:", error);
-        setServerError(error.message);
+        const displayError = typeof error.message === 'string' 
+          ? error.message 
+          : JSON.stringify(error.message);
+        setServerError(displayError);
       } finally {
         setIsSubmitting(false);
       }
@@ -128,7 +131,7 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
       )}
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-5">
-        <Input label="Full Name" value={`${formData.firstName} ${formData.lastName}`} readOnly noHover />
+        <Input label="Full Name" value={`${formData.firstname} ${formData.surname}`} readOnly noHover />
         <Input label="Email Address" value={formData.email} readOnly noHover />
         
         <Input 
@@ -198,17 +201,9 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
           />
         </div>
 
-        <div className="md:col-span-2 flex justify-between items-center mt-6">
+        <div className="md:col-span-2 flex justify-end items-center mt-6">
 
-          <button 
-            type="button" 
-            onClick={() => navigate('/')} 
-            className="text-gray-400 hover:text-gray-600 text-sm font-medium"
-          >
-            Cancel and Return Home
-          </button>
-
-          <Button variant="teal" type="submit" className="w-55 py-3 text-base font-semibold tracking-normal">
+          <Button variant="teal" type="submit" className="w-55 py-3 text-[16px] font-semibold tracking-normal">
             UPDATE MY ACCOUNT
           </Button>
         </div>

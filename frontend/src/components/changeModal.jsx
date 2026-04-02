@@ -144,17 +144,17 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast, current
     <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
       <style>{`input::-ms-reveal, input::-ms-clear { display: none; }`}</style>
       
-      <div className="bg-white w-full max-w-xl rounded-xl p-12 shadow-2xl border border-gray-300 relative animate-in fade-in zoom-in duration-300">
+      <div className="bg-white w-full max-w-lg rounded-xl p-6 shadow-2xl border border-gray-300 relative animate-in fade-in zoom-in duration-300">
         
         <div className="flex justify-between items-start mb-8">
-          <h1 className="text-4xl font-montserrat font-bold text-gabay-teal">
+          <h1 className="text-3xl font-montserrat font-bold text-gabay-teal">
             {isEmailType ? "Change Email" : "Change Password"}
           </h1>
           <button 
             type="button" 
             onClick={onClose} 
             disabled={isLoading}
-            className="text-gabay-blue hover:underline font-poppins text-lg transition-all disabled:opacity-50"
+            className="text-gabay-blue hover:underline font-poppins text-base transition-all disabled:opacity-50"
           >
             Cancel
           </button>
@@ -165,7 +165,7 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast, current
 
           {isEmailType ? (
             <>
-              <div className="mb-6">
+              <div className="mb-5">
                 <label className={labelStyle}>Current Email</label>
                 <input 
                   type="text" 
@@ -175,7 +175,7 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast, current
                 />
               </div>
 
-              <div className="mb-6">
+              <div className="mb-5">
                 <label className={labelStyle}>Enter New Email <span className="text-red-500">*</span></label>
                 <input 
                   type="email" 
@@ -187,7 +187,7 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast, current
                 <span className={errorTextStyle}>{errors.newEmail}</span>
               </div>
 
-              <div className="relative mb-10">
+              <div className="relative mb-5">
                 <label className={labelStyle}>Enter Password to Confirm Changes <span className="text-red-500">*</span></label>
                 <input 
                   type={showCurrent ? "text" : "password"} 
@@ -209,7 +209,7 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast, current
           ) : (
             <>
               {/* --- PASSWORD CHANGE INPUTS --- */}
-              <div className="relative mb-6">
+              <div className="relative mb-3">
                 <label className={labelStyle}>Current Password <span className="text-red-500">*</span></label>
                 <input 
                   type={showCurrent ? "text" : "password"} 
@@ -224,7 +224,7 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast, current
                 <span className={errorTextStyle}>{errors.currentPassword}</span>
               </div>
 
-              <div className="relative mb-6">
+              <div className="relative mb-3">
                 <label className={labelStyle}>New Password <span className="text-red-500">*</span></label>
                 <input 
                   type={showNew ? "text" : "password"} 
@@ -239,7 +239,7 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast, current
                 <span className={errorTextStyle}>{errors.newPassword}</span>
               </div>
 
-              <div className="relative mb-10">
+              <div className="relative mb-3">
                 <label className={labelStyle}>Confirm New Password <span className="text-red-500">*</span></label>
                 <input 
                   type={showConfirm ? "text" : "password"} 
@@ -260,7 +260,7 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast, current
             <button 
               type="submit" 
               disabled={isLoading}
-              className={`bg-gabay-teal hover:bg-teal-600 text-white font-montserrat font-bold py-3 px-12 rounded-full transition-all shadow-md uppercase tracking-wide flex items-center gap-2 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+              className={`bg-gabay-teal hover:bg-teal-600 text-white font-montserrat font-bold py-2 px-10 rounded-full transition-all shadow-md uppercase tracking-wide flex items-center gap-2 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
               {isLoading ? (
                 <>
