@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from datetime import datetime
-
+from dependencies import get_current_user
 from db_connection import get_db
 from db_model import User, Patient
 from py_schema import HospitalNumberRequest, PatientProfileUpdate
@@ -44,7 +44,7 @@ def generate_hospital_number(request: HospitalNumberRequest, db: Session = Depen
         else:
             new_sequence = 1
 
-        new_hospital_number = f"{prefix}{new_sequence:05d}"
+        new_hospital_number = f"{prefix}{new_sequence:06d}"
 
         patient.hospital_num = new_hospital_number
         db.commit()
@@ -143,3 +143,31 @@ def update_patient_profile(profile_data: PatientProfileUpdate, db: Session = Dep
         print(f"\n❌ ERROR UPDATING PROFILE: {str(e)}\n")
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Server Error: {str(e)}")
+
+# ---------------------------------------------------------
+# 4. PATIENT ACCOUNT DELETION
+# ---------------------------------------------------------
+
+@router.delete("/delete-account")
+def delete_user_account(
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        user_to_delete = db.query(User).filter(User.userID == current_user.userID).first()
+        
+        if not user_to_delete:
+            raise HTTPException(status_code=404, detail="User not found.")
+
+        db.delete(user_to_delete)
+        db.commit()
+
+        return {"message": "Account and all associated records have been permanently deleted."}
+
+    except Exception as e:
+        db.rollback()
+        print(f"Delete Account Error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete account. Please try again later."
+        )

@@ -71,7 +71,7 @@ class Patient(Base):
     __tablename__ = "patientTable"
 
     patientID: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    userID: Mapped[Optional[int]] = mapped_column(ForeignKey("userTable.userID", ondelete="RESTRICT"), unique=True)
+    userID: Mapped[Optional[int]] = mapped_column(ForeignKey("userTable.userID", ondelete="CASCADE"), unique=True)
     
     firstname: Mapped[str] = mapped_column(String(100), nullable=False)
     middlename: Mapped[Optional[str]] = mapped_column(String(100))
@@ -88,7 +88,7 @@ class Patient(Base):
     
     # === Relationships ===
     user_account: Mapped[Optional["User"]] = relationship(back_populates="patient_profile")
-    appointments: Mapped[List["Appointment"]] = relationship(back_populates="patient")
+    appointments: Mapped[List["Appointment"]] = relationship(back_populates="patient", cascade="all, delete-orphan")
 
 
 class Doctor(Base):
@@ -122,7 +122,7 @@ class Appointment(Base):
     __tablename__ = "appointmentTable"
 
     appointmentID: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    patientID: Mapped[int] = mapped_column(ForeignKey("patientTable.patientID", ondelete="RESTRICT"), nullable=False)
+    patientID: Mapped[int] = mapped_column(ForeignKey("patientTable.patientID", ondelete="CASCADE"), nullable=False)
     docID: Mapped[Optional[int]] = mapped_column(ForeignKey("doctorTable.docID", ondelete="SET NULL"))
     deptID: Mapped[int] = mapped_column(ForeignKey("departmentTable.deptID", ondelete="RESTRICT"), nullable=False)
     assignedScheduleID: Mapped[Optional[int]] = mapped_column(ForeignKey("scheduleTable.scheduleID", ondelete="SET NULL"))

@@ -47,7 +47,7 @@ def get_my_profile(current_user: User = Depends(get_current_user)):
     }
 
 # ---------------------------------------------------------
-# ROUTE 3: Main Reservation Endpoint 
+# ROUTE 3: Main Rappointment Endpoint 
 # ---------------------------------------------------------
 
 router = APIRouter(prefix="/appointments", tags=["Appointments"])
@@ -223,7 +223,7 @@ def get_appointment_history(email: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Failed to fetch appointment history.")
 
 # ---------------------------------------------------------
-    # ROUTE 5: Update Appointment Status Patient side
+#ROUTE 5: Update Appointment Status Patient side
 # ---------------------------------------------------------
 
 @router.put("/{appointment_id}/status")

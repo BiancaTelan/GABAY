@@ -98,10 +98,31 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
       type: 'danger',
       title: 'Delete Account',
       message: 'This action is permanent. Your hospital records and appointment history will be removed from the GABAY system.',
-      onConfirm: () => {
-        console.log("Account Deleted");
-        onLogout(); 
-        navigate('/'); 
+      onConfirm: async () => {
+        closeModal();
+        
+        try {
+          const response = await fetch('/api/patients/delete-account', {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "Failed to delete account.");
+          }
+
+          console.log("Account successfully deleted from database.");
+          onLogout(); 
+          navigate('/'); 
+          
+        } catch (error) {
+          console.error("Error deleting account:", error);
+          alert(error.message);
+        }
       }
     });
   };
