@@ -131,10 +131,9 @@ const filteredData = useMemo(() => {
                 
                 {/* 1. SORT BY SECTION */}
                 <div>
-                  <p className="text-[10px] font-bold font-poppins text-gray-400 uppercase tracking-widest mb-3">Sorting</p>
+                  <p className="text-[10px] font-bold font-poppins text-gray-400 uppercase tracking-widest mb-3">Sort By</p>
                   <div className="space-y-3">
                     <div>
-                      <label className="text-[11px] font-poppins text-gray-500 font-medium">Sort By</label>
                       <select 
                         value={filters.sortKey}
                         className="w-full text-sm font-poppins border border-gray-200 rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-gabay-blue/10"
@@ -145,7 +144,6 @@ const filteredData = useMemo(() => {
                       </select>
                     </div>
                     <div>
-                      <label className="text-[11px] font-poppins text-gray-500 font-medium">Order</label>
                       <select 
                         value={filters.sortOrder}
                         className="w-full text-sm font-poppins border border-gray-200 rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-gabay-blue/10"
@@ -157,8 +155,6 @@ const filteredData = useMemo(() => {
                     </div>
                   </div>
                 </div>
-
-                <hr className="border-gray-100" />
 
                 {/* 2. ISSUE TYPE SECTION */}
                 <div>
@@ -182,7 +178,7 @@ const filteredData = useMemo(() => {
                   <p className="text-[10px] font-bold font-poppins text-gray-400 uppercase tracking-widest mb-3">Priority Level</p>
                   <div className="grid grid-cols-2 gap-2">
                     {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map(p => (
-                      <label key={p} className="flex items-center gap-2 text-xs font-poppins text-gray-600 cursor-pointer group">
+                      <label key={p} className="flex items-center gap-2 text-sm font-poppins text-gray-600 cursor-pointer group">
                         <input 
                           type="checkbox" 
                           checked={filters.priorities.includes(p)}
