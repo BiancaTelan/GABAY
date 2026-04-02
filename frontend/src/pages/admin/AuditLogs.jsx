@@ -104,7 +104,7 @@ export default function AuditLogs() {
               type="text" 
               value={search}
               onChange={(e) => {setSearch(e.target.value); setCurrentPage(1);}}
-              placeholder="Search by User, IP, Action, or Date..." 
+              placeholder="Search Audit Logs..." 
               className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg font-poppins outline-none focus:ring-2 focus:ring-gabay-blue/20"
             />
             <Search className="absolute right-3 top-2.5 text-gray-400" size={18} />
@@ -119,7 +119,7 @@ export default function AuditLogs() {
           <div className="relative flex-1 lg:flex-none">
             <button 
               onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium hover:bg-teal-50 transition-colors"
             >
               <Funnel size={16} /> Filter ({filters.roles.length})
             </button>
@@ -175,14 +175,7 @@ export default function AuditLogs() {
           <table className="w-full text-left min-w-[1000px]">
             <thead className="bg-gabay-blue font-poppins text-white select-none">
               <tr>
-                <th className="px-4 py-4 text-center">
-                  <input 
-                    type="checkbox" 
-                    onChange={handleSelectAll}
-                    checked={selectedIds.length === pagedData.length && pagedData.length > 0}
-                    className="w-4 h-4 bg-gabay-blue"
-                  />
-                </th>
+
                 <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider">Date</th>
                 <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider">User</th>
                 <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-center">Role</th>
@@ -194,10 +187,6 @@ export default function AuditLogs() {
             <tbody className="divide-y divide-gray-100">
               {pagedData.map((log) => (
                 <tr key={log.id} className={`hover:bg-gray-50 transition-colors ${selectedIds.includes(log.id) ? 'bg-blue-50/50' : ''}`} onClick={() => toggleSelection(log.id)}>
-                  <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}>
-                    <input type="checkbox" checked={selectedIds.includes(log.id)} 
-                    onChange={() => toggleSelection(log.id)} className="w-4 h-4 bg-gabay-blue" />
-                  </td>
                   <td className="px-4 py-4 text-xs font-poppins text-gabay-blue font-medium">
                     {log.date} <br/> <span className="text-gray-400 font-normal">{log.time}</span>
                   </td>

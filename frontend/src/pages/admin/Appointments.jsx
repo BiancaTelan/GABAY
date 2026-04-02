@@ -110,20 +110,17 @@ const toggleSelection = (id) => {
             />
             <Search className="absolute right-3 top-2.5 text-gray-400" size={18} />
           </div>
-          <button className="whitespace-nowrap flex items-center justify-center gap-2 px-5 py-2 rounded-full bg-gabay-teal text-white font-medium font-poppins text-sm hover:bg-opacity-90 transition shadow-sm">
-            <Plus size={16} /><span className="hidden sm:inline">New Appointment</span><span className="sm:hidden">Appointment</span> 
-          </button>
         </div>
 
         <div className="flex flex-row gap-2 w-full lg:w-auto">
-          <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium">
+          <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium hover:bg-teal-50 transition-colors">
             <Download size={16} /> Export as CSV
           </button>
           
           <div className="relative flex-1 lg:flex-none">
             <button 
               onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium hover:bg-teal-50 transition-colors"
             >
               <Funnel size={16} /> Filter ({filters.statuses.length + filters.deptTypes.length})
             </button>
@@ -245,22 +242,22 @@ const toggleSelection = (id) => {
                     </td>
                   </tr>
                   {expandedId === app.id && (
-                    <tr className="bg-gray-50/50 border-l-4 border-gabay-blue">
-                      <td colSpan="8" className="px-10 py-6">
+                    <tr className="bg-gray-50/50">
+                      <td colSpan="8" className="px-10 py-4 border-l-4 border-gabay-blue">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                           <div className="space-y-2 text-xs font-poppins">
                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Schedule:</p>
-                            <span className="flex items-center gap-2 text-gabay-blue font-medium"><Calendar size={14}/> {app.date}</span>
-                            <span className="flex items-center gap-2 text-gabay-blue font-medium"><Clock size={14}/> {app.time}</span>
+                            <span className="flex items-center gap-2 text-gray-700 font-medium"><Calendar size={14}/> {app.date}</span>
+                            <span className="flex items-center gap-2 text-gray-700 font-medium"><Clock size={14}/> {app.time}</span>
                           </div>
                           <div className="space-y-2 text-xs font-poppins">
                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Approved By:</p>
-                            <span className="flex items-center gap-2 text-gabay-blue font-medium"><User size={14}/> {app.approvedBy || '--'}</span>
-                            <span className="flex items-center gap-2 text-gabay-blue font-medium"><Calendar size={14}/> {app.approvedDate || '--'}</span>
+                            <span className="flex items-center gap-2 text-gray-700 font-medium"><User size={14}/> {app.approvedBy || '--'}</span>
+                            <span className="flex items-center gap-2 text-gray-700 font-medium"><Calendar size={14}/> {app.approvedDate || '--'}</span>
                           </div>
                           <div className="space-y-2 text-xs font-poppins">
                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Last Updated:</p>
-                            <span className="text-gabay-blue font-medium">{app.lastUpdate}</span>
+                            <span className="text-gray-700 font-medium">{app.lastUpdate}</span>
                           </div>
                         </div>
                         {app.status === 'Cancelled' && (
