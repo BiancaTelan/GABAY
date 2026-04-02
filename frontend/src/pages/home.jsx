@@ -39,17 +39,17 @@ export default function Home() {
             className="font-poppins flex items-center text-gabay-blue font-semibold text-lg hover:underline group"
           >
             Head to Department List 
-            <span className="ml-2 transform group-hover:translate-x-1 transition-transform">
+            <span className="ml-2 p-3 transform group-hover:translate-x-1 transition-transform">
               →
             </span>
           </button>
         </div>
 
-        <div className="flex-1 relative">
+        <div className="flex-1 relative h-full">
           <img 
             src={caintaLanding} 
             alt="Cainta Municipal Hospital" 
-            className="w-full h-full object-cover object-center"
+            className="w-full h-full object-cover object-bottom"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-white via-transparent to-transparent hidden md:block" />
         </div>

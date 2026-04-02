@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react'; 
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
-
+import { AuthContext } from './authContext';
 import Header from './components/header';
 import Home from './pages/home';
 import Help from './pages/Help';
@@ -23,53 +23,109 @@ import ReservationConfirmation from './pages/R.F.Confirmation';
 import AppointmentConfirmed from './pages/ApptConfirmed';
 import AppointmentCancelled from './pages/ApptCancelled';
 import ForgotPassword from './pages/ForgotPassword';
+import Footer from './components/footer';
+
+import StaffLayout from './components/StaffLayout';
+import StaffDashboard from './pages/staff/StaffDashboard';
+
+import AdminLogin from './pages/admin/AdminLogin';
+import AdminLayout from './components/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import Users from './pages/admin/Users';
+import Personnel from './pages/admin/Personnel';
+import Departments from './pages/admin/Departments';
+import Appointments from './pages/admin/Appointments';
+import AuditLogs from './pages/admin/AuditLogs';
+import SystemLogs from './pages/admin/SystemLogs';
+
 
 function App() { 
   const navigate = useNavigate();
   const location = useLocation();
-
-  const [isLoggedIn, setIsLoggedIn] = useState(false); 
+  const { token, userRole, userInfo, logout } = useContext(AuthContext);
+  
   const [registrationData, setRegistrationData] = useState(null);
-  const [userInfo, setUserInfo] = useState(null);
   const [showBlockerModal, setShowBlockerModal] = useState(false);
   const [formMode, setFormMode] = useState('fill');
 
-  const handleLogin = (userFromDb) => {
-    setIsLoggedIn(true);
-    if (userFromDb) setUserInfo(userFromDb);
-    
-    const origin = location.state?.from?.pathname || '/';
-    navigate(origin);
-  };
+  const isAdminPage = location.pathname.startsWith('/admin');
+  const isLoggedIn = !!token;
+  const isPatient = userRole === 'patient';
+  const isStaff = userRole === 'staff';
+  const isAdmin = userRole === 'admin';
 
   const handleCompleteSignUp = (data) => {
-    setIsLoggedIn(true); 
     setRegistrationData(data); 
     navigate('/hospital-number'); 
   };
 
   const handleFinalRegistration = (finalData) => {
-    setUserInfo({ ...registrationData, ...finalData }); 
     setRegistrationData(null); 
     navigate('/account'); 
   };
 
   const handleLogout = () => {
-    setIsLoggedIn(false); 
-    setUserInfo(null);
-    setRegistrationData(null);
+    logout();
     navigate('/');
   };
 
-  const handleFormSubmission = (data, nextStep) => {
-    if (nextStep === "confirm") {
-      setFormMode('confirm');
-    } else if (nextStep === "fill") {
-      setFormMode('fill');
-    } else if (nextStep === "submit") {
-      console.log("Saving Appointment:", data);
+  const handleFormSubmission = async (data, appointmentType) => {
+    try {
+      const payloadToken = JSON.parse(atob(token.split('.')[1]));
+      const userEmail = payloadToken.sub;
+
+      const payload = new FormData();
+      payload.append('email', userEmail);
+      payload.append('department', data.department);
+      payload.append('doctor_name', data.doctor || "NONE");
+
+      const formatSafeDate = (dateObj) => {
+        const d = new Date(dateObj);
+        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+        return d.toISOString().split('T')[0];
+      };
+
+      payload.append('preferredStartDate', formatSafeDate(data.startDate));
+      if (data.endDate) {
+        payload.append('preferredEndDate', formatSafeDate(data.endDate));
+      }
+
+      payload.append('reason', data.reason);
+      payload.append('hasPreviousRecord', data.hasPreviousRecord);
+      payload.append('appointment_type', appointmentType);
+
+      if (data.referralImage) {
+        payload.append('referral_file', data.referralImage);
+      }
+
+      const response = await fetch('/api/appointments/book', {
+        method: 'POST',
+        body: payload
+      });
+
+      const textResponse = await response.text();
+      let result;
+      try {
+        result = textResponse ? JSON.parse(textResponse) : {};
+      } catch (err) {
+        throw new Error("Server encountered an error. Check the Python backend terminal.");
+      }
+
+      if (!response.ok) {
+        const errorMessage = Array.isArray(result.detail) 
+          ? JSON.stringify(result.detail, null, 2) 
+          : result.detail || "Failed to submit reservation.";
+          
+        throw new Error(errorMessage);
+      }
+      // ------------------------------
+
       setFormMode('fill');
       navigate('/reservation-confirmation'); 
+
+    } catch (error) {
+      console.error("Booking Error:", error);
+      alert(error.message); 
     }
   };
 
@@ -79,71 +135,108 @@ function App() {
     if (destination === 'account') navigate('/account');
   };
 
-  const ProtectedRoute = ({ children }) => {
-    if (!isLoggedIn) {
+  const PatientRoute = ({ children }) => {
+    if (!isLoggedIn || !isPatient) {
       return <Navigate to="/login" state={{ from: location }} replace />;
     }
     return children;
   };
 
-  const showHeader = location.pathname !== '/login' && location.pathname !== '/signup';
+  const StaffRoute = ({ children }) => {
+  if (!isLoggedIn || !isStaff) {
+    return <Navigate to="/admin/login" state={{ from: location }} replace />;
+  }
+  return children;
+  };
+
+   const AdminRoute = ({ children }) => {
+    if (!isLoggedIn || !isAdmin) {
+      return <Navigate to="/admin/login" state={{ from: location }} replace />;
+    }
+    return children;
+  };
+
+   const isLoginPage = ['/login', '/signup', '/admin/login'].includes(location.pathname);
+   
+   const isStaffPage = location.pathname.startsWith('/staff');
+   const showHeader = !isLoginPage && !isAdminPage && !isStaffPage;   
 
   return (
     <div className="min-h-screen bg-white font-sans relative">
-      {showHeader && (
+      {showHeader && !isAdminPage && (
         <Header 
           isLoggedIn={isLoggedIn} 
           currentPage={location.pathname} 
         />
       )}
-
+      
       <main className={showHeader ? "pt-0" : ""}>
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home onReserveGeneral={() => navigate('/general-form')} />} />
           <Route path="/help" element={<Help />} />
           <Route path="/contact" element={<ContactUs />} />
-          <Route path="/login" element={<Login setIsLoggedIn={handleLogin} />} />
-          <Route path="/signup" element={<SignUp onCompleteSignup={handleCompleteSignUp} />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<SignUp />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
           {/* Protected Routes */}
-          <Route path="/departments" element={<ProtectedRoute><DepartmentList onReserveGeneral={() => { setFormMode('fill'); navigate('/general-form'); }} onReserveSpecialty={() => { setFormMode('fill'); navigate('/specialty-form'); }} /></ProtectedRoute>} />
-          <Route path="/account" element={<ProtectedRoute><Account userInfo={userInfo} onLogout={handleLogout} onUpdateProfile={setUserInfo} /></ProtectedRoute>} />
-          <Route path="/hospital-number" element={<ProtectedRoute><HospitalNumber onNavigate={handleNavigation} /></ProtectedRoute>} />
-          <Route path="/register-number" element={<ProtectedRoute><RegisterHospitalNumber initialData={registrationData} onFinalSubmit={handleFinalRegistration} /></ProtectedRoute>} />
-          <Route path="/generated-number" element={<ProtectedRoute><GeneratedHospitalNumber onNavigate={handleNavigation} /></ProtectedRoute>} />
-          <Route path="/prevAppt" element={<ProtectedRoute><AppointmentHistory /></ProtectedRoute>} />
-          <Route path="/inbox" element={<ProtectedRoute><Inbox userInfo={userInfo} /></ProtectedRoute>} />
-          <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
-          <Route path="/appointment-confirmed" element={<ProtectedRoute><AppointmentConfirmed /></ProtectedRoute>} />
-          <Route path="/appointment-cancelled" element={<ProtectedRoute><AppointmentCancelled /></ProtectedRoute>} />
+          <Route element={<PatientRoute />}>
+          <Route path="/departments" element={<DepartmentList onReserveGeneral={() => { setFormMode('fill'); navigate('/general-form'); }} onReserveSpecialty={() => { setFormMode('fill'); navigate('/specialty-form'); }} />} />
+          <Route path="/account" element={<Account userInfo={userInfo} onLogout={handleLogout} onUpdateProfile={() => {}} />} />
+          <Route path="/hospital-number" element={<HospitalNumber onNavigate={handleNavigation} />} />
+          <Route path="/register-number" element={<RegisterHospitalNumber initialData={registrationData} onFinalSubmit={handleFinalRegistration} />} />
+          <Route path="/generated-number" element={<GeneratedHospitalNumber onNavigate={handleNavigation} />} />
+          <Route path="/prevAppt" element={<AppointmentHistory />} />
+          <Route path="/inbox" element={<Inbox userInfo={userInfo} />} />
+          <Route path="/calendar" element={<Calendar />} />
+          <Route path="/appointment-confirmed" element={<AppointmentConfirmed />} />
+          <Route path="/appointment-cancelled" element={<AppointmentCancelled />} />
 
           <Route path="/reschedule/:appointmentId" element={
-            <ProtectedRoute isLoggedIn={isLoggedIn}>
                 <RescheduleForm userInfo={userInfo} />
-            </ProtectedRoute>
           } />
           
           <Route path="/general-form" element={
-            <ProtectedRoute>
               <GeneralForm userInfo={userInfo} mode={formMode} onConfirm={handleFormSubmission} />
-            </ProtectedRoute>
           } />
 
           <Route path="/specialty-form" element={
-            <ProtectedRoute>
-              <SpecialtyForm userInfo={userInfo} mode={formMode} onConfirm={handleFormSubmission} />
-            </ProtectedRoute>
+            <SpecialtyForm userInfo={userInfo} mode={formMode} onConfirm={handleFormSubmission} />
           } />
 
-          <Route path="/reservation-confirmation" element={
-            <ProtectedRoute>
+          <Route path="/reservation-confirmation" element={  
               <ReservationConfirmation userInfo={userInfo} />
-            </ProtectedRoute>
           } />
+        </Route>
+          
+        {/* STAFF ROUTES */}
+        <Route path="/staff/dashboard" element={<StaffLayout />}>
+          <Route index element={<StaffDashboard />} />
+        </Route>
 
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
+        {/* ADMIN ROUTES */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="users" element={<Users />} />
+            <Route path="personnel" element={<Personnel />} />
+            <Route path="departments" element={<Departments />} />
+            <Route path="appointments" element={<Appointments />} /> 
+            
+            <Route path="audit-logs" element={<AuditLogs />} />
+            <Route path="system-logs" element={<SystemLogs />} />
+            {/*<Route path="reports" element={<Reports />} />
+            
+            <Route path="a-settings" element={<AdminSettings />} />
+            <Route path="a-help" element={<AdminHelp />} />
+            <Route path="a-account" element={<AdminAccount />} />
+            <Route path="a-notifs" element={<AdminNotifications />} />
+            <Route path="a-calendar" element={<AdminCalendar />} />
+            <Route path="a-tools" element={<AdminTools />} />*/}
+          </Route>  
+        
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
 
         <ConfirmationModal 
           isOpen={showBlockerModal}
@@ -154,6 +247,7 @@ function App() {
           type="warning"
         />
       </main>
+      {showHeader && !isAdminPage && !isStaffPage && <Footer />}
     </div>
   );
 }

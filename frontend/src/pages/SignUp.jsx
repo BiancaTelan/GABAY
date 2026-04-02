@@ -4,24 +4,23 @@ import Button from '../components/button';
 import Input from '../components/input';
 import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../authContext'; // <-- Import your AuthContext
+import { AuthContext } from '../authContext'; 
 import { emailPattern, namePattern } from '../utils/constants';
 
-export default function SignUp({ onCompleteSignup }) {
+export default function SignUp() {
     const navigate = useNavigate();
-    const { login } = useContext(AuthContext); // <-- Grab the login function
+    const { login } = useContext(AuthContext); 
     
     const [formData, setFormData] = useState({
-      firstName: '',
-      lastName: '',
+      firstname: '',
+      surname: '',
       email: '',
       password: '',
       confirmPassword: ''
     });
 
     const [errors, setErrors] = useState({});
-    const [serverError, setServerError] = useState('');    
-    const [successMsg, setSuccessMsg] = useState('');       
+    const [serverError, setServerError] = useState('');           
 
     const handleSubmit = async (e) => {
       e.preventDefault();
@@ -29,16 +28,16 @@ export default function SignUp({ onCompleteSignup }) {
       setSuccessMsg('');
       let newErrors = {};
       
-      if (!formData.firstName.trim()) {
-        newErrors.firstName = "First name is required";
-      } else if (!namePattern.test(formData.firstName)) {
-        newErrors.firstName = "Names should only contain letters";
+      if (!formData.firstname.trim()) {
+        newErrors.firstname = "First name is required";
+      } else if (!namePattern.test(formData.firstname)) {
+        newErrors.firstname = "Names should only contain letters";
       }
 
-      if (!formData.lastName.trim()) {
-        newErrors.lastName = "Last name is required";
-      } else if (!namePattern.test(formData.lastName)) {
-        newErrors.lastName = "Names should only contain letters";
+      if (!formData.surname.trim()) {
+        newErrors.surname = "Last name is required";
+      } else if (!namePattern.test(formData.surname)) {
+        newErrors.surname = "Names should only contain letters";
       }
 
       if (!formData.email.trim()) {
@@ -69,15 +68,14 @@ export default function SignUp({ onCompleteSignup }) {
       setErrors({});
 
       const payload = {
-        firstname: formData.firstName.trim(),
-        surname: formData.lastName.trim(),
+        firstname: formData.firstname.trim(),
+        surname: formData.surname.trim(),
         email: formData.email.trim(),
         password: formData.password,
         confirm_password: formData.confirmPassword
       };
 
       try {
-        // --- 1. SIGN UP THE USER ---
         const response = await fetch('/api/auth/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -110,15 +108,14 @@ export default function SignUp({ onCompleteSignup }) {
         const accessToken = loginData.access_token;
         const decodedPayload = JSON.parse(atob(accessToken.split('.')[1]));
 
-        login(accessToken, decodedPayload.role);
+        const userData = {
+          firstname: payload.firstname,
+          surname: payload.surname,
+          email: payload.email,
+        };
 
-        setTimeout(() => {
-           onCompleteSignup({
-             firstName: payload.firstname,
-             lastName: payload.surname,
-             email: payload.email
-           });
-        }, 1500);
+        login(accessToken, decodedPayload.role, userData);
+        navigate('/hospital-number');
 
       } catch (error) {
         console.error("Signup Error:", error);
@@ -171,18 +168,18 @@ export default function SignUp({ onCompleteSignup }) {
                 <Input 
                   label="First Name" 
                   placeholder="Enter your first name" 
-                  value={formData.firstName}
-                  error={errors.firstName}
-                  onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                  value={formData.firstname}
+                  error={errors.firstname}
+                  onChange={(e) => setFormData({...formData, firstname: e.target.value})}
                   required
                   isEditing={true}
                 />
                 <Input
                   label="Last Name" 
                   placeholder="Enter your last name" 
-                  value={formData.lastName}
-                  error={errors.lastName}
-                  onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                  value={formData.surname}
+                  error={errors.surname}
+                  onChange={(e) => setFormData({...formData, surname: e.target.value})}
                   required
                   isEditing={true}
                 />

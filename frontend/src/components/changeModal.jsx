@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle } from 'lucide-react'; 
+import { useNavigate } from 'react-router-dom'; 
 
-const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast }) => {
+const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast, currentEmail }) => {
+  const navigate = useNavigate();
   const isEmailType = type === "email";
   
   const [showCurrent, setShowCurrent] = useState(false);
@@ -9,9 +11,10 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast }) => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
+  const [isSuccess, setIsSuccess] = useState(false); 
+  
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
-    currentEmail: 'juandelacruz@gmail.com', 
     newEmail: '',
     currentPassword: '',
     newPassword: '',
@@ -65,30 +68,44 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast }) => {
       setIsLoading(true);
       
       try {
-        // PUT BACKEND LOGIC HERE
-        // Replace '/api/update-account' with your actual endpoint
-        /*
-        const response = await fetch('/api/update-account', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: type, // Tells backend if it's an email or password update
-            ...formData
-          }),
-        });
-        
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message || "Failed to update");
-        */
+        let endpoint = '';
+        let payload = {};
 
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        console.log(`Submitting ${type} change...`, formData);
-        
-        if (setShowToast) {
-          setShowToast(true);
+        if (isEmailType) {
+          endpoint = '/api/auth/change-email';
+          payload = {
+            current_email: currentEmail,
+            new_email: formData.newEmail,
+            password: formData.currentPassword
+          };
+        } else {
+          endpoint = '/api/auth/change-password';
+          payload = {
+            email: currentEmail,
+            current_password: formData.currentPassword,
+            new_password: formData.newPassword
+          };
         }
-        onClose();
+
+        const response = await fetch(endpoint, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.detail || "Failed to update account.");
+        }
+
+        if (isEmailType) {
+          setIsSuccess(true);
+        } else {
+          if (setShowToast) setShowToast(true);
+          onClose();
+        }
+
       } catch (err) {
         setErrors({ server: err.message });
       } finally {
@@ -101,21 +118,43 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast }) => {
   const labelStyle = "block text-gabay-navy font-poppins font-medium mb-2 text-lg";
   const errorTextStyle = "text-red-500 text-xs font-poppins mt-1 block min-h-[16px]";
 
+  if (isSuccess) {
+    return (
+      <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 animate-in fade-in duration-300">
+        <div className="bg-white w-full max-w-md rounded-xl p-10 shadow-2xl border border-gray-300 relative text-center animate-in zoom-in duration-300">
+          <CheckCircle size={70} className="text-gabay-teal mx-auto mb-6" />
+          <h2 className="text-2xl font-montserrat font-bold text-gabay-teal mb-4">
+            Email Updated!
+          </h2>
+          <p className="text-gray-500 font-poppins text-sm mb-8 leading-relaxed">
+            Your email has been successfully changed. For security reasons, your active session has ended. Please log in again using your new email address.
+          </p>
+          <button 
+            onClick={() => navigate('/login')}
+            className="w-full bg-gabay-teal hover:bg-teal-600 text-white font-montserrat font-bold py-3 px-6 rounded-full transition-all shadow-md uppercase tracking-wide"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
       <style>{`input::-ms-reveal, input::-ms-clear { display: none; }`}</style>
       
-      <div className="bg-white w-full max-w-xl rounded-xl p-12 shadow-2xl border border-gray-300 relative animate-in fade-in zoom-in duration-300">
+      <div className="bg-white w-full max-w-lg rounded-xl p-6 shadow-2xl border border-gray-300 relative animate-in fade-in zoom-in duration-300">
         
         <div className="flex justify-between items-start mb-8">
-          <h1 className="text-4xl font-montserrat font-bold text-gabay-teal">
+          <h1 className="text-3xl font-montserrat font-bold text-gabay-teal">
             {isEmailType ? "Change Email" : "Change Password"}
           </h1>
           <button 
             type="button" 
             onClick={onClose} 
             disabled={isLoading}
-            className="text-gabay-blue hover:underline font-poppins text-lg transition-all disabled:opacity-50"
+            className="text-gabay-blue hover:underline font-poppins text-base transition-all disabled:opacity-50"
           >
             Cancel
           </button>
@@ -126,17 +165,17 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast }) => {
 
           {isEmailType ? (
             <>
-              <div className="mb-6">
+              <div className="mb-5">
                 <label className={labelStyle}>Current Email</label>
                 <input 
                   type="text" 
-                  value={formData.currentEmail} 
+                  value={currentEmail} 
                   disabled 
                   className={`${inputStyle} bg-gray-50 border-gray-200 cursor-not-allowed`} 
                 />
               </div>
 
-              <div className="mb-6">
+              <div className="mb-5">
                 <label className={labelStyle}>Enter New Email <span className="text-red-500">*</span></label>
                 <input 
                   type="email" 
@@ -148,7 +187,7 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast }) => {
                 <span className={errorTextStyle}>{errors.newEmail}</span>
               </div>
 
-              <div className="relative mb-10">
+              <div className="relative mb-5">
                 <label className={labelStyle}>Enter Password to Confirm Changes <span className="text-red-500">*</span></label>
                 <input 
                   type={showCurrent ? "text" : "password"} 
@@ -169,7 +208,8 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast }) => {
             </>
           ) : (
             <>
-              <div className="relative mb-6">
+              {/* --- PASSWORD CHANGE INPUTS --- */}
+              <div className="relative mb-3">
                 <label className={labelStyle}>Current Password <span className="text-red-500">*</span></label>
                 <input 
                   type={showCurrent ? "text" : "password"} 
@@ -184,7 +224,7 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast }) => {
                 <span className={errorTextStyle}>{errors.currentPassword}</span>
               </div>
 
-              <div className="relative mb-6">
+              <div className="relative mb-3">
                 <label className={labelStyle}>New Password <span className="text-red-500">*</span></label>
                 <input 
                   type={showNew ? "text" : "password"} 
@@ -199,7 +239,7 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast }) => {
                 <span className={errorTextStyle}>{errors.newPassword}</span>
               </div>
 
-              <div className="relative mb-10">
+              <div className="relative mb-3">
                 <label className={labelStyle}>Confirm New Password <span className="text-red-500">*</span></label>
                 <input 
                   type={showConfirm ? "text" : "password"} 
@@ -220,7 +260,7 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast }) => {
             <button 
               type="submit" 
               disabled={isLoading}
-              className={`bg-gabay-teal hover:bg-gabay-teal2 text-white font-montserrat font-bold py-3 px-12 rounded-full transition-all shadow-md uppercase tracking-wide flex items-center gap-2 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+              className={`bg-gabay-teal hover:bg-teal-600 text-white font-montserrat font-bold py-2 px-10 rounded-full transition-all shadow-md uppercase tracking-wide flex items-center gap-2 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
               {isLoading ? (
                 <>

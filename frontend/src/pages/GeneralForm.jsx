@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import hospitalData from '../utils/hospitalData.json';
+import React, { useState, useEffect } from 'react';
 import { ChevronDown, CalendarDays } from 'lucide-react';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -36,23 +35,45 @@ const GabayInput = React.forwardRef(({ value, onClick, onChange, ...props }, ref
   );
 });
 
-export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
+export default function GeneralForm({ userInfo, onConfirm }) {
   const navigate = useNavigate();
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
+  const [mode, setMode] = useState("fill");
+  const isReadOnly = mode === "confirm";
   
   const [formData, setFormData] = useState({
-    firstName: userInfo?.firstName || "",
-    lastName: userInfo?.lastName || "",
-    hospitalNumber: userInfo?.hospitalNumber || "",
+    firstname: userInfo?.firstname || "",
+    surname: userInfo?.surname || "",
+    hospital_num: userInfo?.hospital_num || "",
     department: "",
     doctor: "NONE",
     reason: "",
     hasPreviousRecord: false
   });
 
+  const [hospitalData, setHospitalData] = useState({ departments: [] });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchHospitalData = async () => {
+      try {
+        const response = await fetch('/api/appointments/departments-and-doctors');
+        if (response.ok) {
+          const data = await response.json();
+          setHospitalData(data); 
+        }
+      } catch (error) {
+        console.error("Failed to fetch hospital data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchHospitalData();
+  }, []);
+
   const [errors, setErrors] = useState({});
-  const isReadOnly = mode === "confirm";
 
   const today = new Date();
   const maxDate = new Date();
@@ -93,6 +114,14 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
     d => d.name === formData.department
   )?.doctors || [];
 
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[50vh]">
+        <div className="w-8 h-8 border-4 border-gabay-teal border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto p-10 font-poppins text-left animate-in fade-in duration-500">
       <h1 className="text-3xl font-montserrat font-bold text-gabay-teal mb-1">
@@ -102,11 +131,11 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
         {isReadOnly ? "Please double-check your details before confirming." : "Complete the form to reserve your appointment."}
       </p>
 
-      <div className="flex flex-col md:flex-row gap-16">
+      <div className="flex flex-col border-2 border-gabay-teal rounded-2xl p-5 md:flex-row gap-16">
         <div className="flex-1 space-y-6">
          
           <div className="flex flex-col">
-            <label className="text-gabay-blue font-semibold mb-1 text-base uppercase tracking-wide">Department</label>
+            <label className="text-gabay-blue font-semibold mb-1 text-lg uppercase tracking-wide">Department</label>
             <div className="relative">
               <select 
                 name="department"
@@ -114,15 +143,14 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
                 onChange={handleInputChange}
                 disabled={isReadOnly}
                 className={`hide-chevron w-full p-2 text-base rounded-md border outline-none transition-all pr-10 ${
-                  isReadOnly ? 'bg-gray-50 border-gray-300 text-gray-700 cursor-default' : 
+                  isReadOnly ? 'bg-gray-100 border-gray-300 text-gray-700 cursor-default' : 
                   errors.department ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 focus:ring-1 focus:ring-gabay-teal'
                 }`}
               >
                 <option value="">Select Department</option>
-                {hospitalData.departments
-                  .filter(dept => dept.type === 'general')
-                  .map(dept => (
-                    <option key={dept.id} value={dept.name}>{dept.name}</option>
+                
+                {generalDepts.map(dept => (
+                  <option key={dept.id} value={dept.name}>{dept.name}</option>
                 ))}
               </select>
               {!isReadOnly && <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />}
@@ -131,7 +159,7 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
           </div>
 
           <div className="flex flex-col">
-            <label className="text-gabay-blue font-semibold mb-1 text-base uppercase tracking-wide">Assigned Doctor</label>
+            <label className="text-gabay-blue font-semibold mb-1 text-lg uppercase tracking-wide">Assigned Doctor</label>
             <div className="relative">
               <select 
                 name="doctor"
@@ -140,7 +168,7 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
                 disabled={!formData.hasPreviousRecord || isReadOnly}
                 className={`hide-chevron w-full p-2 text-base rounded-md border outline-none transition-all pr-10 ${
                   isReadOnly || !formData.hasPreviousRecord 
-                  ? 'bg-gray-100 text-gray-500 border-gray-300 cursor-default' 
+                  ? 'bg-gray-100 text-gray-700 border-gray-300 cursor-default' 
                   : 'border-gray-300 focus:ring-1 focus:ring-gabay-teal'
                 }`}
               >
@@ -154,10 +182,10 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
           </div>
 
           <div className="flex flex-col">
-            <label className="text-gabay-blue font-semibold mb-1 text-base uppercase tracking-wide">Preferred Appointment Date</label>
+            <label className="text-gabay-blue font-semibold mb-1 text-lg uppercase tracking-wide">Preferred Appointment Date</label>
             <div className="relative custom-datepicker-container">
               {isReadOnly ? (
-                <div className="p-2 bg-gray-50 border border-gray-300 rounded-md text-gray-700">
+                <div className="p-2 bg-gray-100 border border-gray-300 rounded-md text-gray-500">
                   {startDate?.toLocaleDateString()} {endDate ? `- ${endDate?.toLocaleDateString()}` : ""}
                 </div>
               ) : (
@@ -198,7 +226,7 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
           </div>
 
           <div className="flex flex-col">
-            <label className="text-gabay-blue font-semibold mb-1 text-base uppercase tracking-wide">Reason for Booking</label>
+            <label className="text-gabay-blue font-semibold mb-1 text-lg uppercase tracking-wide">Reason for Booking</label>
             <textarea 
               name="reason"
               rows="4"
@@ -206,7 +234,7 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
               onChange={handleInputChange}
               readOnly={isReadOnly}
               className={`p-3 text-base rounded-md border outline-none resize-none transition-all ${
-                isReadOnly ? 'bg-gray-50 border-gray-300 text-gray-700 cursor-default' : 
+                isReadOnly ? 'bg-gray-100 border-gray-300 text-gray-500 cursor-default' : 
                 errors.reason ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 focus:ring-1 focus:ring-gabay-teal'
               }`}
               placeholder="Describe your symptoms..."
@@ -219,7 +247,7 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
           <div className={`flex items-center justify-between py-3 px-4 rounded-md transition-all ${
             isReadOnly ? 'bg-gray-100' : 'bg-gray-50'
           }`}>
-            <span className="text-gabay-blue text-lg font-semibold">Has previous OPD record?</span>
+            <span className="text-gabay-blue text-lg uppercase font-semibold">Has previous OPD record?</span>
             <label className={`relative inline-flex items-center ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}>
               <input 
                 type="checkbox" 
@@ -240,14 +268,14 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
           <>
             <button 
               type="button"
-              onClick={() => onConfirm(formData, "fill")}
+              onClick={() => setMode("fill")} 
               className="flex-1 md:flex-none border-2 border-gabay-teal text-gabay-teal px-8 py-2 rounded-full font-bold transition-all hover:bg-teal-50 active:scale-95 text-base"
             >
               EDIT DETAILS
             </button>
             <button 
               type="button"
-              onClick={() => onConfirm({ ...formData, startDate, endDate }, "submit")}
+              onClick={() => onConfirm({ ...formData, startDate, endDate }, "General")} 
               className="flex-1 md:flex-none bg-gabay-teal hover:bg-teal-700 text-white px-8 py-2 rounded-full font-bold transition-all shadow-lg active:scale-95 text-base"
             >
               SUBMIT RESERVATION
@@ -264,7 +292,7 @@ export default function GeneralForm({ userInfo, mode = "fill", onConfirm }) {
             </button>
             <button 
               type="button"
-              onClick={() => validateForm() && onConfirm(formData, "confirm")}
+              onClick={() => { if (validateForm()) setMode("confirm") }} 
               className="flex-1 md:flex-none px-8 py-2 rounded-full bg-gabay-teal font-poppins text-base text-white font-bold hover:bg-teal-600 shadow-md transition-all active:scale-95"
             >
               CONFIRM

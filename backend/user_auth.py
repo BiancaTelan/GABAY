@@ -1,13 +1,14 @@
+import jwt
+import random
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from datetime import timedelta
-
 from db_connection import get_db
 from db_model import User, Patient, roleEnum
-from py_schema import PatientSignUp
-from security import verify_password, create_access_token, get_password_hash, ACCESS_TOKEN_EXPIRE_MINUTES
+from py_schema import PatientSignUp, ForgotPasswordRequest, ResetPasswordOTPRequest, VerifyOTPRequest, ChangeEmailRequest, ChangePasswordRequest
+from security import verify_password, create_access_token, get_password_hash, ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY, ALGORITHM
 
 router = APIRouter(prefix="/auth", tags=["Authentication & Registration"])
 
@@ -86,7 +87,7 @@ def register_patient(patient_data: PatientSignUp, db: Session = Depends(get_db))
         
         db.commit()
 
-        return {"message": "Account created successfully. You can now log in."}
+        return {"message": "Account created successfully. Logging you in"}
 
     except HTTPException:
         raise 
@@ -98,4 +99,93 @@ def register_patient(patient_data: PatientSignUp, db: Session = Depends(get_db))
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred. Please try again later."
         )
+
+# ---------------------------------------------------------
+# 3. FORGOT PASSWORD
+# ---------------------------------------------------------
+
+OTP_STORE = {}
+
+@router.post("/forgot-password")
+def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == request.email).first()
     
+    if user:
+        otp = str(random.randint(100000, 999999))
+        
+        OTP_STORE[request.email] = otp
+        
+        # PRINT TO THE TERMINAL
+        print("\n" + "="*50)
+        print("🚨 GABAY OTP REQUESTED 🚨")
+        print(f"For User: {request.email}")
+        print(f"Your 6-digit Verification Code is: {otp}")
+        print("="*50 + "\n")
+
+    return {"message": "If that email is registered, an OTP has been sent."}
+
+
+@router.post("/verify-otp")
+def verify_otp(request: VerifyOTPRequest):
+    stored_otp = OTP_STORE.get(request.email)
+    
+    if not stored_otp or stored_otp != request.otp:
+        raise HTTPException(status_code=400, detail="Invalid or expired verification code.")
+        
+    return {"message": "OTP verified successfully."}
+
+
+@router.post("/reset-password")
+def reset_password(request: ResetPasswordOTPRequest, db: Session = Depends(get_db)):
+    
+    if request.email not in OTP_STORE:
+        raise HTTPException(status_code=400, detail="Please verify your OTP first.")
+        
+    user = db.query(User).filter(User.email == request.email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+        
+    
+    hashed_password = get_password_hash(request.newPassword)
+    user.passwordHash = hashed_password
+    db.commit()
+    
+    del OTP_STORE[request.email]
+    
+    return {"message": "Password updated successfully."}
+
+# ---------------------------------------------------------
+# 5. CHANGE EMAIL
+# ---------------------------------------------------------
+@router.put("/change-email")
+def change_email(request: ChangeEmailRequest, db: Session = Depends(get_db)):
+    
+    user = db.query(User).filter(User.email == request.current_email).first()
+    if not user or not verify_password(request.password, user.passwordHash):
+        raise HTTPException(status_code=400, detail="Incorrect password.")
+        
+    
+    existing_user = db.query(User).filter(User.email == request.new_email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="That email is already in use.")
+        
+    
+    user.email = request.new_email
+    db.commit()
+    
+    return {"message": "Email updated successfully."}
+
+# ---------------------------------------------------------
+# 6. CHANGE PASSWORD
+# ---------------------------------------------------------
+@router.put("/change-password")
+def change_password(request: ChangePasswordRequest, db: Session = Depends(get_db)):
+   
+    user = db.query(User).filter(User.email == request.email).first()
+    if not user or not verify_password(request.current_password, user.passwordHash):
+        raise HTTPException(status_code=400, detail="Incorrect current password.")
+        
+    user.passwordHash = get_password_hash(request.new_password)
+    db.commit()
+    
+    return {"message": "Password updated successfully."}

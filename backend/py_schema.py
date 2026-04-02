@@ -39,12 +39,17 @@ class HospitalNumberRequest(BaseModel):
     email: EmailStr
 
 class PatientProfileUpdate(BaseModel):
+    firstname: str
+    surname: str
     email: EmailStr
     hospital_num: str
     contactNumber: str
     dob: str
     gender: str
     address: str
+    emergencyContact: str
+    emergencyContactNum: str
+    emergencyEmail: str
     
 # ==========================================
 # USER SCHEMAS (Accounts & Authentication)
@@ -68,6 +73,20 @@ class UserResponse(UserBase):
     class Config:
         from_attributes = True
 
+# ==========================================
+# PASSWORD RESET SCHEMAS
+# ==========================================
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class VerifyOTPRequest(BaseModel):
+    email: EmailStr
+    otp: str
+
+class ResetPasswordOTPRequest(BaseModel):
+    email: EmailStr
+    newPassword: str
 
 # ==========================================
 # PATIENT SCHEMAS (Outpatient Records)
@@ -101,3 +120,17 @@ class PatientResponse(PatientBase):
 
     class Config:
         from_attributes = True
+
+# ==========================================
+# CHANGE EMAIL / PASSWORD SCHEMAS
+# ==========================================
+
+class ChangeEmailRequest(BaseModel):
+    current_email: EmailStr
+    new_email: EmailStr
+    password: str
+
+class ChangePasswordRequest(BaseModel):
+    email: EmailStr
+    current_password: str
+    new_password: str
