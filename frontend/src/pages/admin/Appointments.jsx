@@ -110,9 +110,6 @@ const toggleSelection = (id) => {
             />
             <Search className="absolute right-3 top-2.5 text-gray-400" size={18} />
           </div>
-          <button className="whitespace-nowrap flex items-center justify-center gap-2 px-5 py-2 rounded-full bg-gabay-teal text-white font-medium font-poppins text-sm hover:bg-opacity-90 transition shadow-sm">
-            <Plus size={16} /><span className="hidden sm:inline">New Appointment</span><span className="sm:hidden">Appointment</span> 
-          </button>
         </div>
 
         <div className="flex flex-row gap-2 w-full lg:w-auto">
