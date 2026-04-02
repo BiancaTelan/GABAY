@@ -114,14 +114,14 @@ const toggleSelection = (id) => {
 
         {/* Right Side: Export + Filter */}
         <div className="flex flex-row gap-2 w-full lg:w-auto">
-          <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium">
+          <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium hover:bg-teal-50 transition-colors">
             <Download size={16} /> Export as CSV
           </button>
           
           <div className="relative flex-1 lg:flex-none">
             <button 
               onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium hover:bg-teal-50 transition-colors"
             >
               <Funnel size={16} /> Filter ({filters.deptType.length})
             </button>

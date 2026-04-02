@@ -104,7 +104,7 @@ export default function AuditLogs() {
               type="text" 
               value={search}
               onChange={(e) => {setSearch(e.target.value); setCurrentPage(1);}}
-              placeholder="Search by User, IP, Action, or Date..." 
+              placeholder="Search Audit Logs..." 
               className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg font-poppins outline-none focus:ring-2 focus:ring-gabay-blue/20"
             />
             <Search className="absolute right-3 top-2.5 text-gray-400" size={18} />
@@ -119,7 +119,7 @@ export default function AuditLogs() {
           <div className="relative flex-1 lg:flex-none">
             <button 
               onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium hover:bg-teal-50 transition-colors"
             >
               <Funnel size={16} /> Filter ({filters.roles.length})
             </button>

@@ -116,14 +116,14 @@ const toggleSelection = (id) => {
         </div>
 
         <div className="flex flex-row gap-2 w-full lg:w-auto">
-          <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium">
+          <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium hover:bg-teal-50 transition-colors">
             <Download size={16} /> Export as CSV
           </button>
           
           <div className="relative flex-1 lg:flex-none">
             <button 
               onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium hover:bg-teal-50 transition-colors"
             >
               <Funnel size={16} /> Filter ({filters.statuses.length + filters.deptTypes.length})
             </button>
@@ -250,17 +250,17 @@ const toggleSelection = (id) => {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                           <div className="space-y-2 text-xs font-poppins">
                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Schedule:</p>
-                            <span className="flex items-center gap-2 text-gabay-blue font-medium"><Calendar size={14}/> {app.date}</span>
-                            <span className="flex items-center gap-2 text-gabay-blue font-medium"><Clock size={14}/> {app.time}</span>
+                            <span className="flex items-center gap-2 text-gray-700 font-medium"><Calendar size={14}/> {app.date}</span>
+                            <span className="flex items-center gap-2 text-gray-700 font-medium"><Clock size={14}/> {app.time}</span>
                           </div>
                           <div className="space-y-2 text-xs font-poppins">
                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Approved By:</p>
-                            <span className="flex items-center gap-2 text-gabay-blue font-medium"><User size={14}/> {app.approvedBy || '--'}</span>
-                            <span className="flex items-center gap-2 text-gabay-blue font-medium"><Calendar size={14}/> {app.approvedDate || '--'}</span>
+                            <span className="flex items-center gap-2 text-gray-700 font-medium"><User size={14}/> {app.approvedBy || '--'}</span>
+                            <span className="flex items-center gap-2 text-gray-700 font-medium"><Calendar size={14}/> {app.approvedDate || '--'}</span>
                           </div>
                           <div className="space-y-2 text-xs font-poppins">
                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Last Updated:</p>
-                            <span className="text-gabay-blue font-medium">{app.lastUpdate}</span>
+                            <span className="text-gray-700 font-medium">{app.lastUpdate}</span>
                           </div>
                         </div>
                         {app.status === 'Cancelled' && (
