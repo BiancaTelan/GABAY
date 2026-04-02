@@ -244,7 +244,27 @@ const handleSave = async () => {
               
 
               <Input label="Hospital Number" value={localUserInfo.hospital_num} readOnly noHover />
-              <Input label="Email Address" name="email" value={localUserInfo.email} readOnly={true} noHover={true} error={errors.email} isEditing={false} required />
+              <div className="relative">
+                <Input 
+                  label={
+                    <div className="flex items-center gap-2">
+                      Email Address
+                      {localUserInfo.is_verified === false && (
+                        <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wider uppercase">
+                          Unverified
+                        </span>
+                      )}
+                    </div>
+                  } 
+                  name="email" 
+                  value={localUserInfo.email} 
+                  readOnly={true} 
+                  noHover={true} 
+                  error={errors.email} 
+                  isEditing={false} 
+                  required 
+                />
+              </div>
               
               <div className="flex flex-col">
                 <label className="text-sm font-medium text-gabay-navy mb-1">Gender</label>

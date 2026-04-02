@@ -22,6 +22,7 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+
     to_encode = data.copy()
     
     if expires_delta:
@@ -33,5 +34,11 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     to_encode.update({"exp": expire})
     
     # Sign the token using your secret key
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+def create_verification_token(email: str):
+    expire = datetime.utcnow() + timedelta(hours=12)
+    to_encode = {"sub": email, "type": "email_verification", "exp": expire}
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt

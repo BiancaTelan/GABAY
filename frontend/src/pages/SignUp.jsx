@@ -10,6 +10,7 @@ import { emailPattern, namePattern } from '../utils/constants';
 export default function SignUp() {
     const navigate = useNavigate();
     const { login } = useContext(AuthContext); 
+    const [successMsg, setSuccessMsg] = useState('');
     
     const [formData, setFormData] = useState({
       firstname: '',
@@ -85,7 +86,7 @@ export default function SignUp() {
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.detail || 'Failed to create account. Please try again.');
+          setSuccessMsg(data.message);
         }
 
         setSuccessMsg("Account created successfully! Redirecting...");

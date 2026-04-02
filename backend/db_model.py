@@ -46,6 +46,7 @@ class User(Base):
     role: Mapped[roleEnum] = mapped_column(SQLEnum(roleEnum), nullable=False)
     isActive: Mapped[bool] = mapped_column(Boolean, default=True)
     createdDate: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # === Relationships ===
     patient_profile: Mapped[Optional["Patient"]] = relationship(back_populates="user_account", cascade="all, delete-orphan")

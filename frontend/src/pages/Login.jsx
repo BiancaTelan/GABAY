@@ -3,7 +3,7 @@ import gabayLogo from '../assets/gabayLogo.png';
 import Button from '../components/button';
 import Input from '../components/input';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { useState, useContext } from 'react';
+import { useState, useContext} from 'react';
 import { emailPattern } from '../utils/constants';
 import { AuthContext } from '../authContext';
 

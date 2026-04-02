@@ -43,15 +43,30 @@ export default function Inbox({ userInfo }) {
             };
           });
 
-          const systemNotification = {
+          const isVerified = data.is_verified;
+
+          const notificationsArray = [];
+
+          if (!isVerified) {
+            notificationsArray.push({
+              id: 'sys-verify-1',
+              type: 'system',
+              title: 'Action Required: Verify Your Email',
+              content: 'Please check your email inbox (including spam/junk) to verify your email address. You will not receive schedule updates until your email is verified.',
+              icon: Mail, // You'll need to import AlertCircle or just use Mail
+              isAlert: true 
+            });
+          }
+
+          notificationsArray.push({
             id: 'sys-1',
             type: 'system',
             title: 'System Update Ver. 1.0',
             content: 'What’s New? Fixed errors in calendar schedule formatting and optimized the backend booking engine.',
             icon: Info,
-          };
+          });
 
-          setAllNotifications([systemNotification, ...dynamicNotifications]);
+          setAllNotifications([...notificationsArray, ...dynamicNotifications]);
         }
       } catch (error) {
         console.error("Failed to fetch inbox notifications:", error);
@@ -261,8 +276,10 @@ export default function Inbox({ userInfo }) {
                       )}
                       
                       {note.type === 'system' && (
-                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                          <p className="font-poppins text-sm text-gray-700 leading-relaxed">{note.content}</p>
+                        <div className={`p-4 rounded-lg border ${note.isAlert ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-100'}`}>
+                          <p className={`font-poppins text-sm leading-relaxed ${note.isAlert ? 'text-red-700 font-medium' : 'text-gray-700'}`}>
+                            {note.content}
+                          </p>
                         </div>
                       )}
                     </div>

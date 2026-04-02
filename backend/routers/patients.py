@@ -9,6 +9,9 @@ from py_schema import HospitalNumberRequest, PatientProfileUpdate
 
 router = APIRouter(prefix="/patients", tags=["Patient Management"])
 
+# ---------------------------------------------------------
+# 1. HOSPITAL NUMBER GENERATION
+# ---------------------------------------------------------
 @router.post("/generate-hospital-number")
 def generate_hospital_number(request: HospitalNumberRequest, db: Session = Depends(get_db)):
     try:
@@ -59,7 +62,9 @@ def generate_hospital_number(request: HospitalNumberRequest, db: Session = Depen
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Server Error: {str(e)}")
 
-
+# ---------------------------------------------------------
+# 2. PATIENT PROFILE MANAGEMENT
+# ---------------------------------------------------------
 @router.get("/profile/{email}")
 def get_patient_profile(email: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == email).first()
@@ -76,6 +81,7 @@ def get_patient_profile(email: str, db: Session = Depends(get_db)):
         "firstname": patient.firstname,
         "surname": patient.surname,
         "email": user.email,
+        "is_verified": user.is_verified,
         "hospital_num": patient.hospital_num or "",
         "dob": formatted_dob,
         "gender": patient.gender or "Female",
@@ -86,6 +92,9 @@ def get_patient_profile(email: str, db: Session = Depends(get_db)):
         "emergencyEmail": patient.emergencyEmail or ""
     }
 
+# ---------------------------------------------------------
+# 3. UPDATE PATIENT PROFILE
+# ---------------------------------------------------------
 @router.put("/update-profile")
 def update_patient_profile(profile_data: PatientProfileUpdate, db: Session = Depends(get_db)):
     try:
