@@ -175,14 +175,7 @@ export default function AuditLogs() {
           <table className="w-full text-left min-w-[1000px]">
             <thead className="bg-gabay-blue font-poppins text-white select-none">
               <tr>
-                <th className="px-4 py-4 text-center">
-                  <input 
-                    type="checkbox" 
-                    onChange={handleSelectAll}
-                    checked={selectedIds.length === pagedData.length && pagedData.length > 0}
-                    className="w-4 h-4 bg-gabay-blue"
-                  />
-                </th>
+
                 <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider">Date</th>
                 <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider">User</th>
                 <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider text-center">Role</th>
@@ -194,10 +187,6 @@ export default function AuditLogs() {
             <tbody className="divide-y divide-gray-100">
               {pagedData.map((log) => (
                 <tr key={log.id} className={`hover:bg-gray-50 transition-colors ${selectedIds.includes(log.id) ? 'bg-blue-50/50' : ''}`} onClick={() => toggleSelection(log.id)}>
-                  <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}>
-                    <input type="checkbox" checked={selectedIds.includes(log.id)} 
-                    onChange={() => toggleSelection(log.id)} className="w-4 h-4 bg-gabay-blue" />
-                  </td>
                   <td className="px-4 py-4 text-xs font-poppins text-gabay-blue font-medium">
                     {log.date} <br/> <span className="text-gray-400 font-normal">{log.time}</span>
                   </td>
