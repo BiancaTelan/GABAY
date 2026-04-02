@@ -29,9 +29,8 @@ export default function QueueStatusModal({ isOpen, onClose, patient, onUpdate })
             COMPLETED
           </Button>
           <Button
-            variant="outline"
+            variant="teal-outline"
             onClick={() => onUpdate(patient, 'serving')}
-            className="px-8 py-1.5 rounded-full border border-gabay-teal text-sm text-gabay-teal font-semibold hover:bg-teal-50 transition-all"
           >
             CURRENTLY SERVING
           </Button>

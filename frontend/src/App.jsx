@@ -27,6 +27,7 @@ import Footer from './components/footer';
 
 import StaffLayout from './components/StaffLayout';
 import StaffDashboard from './pages/staff/StaffDashboard';
+import StaffAppointments from './pages/staff/StaffAppointments';
 
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminLayout from './components/AdminLayout';
@@ -211,8 +212,10 @@ function App() {
         </Route>
           
         {/* STAFF ROUTES */}
-        <Route path="/staff/dashboard" element={<StaffLayout />}>
+        <Route path="/staff" element={<StaffLayout />}>
           <Route index element={<StaffDashboard />} />
+          <Route path="dashboard" element={<StaffDashboard />} />
+          <Route path="appointments" element={<StaffAppointments />} />
         </Route>
 
         {/* ADMIN ROUTES */}
@@ -222,7 +225,6 @@ function App() {
             <Route path="personnel" element={<Personnel />} />
             <Route path="departments" element={<Departments />} />
             <Route path="appointments" element={<Appointments />} /> 
-            
             <Route path="audit-logs" element={<AuditLogs />} />
             <Route path="system-logs" element={<SystemLogs />} />
             {/*<Route path="reports" element={<Reports />} />

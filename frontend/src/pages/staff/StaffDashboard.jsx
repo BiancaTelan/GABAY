@@ -27,7 +27,9 @@ export default function StaffDashboard() {
     { name: 'Jose Rizal', hospitalNumber: '26-154930', reason: 'Follow-up' },
     { name: 'Antonio Luna', hospitalNumber: '26-154931', reason: 'Consultation' },
     { name: 'Gabriela Silang', hospitalNumber: '26-154932', reason: 'Follow-up' },
-    { name: 'Emilio Aguinaldo', hospitalNumber: '26-154933', reason: 'Consultation' }
+    { name: 'Emilio Aguinaldo', hospitalNumber: '26-154933', reason: 'Consultation' },
+    { name: 'Andres Bonifacio', hospitalNumber: '26-154934', reason: 'Follow-up' },
+    { name: 'Melchora Aquino', hospitalNumber: '26-154935', reason: 'Consultation' }
   ];
 
   const [queueList, setQueueList] = useState([
@@ -79,7 +81,7 @@ export default function StaffDashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gabay-blue px-4 py-4 mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gabay-blue px-6 py-4 mb-4">
         <div>
           <h1 className="font-montserrat text-3xl font-bold text-white">Dashboard</h1>
           <p className="font-poppins text-sm text-white mt-1">
@@ -106,12 +108,12 @@ export default function StaffDashboard() {
 
           {/* Scheduled Appointment List */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="text-center mb-6">
+            <div className="mb-6">
               <h2 className="font-montserrat text-xl font-bold text-gabay-blue">Scheduled Appointment List</h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {patients.map((patient, idx) => (
-                <div key={idx} className="relative bg-blue-100 py-7 px-6 rounded-xl shadow-sm border border-blue-200/50">
+                <div key={idx} className="relative bg-blue-100 py-2 px-6 rounded-xl shadow-sm border border-blue-200/50">
                   <div className="space-y-1">
                     <h3 className="font-poppins font-bold text-md">{patient.name}</h3>
                     <p className="font-poppins text-md">{patient.hospitalNumber}</p>
