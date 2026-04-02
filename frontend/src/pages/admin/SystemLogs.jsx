@@ -49,32 +49,50 @@ export default function SystemLogs() {
 
   const criticalErrorCount = rawSystemData.filter(i => i.priority === 'CRITICAL').length;
 
-  // --- LOGIC: FILTERING & SORTING ---
-  const filteredData = useMemo(() => {
-    let result = rawSystemData.filter(item => 
-      item.type.toLowerCase().includes(search.toLowerCase()) || 
-      item.module.toLowerCase().includes(search.toLowerCase()) ||
-      item.description.toLowerCase().includes(search.toLowerCase()) ||
-      item.date.includes(search)
-    );
+ // --- LOGIC: FILTERING & SORTING ---
+const filteredData = useMemo(() => {
+  let result = rawSystemData.filter(item => 
+    item.type.toLowerCase().includes(search.toLowerCase()) || 
+    item.module.toLowerCase().includes(search.toLowerCase()) ||
+    item.description.toLowerCase().includes(search.toLowerCase()) ||
+    item.date.includes(search)
+  );
 
-    if (filters.priorities.length > 0) result = result.filter(i => filters.priorities.includes(i.priority));
-    if (filters.issueType !== 'All') result = result.filter(i => i.type === filters.issueType);
+  // 1. Filter by Priority Checkboxes
+  if (filters.priorities.length > 0) {
+    result = result.filter(i => filters.priorities.includes(i.priority));
+  }
 
-    result.sort((a, b) => {
-      let valA = a[filters.sortKey];
-      let valB = b[filters.sortKey];
+  // 2. Filter by Issue Type Dropdown
+  if (filters.issueType !== 'All') {
+    result = result.filter(i => i.type === filters.issueType);
+  }
 
-      if (filters.sortKey === 'date') {
-        valA = new Date(`${a.date} ${a.time}`);
-        valB = new Date(`${b.date} ${b.time}`);
-        return filters.sortOrder === 'asc' ? valA - valB : valB - valA;
-      }
-      return filters.sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
-    });
+  // 3. Advanced Sorting
+  result.sort((a, b) => {
+    let valA, valB;
 
-    return result;
-  }, [search, filters]);
+    if (filters.sortKey === 'date') {
+      // Convert strings to actual Date objects for comparison
+      valA = new Date(`${a.date} ${a.time}`);
+      valB = new Date(`${b.date} ${b.time}`);
+    } else if (filters.sortKey === 'priority') {
+      // Map strings to numbers so "CRITICAL" > "LOW"
+      const priorityWeight = { 'CRITICAL': 4, 'HIGH': 3, 'MEDIUM': 2, 'LOW': 1 };
+      valA = priorityWeight[a.priority];
+      valB = priorityWeight[b.priority];
+    }
+
+    // Comparison logic
+    if (filters.sortOrder === 'asc') {
+      return valA > valB ? 1 : -1;
+    } else {
+      return valA < valB ? 1 : -1;
+    }
+  });
+
+  return result;
+}, [search, filters]);
 
   // --- PAGINATION ---
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
@@ -103,9 +121,109 @@ export default function SystemLogs() {
           <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-medium">
             <Download size={16} /> Export as CSV
           </button>
-          <button onClick={() => setShowFilterDropdown(!showFilterDropdown)} className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-medium">
-            <Funnel size={16} /> Filter
-          </button>
+          {/* FILTER BUTTON WITH DYNAMIC COUNT */}
+<div className="relative flex-1 lg:flex-none">
+  <button 
+    onClick={() => setShowFilterDropdown(!showFilterDropdown)} 
+    className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium hover:bg-teal-50 transition-colors"
+  >
+    <Funnel size={16} /> 
+    Filter ({filters.priorities.length + (filters.issueType !== 'All' ? 1 : 0)})
+  </button>
+
+  {/* DROPDOWN MENU */}
+  {showFilterDropdown && (
+    <div className="absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-2xl z-[100] p-5 space-y-5 max-h-[500px] overflow-y-auto">
+      
+      {/* 1. SORT BY SECTION */}
+      <div>
+        <p className="text-[10px] font-bold font-poppins text-gray-400 uppercase tracking-widest mb-3">Sorting</p>
+        <div className="space-y-3">
+          <div>
+            <label className="text-[11px] font-poppins text-gray-500 font-medium">Sort By</label>
+            <select 
+              value={filters.sortKey}
+              className="w-full text-sm font-poppins border border-gray-200 rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-gabay-blue/10"
+              onChange={(e) => setFilters({...filters, sortKey: e.target.value})}
+            >
+              <option value="date">Date</option>
+              <option value="priority">Priority Level</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-[11px] font-poppins text-gray-500 font-medium">Order</label>
+            <select 
+              value={filters.sortOrder}
+              className="w-full text-sm font-poppins border border-gray-200 rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-gabay-blue/10"
+              onChange={(e) => setFilters({...filters, sortOrder: e.target.value})}
+            >
+              <option value="desc">By Newest / High Priority</option>
+              <option value="asc">By Oldest / Low Priority</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <hr className="border-gray-100" />
+
+      {/* 2. ISSUE TYPE SECTION */}
+      <div>
+        <p className="text-[10px] font-bold font-poppins text-gray-400 uppercase tracking-widest mb-3">Issue Type</p>
+        <select 
+          value={filters.issueType}
+          className="w-full text-sm font-poppins border border-gray-200 rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-gabay-blue/10"
+          onChange={(e) => setFilters({...filters, issueType: e.target.value})}
+        >
+          <option value="All">All Types</option>
+          <option value="Performance">Performance</option>
+          <option value="Security">Security</option>
+          <option value="Storage">Storage</option>
+          <option value="Memory">Memory</option>
+          <option value="Report">Report</option>
+        </select>
+      </div>
+
+      {/* 3. PRIORITY LEVEL SECTION */}
+      <div>
+        <p className="text-[10px] font-bold font-poppins text-gray-400 uppercase tracking-widest mb-3">Priority Level</p>
+        <div className="grid grid-cols-2 gap-2">
+          {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map(p => (
+            <label key={p} className="flex items-center gap-2 text-xs font-poppins text-gray-600 cursor-pointer group">
+              <input 
+                type="checkbox" 
+                checked={filters.priorities.includes(p)}
+                onChange={(e) => {
+                  const newP = e.target.checked 
+                    ? [...filters.priorities, p] 
+                    : filters.priorities.filter(x => x !== p);
+                  setFilters({...filters, priorities: newP});
+                }}
+                className="w-4 h-4 rounded accent-gabay-blue"
+              /> 
+              <span className="group-hover:text-gabay-blue transition-colors">{p}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* ACTION BUTTONS */}
+      <div className="pt-2 flex gap-2">
+        <button 
+          onClick={() => setFilters({ sortKey: 'date', sortOrder: 'desc', priorities: [], issueType: 'All' })} 
+          className="flex-1 py-2 text-xs font-poppins font-medium border border-gray-400 rounded-lg text-gray-400 hover:text-red-500 transition-colors"
+        >
+          Reset All
+        </button>
+        <button 
+          onClick={() => setShowFilterDropdown(false)} 
+          className="flex-1 py-2 bg-gabay-blue text-white rounded-lg text-xs font-poppins font-medium shadow-md hover:bg-opacity-90 transition-all"
+        >
+          Apply
+        </button>
+      </div>
+    </div>
+  )}
+</div>
         </div>
       </div>
 

@@ -245,8 +245,8 @@ const toggleSelection = (id) => {
                     </td>
                   </tr>
                   {expandedId === app.id && (
-                    <tr className="bg-gray-50/50 border-l-4 border-gabay-blue">
-                      <td colSpan="8" className="px-10 py-6">
+                    <tr className="bg-gray-50/50">
+                      <td colSpan="8" className="px-10 py-4 border-l-4 border-gabay-blue">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                           <div className="space-y-2 text-xs font-poppins">
                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Schedule:</p>
