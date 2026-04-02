@@ -155,7 +155,7 @@ const toggleSelection = (id) => {
                   <p className="text-[10px] font-bold font-poppins text-gray-400 uppercase tracking-widest mb-3">Department Type</p>
                   <div className="grid grid-cols-2 gap-2">
                     {['GENERAL', 'SPECIALTY'].map(type => (
-                      <label key={type} className="flex items-center gap-2 text-sm font-poppins cursor-pointer">
+                      <label key={type} className="flex items-center text-gray-600 gap-2 text-sm font-poppins cursor-pointer">
                         <input 
                           type="checkbox" 
                           checked={filters.deptType.includes(type)}
@@ -163,7 +163,7 @@ const toggleSelection = (id) => {
                             const newTypes = e.target.checked ? [...filters.deptType, type] : filters.deptType.filter(x => x !== type);
                             setFilters({...filters, deptType: newTypes});
                           }}
-                          className="w-4 h-4 rounded bg-gabay-blue"
+                          className="w-4 h-4 rounded accent-gabay-blue"
                         /> {type}
                       </label>
                     ))}
@@ -193,7 +193,7 @@ const toggleSelection = (id) => {
                     type="checkbox" 
                     onChange={handleSelectAll}
                     checked={selectedIds.length === pagedData.length && pagedData.length > 0}
-                    className="w-4 h-4 accent-gabay-blue"
+                    className="w-4 h-4 bg-gabay-blue"
                   />
                 </th>
                 <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider">Department ID</th>
@@ -210,7 +210,7 @@ const toggleSelection = (id) => {
                 <tr key={dept.id} className="hover:bg-gray-50 transition-colors" onClick={() => toggleSelection(dept.id)}>
                   <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                     <input type="checkbox" checked={selectedIds.includes(dept.id)} 
-                    onChange={() => toggleSelection(dept.id)} className="w-4 h-4 accent-gabay-blue" />
+                    onChange={() => toggleSelection(dept.id)} className="w-4 h-4 bg-gabay-blue" />
                   </td>
                   <td className="px-4 py-4 text-sm text-gray-700 font-medium font-poppins">{dept.id}</td>
                   <td className="px-4 py-4 text-sm font-poppins font-medium text-gabay-blue">{dept.name}</td>

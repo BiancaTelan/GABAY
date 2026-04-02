@@ -174,7 +174,7 @@ export default function Personnel() {
                 <label key={type} className="flex items-center gap-2 text-sm font-poppins cursor-pointer group">
                   <input 
                     type="checkbox" 
-                    className="w-4 h-4 rounded bg-gabay-blue"
+                    className="w-4 h-4 rounded accent-gabay-blue"
                     checked={filters.deptType.includes(type)}
                     onChange={(e) => {
                       const newTypes = e.target.checked ? [...filters.deptType, type] : filters.deptType.filter(x => x !== type);
@@ -195,7 +195,7 @@ export default function Personnel() {
                 <label key={r} className="flex items-center gap-2 text-sm cursor-pointer group">
                   <input 
                     type="checkbox" 
-                    className="w-4 h-4 rounded bg-gabay-blue"
+                    className="w-4 h-4 rounded accent-gabay-blue"
                     checked={filters.roles.includes(r)}
                     onChange={(e) => {
                       const newRoles = e.target.checked ? [...filters.roles, r] : filters.roles.filter(x => x !== r);
@@ -216,7 +216,7 @@ export default function Personnel() {
                 <label key={s} className="flex items-center gap-2 text-sm cursor-pointer group">
                   <input 
                     type="checkbox" 
-                    className="w-4 h-4 rounded bg-gabay-blue"
+                    className="w-4 h-4 rounded accent-gabay-blue"
                     checked={filters.statuses.includes(s)}
                     onChange={(e) => {
                       const newStatus = e.target.checked ? [...filters.statuses, s] : filters.statuses.filter(x => x !== s);

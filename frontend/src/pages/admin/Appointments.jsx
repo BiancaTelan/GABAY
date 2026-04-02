@@ -160,7 +160,7 @@ const toggleSelection = (id) => {
                         <input type="checkbox" checked={filters.statuses.includes(s)} onChange={(e) => {
                           const newStatus = e.target.checked ? [...filters.statuses, s] : filters.statuses.filter(x => x !== s);
                           setFilters({...filters, statuses: newStatus});
-                        }} className="w-4 h-4 rounded bg-gabay-blue" />
+                        }} className="w-4 h-4 rounded accent-gabay-blue" />
                         <span className="text-gray-600">{s}</span>
                       </label>
                     ))}
@@ -175,7 +175,7 @@ const toggleSelection = (id) => {
                         <input type="checkbox" checked={filters.deptTypes.includes(type)} onChange={(e) => {
                           const newTypes = e.target.checked ? [...filters.deptTypes, type] : filters.deptTypes.filter(x => x !== type);
                           setFilters({...filters, deptTypes: newTypes});
-                        }} className="w-4 h-4 rounded bg-gabay-blue" />
+                        }} className="w-4 h-4 rounded accent-gabay-blue" />
                         <span className="text-gray-600">{type}</span>
                       </label>
                     ))}
@@ -205,7 +205,7 @@ const toggleSelection = (id) => {
                     type="checkbox" 
                     onChange={handleSelectAll}
                     checked={selectedIds.length === pagedData.length && pagedData.length > 0}
-                    className="w-4 h-4 accent-gabay-blue"
+                    className="w-4 h-4 bg-gabay-blue"
                   />
                 </th>
                 <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider">Appointment ID</th>

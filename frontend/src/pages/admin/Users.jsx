@@ -154,7 +154,7 @@ export default function Users() {
                         <input type="checkbox" checked={filters.genders.includes(g)} onChange={(e) => {
                           const newGenders = e.target.checked ? [...filters.genders, g] : filters.genders.filter(x => x !== g);
                           setFilters({...filters, genders: newGenders});
-                        }} className="w-4 h-4 rounded bg-gabay-blue" /> {g}
+                        }} className="w-4 h-4 rounded accent-gabay-blue" /> {g}
                       </label>
                     ))}
                   </div>
@@ -168,7 +168,7 @@ export default function Users() {
                         <input type="checkbox" checked={filters.statuses.includes(s)} onChange={(e) => {
                           const newStatus = e.target.checked ? [...filters.statuses, s] : filters.statuses.filter(x => x !== s);
                           setFilters({...filters, statuses: newStatus});
-                        }} className="w-4 h-4 rounded bg-gabay-blue" /> {s}
+                        }} className="w-4 h-4 rounded accent-gabay-blue" /> {s}
                       </label>
                     ))}
                   </div>
@@ -206,7 +206,7 @@ export default function Users() {
             <tbody className="divide-y divide-gray-100">
               {pagedData.map((user) => (
                 <tr key={user.id} className={`hover:bg-gray-50 transition-colors ${selectedIds.includes(user.id) ? 'bg-blue-50/50' : ''}`} onClick={() => toggleSelection(user.id)}>
-                  <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}><input type="checkbox" className="w-4 h-4 rounded bg-gabay-blue" checked={selectedIds.includes(user.id)} onChange={() => toggleSelection(user.id)} /></td>
+                  <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}><input type="checkbox" className="w-4 h-4 rounded accent-gabay-blue" checked={selectedIds.includes(user.id)} onChange={() => toggleSelection(user.id)} /></td>
                   <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gray-700 font-medium">{user.id}</td>
                   <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gabay-blue font-medium">{user.name}</td>
                   <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gray-700">{user.email}</td>
