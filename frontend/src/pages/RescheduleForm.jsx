@@ -3,11 +3,13 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import DatePicker from "react-datepicker";
 import { CalendarDays, AlertCircle } from 'lucide-react';
 import "react-datepicker/dist/react-datepicker.css";
+import { AuthContext } from '../authContext';
 
 export default function RescheduleForm({ userInfo }) {
   const { appointmentId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const { updateUnreadCount } = useContext(AuthContext);
 
   const { department, doctor, date } = location.state || {
     department: "Unknown",
@@ -59,6 +61,9 @@ export default function RescheduleForm({ userInfo }) {
       }
 
       alert("Reschedule request submitted successfully! It is now pending approval.");
+      if (updateUnreadCount) {
+        updateUnreadCount(prevCount => prevCount + 1);
+      }
       navigate('/calendar');
       
     } catch (err) {

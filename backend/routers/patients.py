@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from datetime import datetime
 from dependencies import get_current_user
 from db_connection import get_db
 from db_model import User, Patient
-from py_schema import HospitalNumberRequest, PatientProfileUpdate
+from py_schema import HospitalNumberRequest, PatientProfileUpdate, ContactFormRequest
+from email_utils import send_contact_us_email
 
 router = APIRouter(prefix="/patients", tags=["Patient Management"])
 
@@ -171,3 +172,29 @@ def delete_user_account(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete account. Please try again later."
         )
+    
+# ---------------------------------------------------------
+# 5. PATIENT CONTACT US
+# ---------------------------------------------------------
+
+@router.post("/contact-us")
+async def submit_contact_form(
+    request: ContactFormRequest, 
+    background_tasks: BackgroundTasks
+):
+    try:
+        full_name = f"{request.firstname} {request.surname}"
+        
+        background_tasks.add_task(
+            send_contact_us_email,
+            name=full_name,
+            user_email=request.email,
+            subject=request.subject,
+            message=request.message
+        )
+        
+        return {"message": "Your message has been successfully sent to the hospital administration."}
+        
+    except Exception as e:
+        print(f"Contact Us Error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to send message. Please try again later.") 

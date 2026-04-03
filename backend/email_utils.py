@@ -13,6 +13,9 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 logger = logging.getLogger(__name__)
 
+# ==========================================
+# EMAIL VERIFICATION FUNCTION
+# ==========================================
 def send_verification_email(recipient_email: str, token: str):
     if not SENDER_EMAIL or not SENDER_PASSWORD:
         logger.error("Failed to send email: Missing SMTP credentials in environment variables.")
@@ -44,7 +47,9 @@ This link is valid for 12 hours."""
     except Exception as e:
         logger.error(f"Failed to send verification email to {recipient_email}. Error: {e}")
 
-
+# ==========================================
+# EMAIL OTP FUNCTION
+# ==========================================
 def send_otp_email(recipient_email: str, otp: str):
     if not SENDER_EMAIL or not SENDER_PASSWORD:
         logger.error("Failed to send OTP: Missing SMTP credentials in environment variables.")
@@ -77,6 +82,9 @@ If you did not request a password reset, please ignore this email."""
     except Exception as e:
         logger.error(f"Failed to send OTP email to {recipient_email}. Error: {e}")
 
+# ==========================================
+# EMAIL NOTIFICATION EMAIL
+# ==========================================
 def send_notification_email(recipient_email: str, subject: str, body: str):
    
     if not SENDER_EMAIL or not SENDER_PASSWORD:
@@ -106,3 +114,42 @@ def send_notification_email(recipient_email: str, subject: str, body: str):
     finally:
         server.quit()
 
+# ==========================================
+# CONTACT US EMAIL FUNCTION
+# ==========================================
+def send_contact_us_email(name: str, user_email: str, subject: str, message: str):
+    """Forwards a Contact Us form submission to the hospital's admin email."""
+    if not SENDER_EMAIL or not SENDER_PASSWORD:
+        logger.error("Failed to send Contact Us email: Missing SMTP credentials.")
+        return
+
+    try:
+        email_subject = f"New GABAY Inquiry: {subject}"
+        
+        body = f"""You have received a new message from the GABAY System Contact Form.
+        
+From: {name}
+Email: {user_email}
+Subject: {subject}
+
+Message:
+{message}
+"""
+
+        msg = MIMEMultipart()
+        msg['From'] = SENDER_EMAIL
+        msg['To'] = SENDER_EMAIL
+        msg['Subject'] = email_subject
+        
+        msg.add_header('reply-to', user_email)
+        
+        msg.attach(MIMEText(body, 'plain'))
+
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls() 
+        server.login(SENDER_EMAIL, SENDER_PASSWORD)
+        server.sendmail(SENDER_EMAIL, SENDER_EMAIL, msg.as_string())
+        server.quit()
+
+    except Exception as e:
+        logger.error(f"Failed to process Contact Us form from {user_email}. Error: {e}")

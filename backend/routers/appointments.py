@@ -33,7 +33,6 @@ def get_all_hospital_schedules():
     
     return {"message": "Secure hospital schedule data returned."}
 
-
 # ---------------------------------------------------------
 # ROUTE 2: General Authenticated Access (All logged-in users)
 # ---------------------------------------------------------
@@ -197,10 +196,15 @@ def get_appointment_history(email: str, db: Session = Depends(get_db)):
         )
 
         history = []
+        unread_count = 0
         for appt in appointments:
             dept = db.query(Department).filter(Department.deptID == appt.deptID).first()
             doc = db.query(Doctor).filter(Doctor.docID == appt.docID).first() if appt.docID else None
             status = db.query(AppointmentStatus).filter(AppointmentStatus.statusID == appt.statusID).first()
+            status_name = status.statusName if status else "Pending Approval"
+
+            if "Pending" in status_name:
+                unread_count += 1
 
             history.append({
                 "id": appt.appointmentID,
@@ -211,12 +215,15 @@ def get_appointment_history(email: str, db: Session = Depends(get_db)):
                 "type": appt.type,
                 "reason": appt.purposeDetailed or "No reason provided.",
                 "referral": appt.referral_doc or None,
-
                 "createdAt": appt.createdAt.strftime("%m/%d/%Y") if appt.createdAt else "Recently"
             })
 
 
-        return {"appointments": history, "is_verified": user.is_verified}
+        return {
+            "appointments": history,
+            "is_verified": user.is_verified,
+            "unread_count": unread_count 
+        }
         
     except Exception as e:
         print(f"Error fetching history: {e}")

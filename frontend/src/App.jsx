@@ -75,7 +75,7 @@ const AdminRoute = () => {
 function App() { 
   const navigate = useNavigate();
   const location = useLocation();
-  const { token, userInfo, logout } = useContext(AuthContext);
+  const { token, userInfo, logout, updateUnreadCount } = useContext(AuthContext);
   
   const [registrationData, setRegistrationData] = useState(null);
   const [showBlockerModal, setShowBlockerModal] = useState(false);
@@ -141,7 +141,7 @@ function App() {
       try {
         result = textResponse ? JSON.parse(textResponse) : {};
       } catch (err) {
-        throw new Error("Server encountered an error. Check the Python backend terminal.");
+        throw new Error("Server encountered an error.");
       }
 
       if (!response.ok) {
@@ -151,7 +151,9 @@ function App() {
           
         throw new Error(errorMessage);
       }
-      // ------------------------------
+      if (updateUnreadCount) {
+        updateUnreadCount(prevCount => prevCount + 1);
+      }
 
       setFormMode('fill');
       navigate('/reservation-confirmation'); 

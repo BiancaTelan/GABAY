@@ -134,3 +134,14 @@ class ChangePasswordRequest(BaseModel):
     email: EmailStr
     current_password: str
     new_password: str
+
+# ==========================================
+# CONTACT FORM SCHEMA
+# ==========================================
+
+class ContactFormRequest(BaseModel):
+    firstname: str
+    surname: str
+    email: str
+    subject: str
+    message: str

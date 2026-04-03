@@ -5,14 +5,19 @@ import { AuthContext } from '../authContext';
 
 export default function Inbox({ userInfo }) {
   const navigate = useNavigate();
-  const { token } = useContext(AuthContext);
-
+  const { token, updateUnreadCount } = useContext(AuthContext);
   const [activeFilter, setActiveFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   
   const [allNotifications, setAllNotifications] = useState([]);
   const itemsPerPage = 3;
+
+  useEffect(() => {
+    if (updateUnreadCount) {
+      updateUnreadCount(0);
+    }
+  }, [updateUnreadCount]);
 
   useEffect(() => {
     const fetchInboxData = async () => {
