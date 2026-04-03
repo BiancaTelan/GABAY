@@ -259,9 +259,9 @@ export default function AdminAccount() {
                 <img src={localUserInfo.profilePhoto || "/default-avatar.png"} alt="Profile" className="w-full h-full object-cover" />
             </div>
             {isEditing && (
-                <button className="absolute bottom-2 right-2 p-2 bg-white rounded-full shadow-md text-gabay-blue hover:text-gabay-teal transition-colors">
-                    <Camera size={20} />
-                </button>
+                <p className="text-[10px] text-gray-400 mt-6 text-center lg:text-left">
+                  Must be in .jpg or .png format <br/> Maximum file size allowed: 100mb
+              </p>
             )}
           </div>
 
@@ -270,7 +270,6 @@ export default function AdminAccount() {
               <>
                 <button onClick={() => { setChangeModalType('email'); setIsChangeModalOpen(true); }} className="block text-gabay-blue hover:underline text-sm font-medium">Change Email</button>
                 <button onClick={() => { setChangeModalType('password'); setIsChangeModalOpen(true); }} className="block text-gabay-blue hover:underline text-sm font-medium">Change Password</button>
-                <button className="block text-gabay-blue hover:underline text-sm font-medium">Edit Profile Photo</button>
                 <div className="pt-4"></div>
               </>
             )}
@@ -280,11 +279,6 @@ export default function AdminAccount() {
             </button>
           </div>
           
-          {isEditing && (
-              <p className="text-[10px] text-gray-400 mt-6 text-center lg:text-left">
-                  Must be in .jpg or .png format <br/> Maximum file size allowed: 100mb
-              </p>
-          )}
         </div>
       </div>
 
