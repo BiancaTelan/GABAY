@@ -167,7 +167,7 @@ export default function AdminAccount() {
               {!isEditing && (
                 <button 
                   onClick={() => { setTempUserInfo({...localUserInfo}); setIsEditing(true); }} 
-                  className="px-5 py-1 rounded-full text-sm font-medium border border-gabay-teal text-gabay-teal hover:bg-teal-50 transition-all whitespace-nowrap shrink-0"
+                  className="px-5 py-1 rounded-full text-sm font-medium border border-gabay-teal text-gabay-teal bg-white hover:bg-teal-50 transition-all whitespace-nowrap shrink-0"
                 >
                   Edit Profile
                 </button>
@@ -247,8 +247,8 @@ export default function AdminAccount() {
 
           {isEditing && (
             <div className="flex gap-4">
-              <button onClick={() => { setLocalUserInfo(tempUserInfo); setIsEditing(false); }} className="px-10 py-2 rounded-full border border-gabay-teal text-gabay-teal font-bold hover:bg-teal-50 transition-all">CANCEL</button>
-              <button onClick={handleSave} className="px-10 py-2 rounded-full bg-gabay-teal text-white font-bold hover:bg-teal-600 transition-all shadow-md">SAVE</button>
+              <button onClick={() => { setLocalUserInfo(tempUserInfo); setIsEditing(false); }} className="px-10 py-2 rounded-full border border-gabay-teal text-gabay-teal font-bold hover:bg-teal-50 bg-white transition-all">CANCEL</button>
+              <button onClick={handleSave} className="px-10 py-2 rounded-full bg-gabay-teal text-white font-bold hover:bg-gabay-teal2 transition-all shadow-md">SAVE</button>
             </div>
           )}
         </div>
@@ -265,21 +265,22 @@ export default function AdminAccount() {
             )}
           </div>
 
-          <div className="space-y-4 w-full">
-            {isEditing && (
+           
+            <div className="w-full md:w-64 flex flex-col items-start gap-4 pt-5">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Account Settings</h3>
+             {isEditing && (
               <>
-                <button onClick={() => { setChangeModalType('email'); setIsChangeModalOpen(true); }} className="block text-gabay-blue hover:underline text-sm font-medium">Change Email</button>
-                <button onClick={() => { setChangeModalType('password'); setIsChangeModalOpen(true); }} className="block text-gabay-blue hover:underline text-sm font-medium">Change Password</button>
+                <button onClick={() => { setChangeModalType('email'); setIsChangeModalOpen(true); }} className="block text-gabay-blue hover:text-gabay-navy transition-colors hover:underline text-sm font-medium">Change Email</button>
+                <button onClick={() => { setChangeModalType('password'); setIsChangeModalOpen(true); }} className="block text-gabay-blue hover:text-gabay-navy transition-colors hover:underline text-sm font-medium">Change Password</button>
                 <div className="pt-4"></div>
               </>
             )}
-            
-            <button onClick={openLogoutModal} className="flex items-center gap-2 text-gabay-teal hover:underline text-sm font-bold">
+             <button onClick={openLogoutModal} className="flex items-center gap-2 text-gabay-teal hover:underline transition-colors hover:text-gabay-teal2 text-sm font-bold">
               <LogOut size={18} /> Log Out
             </button>
+            </div>
           </div>
           
-        </div>
       </div>
 
       <ConfirmationModal {...modalConfig} onClose={() => setModalConfig({...modalConfig, isOpen: false})} />
