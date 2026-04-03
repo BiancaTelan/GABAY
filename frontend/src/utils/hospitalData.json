@@ -1,0 +1,40 @@
+{
+  "departments": [
+    {
+      "id": "internal-med",
+      "name": "General Internal Medicine",
+      "type": "general",
+      "doctors": ["Dr. Ritchie Cruz", "Dr. Sarah Gomez", "Dr. Mark Velez"]
+    },
+    {
+      "id": "pediatrics",
+      "name": "General Pediatrics",
+      "type": "general",
+      "doctors": ["Dr. Maria Santos", "Dr. Juan Dela Cruz"]
+    },
+    {
+      "id": "obgyn",
+      "name": "OB-GYN",
+      "type": "general",
+      "doctors": ["Dr. Elena Reyes", "Dr. Patricia Luna"]
+    },
+    {
+      "id": "cardiology",
+      "name": "Cardiology",
+      "type": "specialty",
+      "doctors": ["Dr. Antonio Luna", "Dr. Jose Rizal"]
+    },
+    {
+      "id": "dermatology",
+      "name": "Dermatology",
+      "type": "specialty",
+      "doctors": ["Dr. Leonor Rivera", "Dr. Maria Clara"]
+    },
+    {
+      "id": "ophthalmology",
+      "name": "Ophthalmology",
+      "type": "specialty",
+      "doctors": ["Dr. Paciano Mercado"]
+    }
+  ]
+}
