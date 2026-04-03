@@ -39,6 +39,8 @@ import Appointments from './pages/admin/Appointments';
 import AuditLogs from './pages/admin/AuditLogs';
 import SystemLogs from './pages/admin/SystemLogs';
 
+import AdminAccount from './pages/admin/AdminAccount';
+
 
 function App() { 
   const navigate = useNavigate();
@@ -219,7 +221,7 @@ function App() {
         </Route>
 
         {/* ADMIN ROUTES */}
-          <Route path="/admin" element={<AdminLayout />}>
+          <Route path="/admin" element={<AdminLayout />}> {/* element={<AdminRoute><AdminLayout /></AdminRoute>}>*/}
             <Route index element={<AdminDashboard />} />
             <Route path="users" element={<Users />} />
             <Route path="personnel" element={<Personnel />} />
@@ -227,11 +229,13 @@ function App() {
             <Route path="appointments" element={<Appointments />} /> 
             <Route path="audit-logs" element={<AuditLogs />} />
             <Route path="system-logs" element={<SystemLogs />} />
+
+            <Route path="a-account" element={<AdminAccount />} />
             {/*<Route path="reports" element={<Reports />} />
             
             <Route path="a-settings" element={<AdminSettings />} />
             <Route path="a-help" element={<AdminHelp />} />
-            <Route path="a-account" element={<AdminAccount />} />
+            
             <Route path="a-notifs" element={<AdminNotifications />} />
             <Route path="a-calendar" element={<AdminCalendar />} />
             <Route path="a-tools" element={<AdminTools />} />*/}
