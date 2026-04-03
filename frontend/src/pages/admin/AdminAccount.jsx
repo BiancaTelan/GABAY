@@ -22,8 +22,6 @@ export default function AdminAccount() {
     dob: "",
     gender: "Male",
     address: "",
-    emergencyContact: "",
-    emergencyContactNum: "",
     profilePhoto: null
   });
 
@@ -86,10 +84,6 @@ export default function AdminAccount() {
     if (!localUserInfo.surname.trim()) newErrors.surname = "Last name is required";
     else if (!namePattern.test(localUserInfo.surname)) newErrors.surname = "No numbers/special characters";
 
-    if (localUserInfo.emergencyContact && !namePattern.test(localUserInfo.emergencyContact)) {
-        newErrors.emergencyContact = "No numbers/special characters";
-    }
-
     if (!localUserInfo.dob.trim()) {
       newErrors.dob = "Date of birth is required";
     } else if (!dobPattern.test(localUserInfo.dob)) {
@@ -143,7 +137,7 @@ export default function AdminAccount() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-8 py-12 font-poppins relative text-left animate-in fade-in duration-500">
+    <div className="max-w-7xl mx-auto px-5 py-5 font-poppins relative text-left animate-in fade-in duration-500">
       
       {showToast && (
         <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[100]">
@@ -158,7 +152,7 @@ export default function AdminAccount() {
         <div className="flex items-center gap-6">
           <div>
             <h1 className="text-3xl font-montserrat font-bold text-gabay-teal">
-              {isEditing ? "Account Information" : "My Admin Account"}
+              {isEditing ? "Account Information" : "My Account"}
             </h1>
             <div className="flex flex-row items-center gap-4 mt-1 flex-nowrap">
               <p className="text-gray-500 text-base">
@@ -180,14 +174,20 @@ export default function AdminAccount() {
       <div className="flex flex-col lg:flex-row gap-16">
         <div className="flex-1 space-y-12">
           <section>
-            <h2 className="text-sm font-bold text-gabay-blue mb-6 tracking-widest uppercase">Personal Information</h2>
+            <h2 className="text-base font-bold text-gabay-blue mb-6 tracking-widest uppercase">Personal Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {isEditing ? (
                 <>
-                  <div className="md:col-span-2"><Input label="First Name *" name="firstname" value={localUserInfo.firstname} onChange={handleInputChange} error={errors.firstname} isEditing={true} /></div>
+                  <div className="md:col-span-2"><Input label="First Name" name="firstname" value={localUserInfo.firstname} onChange={handleInputChange} error={errors.firstname} isEditing={true} required /></div>
                   <div className="md:col-span-1"><Input label="M.I." name="mi" value={localUserInfo.mi} onChange={handleInputChange} isEditing={true} maxLength={2} /></div>
-                  <div className="md:col-span-1"><Input label="Last Name *" name="surname" value={localUserInfo.surname} onChange={handleInputChange} error={errors.surname} isEditing={true} /></div>
-                  <div className="md:col-span-1"><Input label="Suffix" name="suffix" value={localUserInfo.suffix} onChange={handleInputChange} isEditing={true} /></div>
+                  <div className="md:col-span-1"><Input label="Last Name" name="surname" value={localUserInfo.surname} onChange={handleInputChange} error={errors.surname} isEditing={true} required /></div>
+                  <div className="md:col-span-1"><label className="text-sm font-medium text-gabay-navy mb-1 block">Suffix</label>
+                  <select name="suffix" value={localUserInfo.suffix}
+                  onChange={handleInputChange} className="w-full h-[42px] px-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gabay-teal/20 focus:border-gabay-teal transition-all bg-white text-sm">
+                    <option value="">None</option> <option value="Jr.">Jr.</option> <option value="Sr.">Sr.</option> <option value="I">I</option> 
+                    <option value="II">II</option> <option value="III">III</option> <option value="IV">IV</option> <option value="V">V</option>
+                    </select>
+                  </div>
                 </>
               ) : (
                 <div className="md:col-span-4">
@@ -199,7 +199,7 @@ export default function AdminAccount() {
               
               <div className="md:col-span-2">
                 <Input 
-                  label="Date of Birth *" 
+                  label="Date of Birth" 
                   name="dob" 
                   value={localUserInfo.dob} 
                   onChange={handleInputChange} 
@@ -209,16 +209,17 @@ export default function AdminAccount() {
                   placeholder="MM/DD/YYYY"
                   maxLength={10}
                   error={errors.dob}
+                  required
                 />
               </div>
 
               <div className="md:col-span-4">
-                <label className="text-sm font-medium text-gabay-navy mb-2 block">Gender *</label>
+                <label className="text-sm font-medium text-gabay-navy mb-2 block">Gender</label>
                 {isEditing ? (
                   <div className="flex gap-6 items-center h-10">
                     {["Female", "Male"].map((g) => (
                       <label key={g} className="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="gender" value={g} checked={localUserInfo.gender === g} onChange={handleInputChange} className="accent-gabay-teal w-4 h-4" />
+                        <input type="radio" name="gender" value={g} checked={localUserInfo.gender === g} onChange={handleInputChange} className="accent-gabay-blue w-4 h-4" />
                         <span>{g}</span>
                       </label>
                     ))}
@@ -231,24 +232,21 @@ export default function AdminAccount() {
           </section>
 
           <section>
-            <h2 className="text-sm font-bold text-gabay-blue mb-6 tracking-widest uppercase">Contact Information</h2>
+            <h2 className="text-base font-bold text-gabay-blue mb-6 tracking-widest uppercase">Contact Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-              <Input label="Email Address *" value={localUserInfo.email} readOnly noHover className="bg-gray-50" />
-              <Input label="Contact Number *" name="contactNumber" value={localUserInfo.contactNumber} onChange={handleInputChange} error={errors.contactNumber} readOnly={!isEditing} isEditing={isEditing} />
+              <Input label="Email Address" value={localUserInfo.email} readOnly noHover className="bg-gray-50"/>
+              <Input label="Contact Number" name="contactNumber" value={localUserInfo.contactNumber} onChange={handleInputChange} error={errors.contactNumber} readOnly={!isEditing} isEditing={isEditing} required />
               
               <div className="md:col-span-2">
                 <Input label="Home Address" name="address" value={localUserInfo.address} onChange={handleInputChange} readOnly={!isEditing} isEditing={isEditing} />
               </div>
-
-              <Input label="Emergency Contact" name="emergencyContact" value={localUserInfo.emergencyContact} onChange={handleInputChange} error={errors.emergencyContact} readOnly={!isEditing} isEditing={isEditing} />
-              <Input label="Emergency Contact Number" name="emergencyContactNum" value={localUserInfo.emergencyContactNum} onChange={handleInputChange} error={errors.emergencyContactNum} readOnly={!isEditing} isEditing={isEditing} />
             </div>
           </section>
 
           {isEditing && (
             <div className="flex gap-4">
-              <button onClick={() => { setLocalUserInfo(tempUserInfo); setIsEditing(false); }} className="px-10 py-2 rounded-full border border-gabay-teal text-gabay-teal font-bold hover:bg-teal-50 bg-white transition-all">CANCEL</button>
-              <button onClick={handleSave} className="px-10 py-2 rounded-full bg-gabay-teal text-white font-bold hover:bg-gabay-teal2 transition-all shadow-md">SAVE</button>
+              <button onClick={() => { setLocalUserInfo(tempUserInfo); setIsEditing(false); }} className="px-8 py-1 rounded-full border border-gabay-teal text-base text-gabay-teal font-semibold hover:bg-teal-50 bg-white transition-all">CANCEL</button>
+              <button onClick={handleSave} className="px-8 py-1 rounded-full bg-gabay-teal text-base text-white font-semibold hover:bg-gabay-teal2 transition-all shadow-md">SAVE CHANGES</button>
             </div>
           )}
         </div>
