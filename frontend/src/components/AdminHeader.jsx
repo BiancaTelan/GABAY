@@ -1,9 +1,11 @@
 import { Bell, Calendar, UserCircle, Menu } from 'lucide-react';
 import gabayLogo from '../assets/gabayLogo.png';
-
+import { useContext } from 'react';
+import { AuthContext } from '../authContext';
 import { useNavigate, useLocation } from 'react-router-dom'; 
 
 export default function AdminHeader({ isCollapsed, setIsCollapsed, isLoggedIn }) {
+  const { userInfo } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -47,15 +49,14 @@ export default function AdminHeader({ isCollapsed, setIsCollapsed, isLoggedIn })
 
         {/* Account Button */}
         <button 
-          onClick={() => handleNav('/admin/a-account')} 
-          className={`p-2 rounded-lg flex items-center gap-2 group transition-all ${
-            isActive('/a-account') 
-              ? 'bg-gabay-blue text-white shadow-md' 
-              : 'text-gray-400 hover:bg-blue-50 hover:text-gabay-blue'
-          }`}
-          title="Admin Account"
+          onClick={() => navigate('/admin/a-account')} 
+          className="flex items-center justify-center p-0.5 rounded-full border-2 border-transparent hover:border-gabay-blue transition-all overflow-hidden"
         >
-          <UserCircle size={32} />
+          <img 
+            src={userInfo?.profilePhoto || "/default-avatar.png"} 
+            alt="Admin" 
+            className="h-9 w-9 rounded-full object-cover bg-gray-100" 
+          />
         </button>
       </div>
     </header>
