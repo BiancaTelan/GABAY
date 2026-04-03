@@ -8,8 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 SENDER_EMAIL = os.getenv("SENDER_EMAIL")
 SENDER_PASSWORD = os.getenv("SENDER_PASSWORD")
-
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+FRONTEND_URL = os.getenv("FRONTEND_URL")
 
 logger = logging.getLogger(__name__)
 
