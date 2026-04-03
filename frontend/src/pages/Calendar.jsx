@@ -44,7 +44,7 @@ export default function CalendarPage() {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const userEmail = payload.sub;
 
-        const response = await fetch(`/api/appointments/history/${userEmail}`);
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/history/${userEmail}`);
         if (response.ok) {
           const data = await response.json();
           

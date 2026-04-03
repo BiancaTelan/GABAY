@@ -20,7 +20,7 @@ export default function VerifyEmail() {
 
     const verifyUserEmail = async () => {
       try {
-        const response = await fetch(`/api/auth/verify-email?token=${token}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/verify-email?token=${token}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

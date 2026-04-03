@@ -27,7 +27,7 @@ export default function Inbox({ userInfo }) {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const userEmail = payload.sub;
 
-        const response = await fetch(`/api/appointments/history/${userEmail}`);
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/history/${userEmail}`);
         if (response.ok) {
           const data = await response.json();
           
@@ -111,7 +111,7 @@ export default function Inbox({ userInfo }) {
 
   const handleApprove = async (note) => {
     try {
-      const response = await fetch(`/api/appointments/${note.id}/status`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/${note.id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'Confirmed' })
@@ -137,7 +137,7 @@ export default function Inbox({ userInfo }) {
 
   const handleReject = async (note) => {
     try {
-      const response = await fetch(`/api/appointments/${note.id}/status`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/${note.id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'Cancelled' })

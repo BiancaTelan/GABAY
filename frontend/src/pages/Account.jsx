@@ -37,7 +37,7 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const userEmail = payload.sub;
 
-        const response = await fetch(`/api/patients/profile/${userEmail}`);
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/patients/profile/${userEmail}`);
         if (response.ok) {
           const data = await response.json();
           setLocalUserInfo(data);
@@ -102,7 +102,7 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
         closeModal();
         
         try {
-          const response = await fetch('/api/patients/delete-account', {
+          const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/patients/delete-account`, {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -183,7 +183,7 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
 const handleSave = async () => {
     if (validate()) {
       try {
-        const response = await fetch('/api/patients/update-profile', {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/patients/update-profile`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(localUserInfo)

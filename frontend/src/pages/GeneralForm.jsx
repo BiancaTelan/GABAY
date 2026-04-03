@@ -58,7 +58,7 @@ export default function GeneralForm({ userInfo, onConfirm }) {
   useEffect(() => {
     const fetchHospitalData = async () => {
       try {
-        const response = await fetch('/api/appointments/departments-and-doctors');
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/departments-and-doctors`);
         if (response.ok) {
           const data = await response.json();
           setHospitalData(data); 
