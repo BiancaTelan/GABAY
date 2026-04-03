@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, CheckCircle, Camera } from 'lucide-react';
 import toast from 'react-hot-toast'; 
@@ -8,16 +8,21 @@ import ChangeModal from '../../components/changeModal';
 import { emailPattern, namePattern, phonePattern, dobPattern } from '../../utils/constants';
 import { AuthContext } from '../../authContext';
 
-export default function AdminAccount() {
+export default function PersonnelAccount() {
   const navigate = useNavigate();
-  const { token, onLogout } = useContext(AuthContext);
+  const { token, onLogout, userRole, userInfo } = useContext(AuthContext);
+  const fileInputRef = useRef(null);
+
+  // Dynamic values based on role
+  const apiBase = userRole === 'admin' ? '/api/admin' : '/api/staff';
+  const displayRole = userRole === 'admin' ? 'Admin' : 'Staff';
 
   const [localUserInfo, setLocalUserInfo] = useState({
     firstname: "",
     surname: "",
     mi: "",
     suffix: "",
-    role: "ADMIN",
+    role: userRole?.toUpperCase() || "STAFF",
     email: "",
     contactNumber: "",
     dob: "",
@@ -29,19 +34,19 @@ export default function AdminAccount() {
   const [tempUserInfo, setTempUserInfo] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [errors, setErrors] = useState({});
-  const [showToast, setShowToast] = useState(false);
   const [modalConfig, setModalConfig] = useState({ isOpen: false, type: '', title: '', message: '', onConfirm: null });
   const [isChangeModalOpen, setIsChangeModalOpen] = useState(false);
   const [changeModalType, setChangeModalType] = useState('password');
 
   useEffect(() => {
-    const fetchAdminProfile = async () => {
+    const fetchProfile = async () => {
       if (!token) return;
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const userEmail = payload.sub;
 
-        const response = await fetch(`/api/admin/profile/${userEmail}`, {
+        /* BACKEND API: Dynamic based on apiBase */
+        const response = await fetch(`${apiBase}/profile/${userEmail}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
@@ -50,11 +55,11 @@ export default function AdminAccount() {
           setLocalUserInfo(data);
         }
       } catch (error) {
-        console.error("Failed to fetch admin profile:", error);
+        console.error(`Failed to fetch ${userRole} profile:`, error);
       }
     };
-    fetchAdminProfile();
-  }, [token]);
+    fetchProfile();
+  }, [token, apiBase, userRole]);
 
   const handleInputChange = (e) => {
     let { name, value } = e.target;
@@ -75,13 +80,11 @@ export default function AdminAccount() {
     setLocalUserInfo(prev => ({ ...prev, dob: `${m}/${d}/${y}` }));
   };
 
-  const fileInputRef = React.useRef(null);
+  const handleImageClick = () => {
+    if (fileInputRef.current) fileInputRef.current.click();
+  };
 
-    const handleImageClick = () => {
-    fileInputRef.current.click(); // file picker
-    };
-
-    const handleFileChange = async (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -90,28 +93,26 @@ export default function AdminAccount() {
         return;
     }
 
-    // Backend
     const formData = new FormData();
     formData.append('profile_photo', file);
 
     try {
-        /* BACKEND API: POST /api/admin/upload-photo */
-        const response = await fetch('/api/admin/upload-photo', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: formData
+        /* BACKEND API: Dynamic upload endpoint */
+        const response = await fetch(`${apiBase}/upload-photo`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData
         });
 
         if (!response.ok) throw new Error("Upload failed");
 
         const data = await response.json();
-        // Assuming backend returns { "photo_url": "..." }
         setLocalUserInfo(prev => ({ ...prev, profilePhoto: data.photo_url }));
         toast.success("Photo updated!");
     } catch (error) {
         toast.error(error.message);
     }
-    };
+  };
 
   const validate = () => {
     let newErrors = {};
@@ -135,7 +136,7 @@ export default function AdminAccount() {
       if (mDiff < 0 || (mDiff === 0 && today.getDate() < birthDate.getDate())) age--;
       
       if (birthDate > today) newErrors.dob = "Date cannot be in the future";
-      else if (age < 18) newErrors.dob = "ADMIN MUST BE AT LEAST 18 YEARS OLD";
+      else if (age < 18) newErrors.dob = `${userRole.toUpperCase()} MUST BE AT LEAST 18 YEARS OLD`;
     }
 
     if (!localUserInfo.contactNumber.trim()) newErrors.contactNumber = "Required";
@@ -148,7 +149,8 @@ export default function AdminAccount() {
   const handleSave = async () => {
     if (validate()) {
       try {
-        const response = await fetch('/api/admin/update-profile', {
+        /* BACKEND API: Dynamic update endpoint */
+        const response = await fetch(`${apiBase}/update-profile`, {
           method: 'PUT',
           headers: { 
               'Content-Type': 'application/json',
@@ -156,7 +158,7 @@ export default function AdminAccount() {
           },
           body: JSON.stringify(localUserInfo)
         });
-        if (!response.ok) throw new Error("Failed to save admin profile.");
+        if (!response.ok) throw new Error(`Failed to save ${userRole} profile.`);
         setIsEditing(false);
         toast.success('Profile Updated Successfully!');
       } catch (error) {
@@ -183,21 +185,12 @@ export default function AdminAccount() {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-6 md:py-6 font-poppins relative text-left animate-in fade-in duration-500">
-    {/* TOAST NOTIF */}
-    {showToast && (
-        <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[100] pointer-events-none">
-            <div className="bg-green-500 text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-white/20">
-            <CheckCircle size={20} className="text-white" />
-            <span className="font-medium font-montserrat text-sm tracking-wide">Changes saved successfully!</span>
-            </div>
-        </div>
-    )}
-
+      
       <div className="flex flex-row items-center justify-between mb-10 gap-4 flex-nowrap">
         <div className="flex items-center gap-6">
           <div>
-            <h1 className="text-3xl font-montserrat font-bold text-gabay-teal whitespace-nowrap">
-              {isEditing ? "Account Information" : "My Admin Account"}
+            <h1 className="text-3xl font-montserrat font-bold text-gabay-blue whitespace-nowrap">
+              {isEditing ? "Account Information" : `My Account`}
             </h1>
             <div className="flex flex-row items-center gap-4 mt-1 flex-nowrap">
               <p className="text-gray-500 text-base">
@@ -218,9 +211,8 @@ export default function AdminAccount() {
 
       <div className="flex flex-col lg:flex-row gap-16">
         <div className="flex-1 space-y-12">
-          {/* PERSONAL INFO SECTION */}
           <section>
-            <h2 className="text-base font-bold text-gabay-blue mb-5 tracking-widest uppercase">Personal Information</h2>
+            <h2 className="text-base font-bold text-gabay-teal mb-5 tracking-widest uppercase">Personal Information</h2>
 
             {isEditing ? (
               <div className="space-y-3">
@@ -273,9 +265,8 @@ export default function AdminAccount() {
             )}
           </section>
 
-          {/* CONTACT INFO SECTION */}
           <section>
-            <h2 className="text-base font-bold text-gabay-blue mb-5 tracking-widest uppercase">Contact Information</h2>
+            <h2 className="text-base font-bold text-gabay-teal mb-5 tracking-widest uppercase">Contact Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
               <Input label="Email Address" value={localUserInfo.email} readOnly noHover className="bg-gray-50"/>
               <Input label="Contact Number" name="contactNumber" value={localUserInfo.contactNumber} onChange={handleInputChange} error={errors.contactNumber} readOnly={!isEditing} isEditing={isEditing} required maxLength={11} placeholder="09XXXXXXXXX" />
@@ -287,16 +278,14 @@ export default function AdminAccount() {
 
           {isEditing && (
             <div className="flex gap-4 pt-2">
-              <button onClick={() => { setLocalUserInfo(tempUserInfo); setIsEditing(false); setErrors({}); }} className="px-8 py-1 rounded-full border border-gabay-teal text-base text-gabay-teal font-poppins font-semibold hover:bg-teal-50 bg-white transition-all">CANCEL</button>
-              <button onClick={handleSave} className="px-10 py-2 rounded-full bg-gabay-teal text-base text-white font-poppins font-semibold hover:bg-teal-600 transition-all shadow-md">SAVE CHANGES</button>
+              <button onClick={() => { setLocalUserInfo(tempUserInfo); setIsEditing(false); setErrors({}); }} className="px-8 py-1 rounded-full border border-gabay-teal text-base text-gabay-teal font-poppins font-semibold hover:bg-teal-50 bg-white transition-all text-sm">CANCEL</button>
+              <button onClick={handleSave} className="px-10 py-2 rounded-full bg-gabay-teal text-base text-white font-poppins font-semibold hover:bg-teal-600 transition-all shadow-md text-sm">SAVE CHANGES</button>
             </div>
           )}
         </div>
 
-        {/* SIDEBAR SECTION */}
         <div className="w-full lg:w-72 flex flex-col items-center lg:items-start border-l border-gray-100 pl-0 lg:pl-12">
           <div className="flex flex-col items-center lg:items-start mb-8">
-            {/* Photo */}
             <div className="relative group w-40 h-40" onClick={isEditing ? handleImageClick : null}>
               <div className={`w-40 h-40 rounded-full bg-gray-200 overflow-hidden border-4 border-white shadow-lg transition-all ${isEditing ? 'cursor-pointer' : ''}`}>
                 <img 
@@ -304,8 +293,6 @@ export default function AdminAccount() {
                   alt="Profile Photo" 
                   className="w-full h-full object-cover" 
                 />
-                
-                {/* Overlay */}
                 {isEditing && (
                   <div className="absolute inset-0 rounded-full bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <Camera size={24} className="text-white mb-1" />
@@ -313,13 +300,11 @@ export default function AdminAccount() {
                   </div>
                 )}
               </div>
-
               {isEditing && (
                 <button className="absolute bottom-1 right-1 p-2 bg-white rounded-full shadow-md text-gabay-blue hover:text-gabay-teal transition-colors z-10 border border-gray-100 pointer-events-none">
                   <Camera size={18} />
                 </button>
               )}
-
               <input 
                 type="file" 
                 ref={fileInputRef} 
@@ -328,7 +313,6 @@ export default function AdminAccount() {
                 className="hidden" 
               />
             </div>
-
             {isEditing && (
               <p className="text-[10px] text-gray-400 mt-4 text-center lg:text-left leading-relaxed">
                 Must be in .jpg or .png format <br/> Maximum file size allowed: 100mb
@@ -338,7 +322,6 @@ export default function AdminAccount() {
 
           <div className="w-full flex flex-col items-center lg:items-start gap-4 pt-4 md:pt-0">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Account Settings</h3>
-            
             {isEditing && (
               <div className="flex flex-col items-center lg:items-start gap-4 w-full">
                 <button onClick={() => { setChangeModalType('email'); setIsChangeModalOpen(true); }} className="block text-gabay-blue hover:text-gabay-navy transition-colors hover:underline text-sm font-medium">Change Email</button>
@@ -346,7 +329,6 @@ export default function AdminAccount() {
                 <div className="w-full border-t border-gray-100 pt-3"></div>
               </div>
             )}
-
             <button onClick={openLogoutModal} className="flex items-center gap-2 text-gabay-teal hover:underline transition-colors hover:text-gabay-teal2 text-sm font-bold">
               <LogOut size={18} /> Log Out
             </button>

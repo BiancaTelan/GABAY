@@ -43,6 +43,7 @@ import AuditLogs from './pages/admin/AuditLogs';
 import SystemLogs from './pages/admin/SystemLogs';
 
 import AdminAccount from './pages/admin/AdminAccount';
+import PersonnelAccount from './pages/admin/PersonnelAccount';
 
 function App() { 
   const navigate = useNavigate();
@@ -243,7 +244,7 @@ function App() {
             <Route path="audit-logs" element={<AuditLogs />} />
             <Route path="system-logs" element={<SystemLogs />} />
 
-            <Route path="a-account" element={<AdminAccount />} />
+            <Route path="a-account" element={<PersonnelAccount />} />
             {/*<Route path="reports" element={<Reports />} />
             
             <Route path="a-settings" element={<AdminSettings />} />
