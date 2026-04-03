@@ -131,7 +131,7 @@ function App() {
         payload.append('referral_file', data.referralImage);
       }
 
-      const response = await fetch('/api/appointments/book', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/book`, {
         method: 'POST',
         body: payload
       });

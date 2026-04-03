@@ -49,7 +49,7 @@ export default function RescheduleForm({ userInfo }) {
         reason: newReason
       };
 
-      const response = await fetch(`/api/appointments/${appointmentId}/reschedule`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/${appointmentId}/reschedule`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

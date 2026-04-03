@@ -41,7 +41,7 @@ export default function ContactUs() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/patients/contact-us', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/patients/contact-us`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -93,7 +93,7 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
       setIsSubmitting(true);
       
       try {
-        const response = await fetch('/api/patients/update-profile', {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/patients/update-profile`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData)
