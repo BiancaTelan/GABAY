@@ -1,4 +1,5 @@
 import React, { useState, useContext } from 'react'; 
+import { Toaster } from 'react-hot-toast';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { AuthContext } from './authContext';
 import Header from './components/header';
@@ -28,6 +29,8 @@ import Footer from './components/footer';
 import StaffLayout from './components/StaffLayout';
 import StaffDashboard from './pages/staff/StaffDashboard';
 import StaffAppointments from './pages/staff/StaffAppointments';
+import RescheduleAppointment from './pages/staff/RescheduleAppointment';
+import BookSchedule from './pages/staff/BookScheduleForm';
 
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminLayout from './components/AdminLayout';
@@ -40,7 +43,6 @@ import AuditLogs from './pages/admin/AuditLogs';
 import SystemLogs from './pages/admin/SystemLogs';
 
 import AdminAccount from './pages/admin/AdminAccount';
-
 
 function App() { 
   const navigate = useNavigate();
@@ -166,6 +168,15 @@ function App() {
 
   return (
     <div className="min-h-screen bg-white font-sans relative">
+      <Toaster 
+        position="top-center" 
+        reverseOrder={false} 
+        toastOptions={{
+          style: {
+            fontFamily: 'Poppins, sans-serif', // Match your GABAY branding
+          },
+        }}
+      />
       {showHeader && !isAdminPage && (
         <Header 
           isLoggedIn={isLoggedIn} 
@@ -218,6 +229,8 @@ function App() {
           <Route index element={<StaffDashboard />} />
           <Route path="dashboard" element={<StaffDashboard />} />
           <Route path="appointments" element={<StaffAppointments />} />
+          <Route path="reschedule" element={<RescheduleAppointment />} />
+          <Route path="book-schedule" element={<BookSchedule />} />
         </Route>
 
         {/* ADMIN ROUTES */}
