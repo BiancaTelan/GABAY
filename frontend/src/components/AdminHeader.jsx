@@ -35,11 +35,13 @@ export default function AdminHeader({ isCollapsed, setIsCollapsed, isLoggedIn })
         {/* Placeholder / Spacer */}
         <div className="w-10 h-10 bg-gray-100 rounded-md hidden md:block"></div>
         
-        <button className="p-2 text-gabay-blue hover:bg-blue-50 rounded-lg transition">
+        <button onClick={() => navigate('/admin/a-calendar')} 
+        className="p-2 text-gabay-blue hover:bg-blue-50 rounded-lg transition">
           <Calendar size={23} />
         </button>
         
-        <button className="p-2 text-gabay-blue hover:bg-blue-50 rounded-lg transition relative">
+        <button onClick={() => navigate('/admin/a-notifs')} 
+        className="p-2 text-gabay-blue hover:bg-blue-50 rounded-lg transition relative">
           <Bell size={23} />
           {/* Notification Dot */}
           <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 border-2 border-white rounded-full"></span>

@@ -41,6 +41,8 @@ import Departments from './pages/admin/Departments';
 import Appointments from './pages/admin/Appointments';
 import AuditLogs from './pages/admin/AuditLogs';
 import SystemLogs from './pages/admin/SystemLogs';
+import AdminNotifs from './pages/admin/AdminNotifs';
+import AdminCalendar from './pages/admin/AdminCalendar';
 
 import PersonnelAccount from './pages/admin/PersonnelAccount';
 
@@ -244,13 +246,12 @@ function App() {
             <Route path="system-logs" element={<SystemLogs />} />
 
             <Route path="a-account" element={<PersonnelAccount />} />
+            <Route path="a-notifs" element={<AdminNotifs />} />
+            <Route path="a-calendar" element={<AdminCalendar />} />
+
             {/*<Route path="reports" element={<Reports />} />
-            
             <Route path="a-settings" element={<AdminSettings />} />
             <Route path="a-help" element={<AdminHelp />} />
-            
-            <Route path="a-notifs" element={<AdminNotifications />} />
-            <Route path="a-calendar" element={<AdminCalendar />} />
             <Route path="a-tools" element={<AdminTools />} />*/}
           </Route>  
         
