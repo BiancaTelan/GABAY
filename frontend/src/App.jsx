@@ -42,7 +42,6 @@ import Appointments from './pages/admin/Appointments';
 import AuditLogs from './pages/admin/AuditLogs';
 import SystemLogs from './pages/admin/SystemLogs';
 
-import AdminAccount from './pages/admin/AdminAccount';
 import PersonnelAccount from './pages/admin/PersonnelAccount';
 
 function App() { 
