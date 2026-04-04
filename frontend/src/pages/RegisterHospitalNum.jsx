@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Input from '../components/input';
 import Button from '../components/button';
 import { phonePattern, dobPattern, minAgeRequirement } from '../utils/constants';
+import { AuthContext } from '../authContext';
 
 export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
   const navigate = useNavigate(); 
   
-  const userData = initialData?.user || initialData || {};
+  const { userInfo } = useContext(AuthContext);
+
+  const userData = initialData?.user || initialData || userInfo || {};
 
   const [formData, setFormData] = useState({
     firstname: userData.firstname || "",
@@ -25,18 +28,15 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
   const [isSubmitting, setIsSubmitting] = useState(false); 
 
   useEffect(() => {
-    if (!formData.email) {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          setFormData(prev => ({ ...prev, email: payload.sub || prev.email }));
-        } catch (e) {
-          console.error("Token parse error");
-        }
-      }
+    if ((!formData.firstname || !formData.email) && userInfo) {
+      setFormData(prev => ({
+        ...prev,
+        firstname: userInfo.firstname || prev.firstname,
+        surname: userInfo.surname || prev.surname,
+        email: userInfo.email || prev.email
+      }));
     }
-  }, []);
+  }, [userInfo]);
 
   const handleInputChange = (e) => {
     let { name, value } = e.target;
@@ -110,18 +110,30 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
       try {
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/patients/update-profile`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
           body: JSON.stringify(formData)
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-          if (Array.isArray(data.detail)) {
-            const errorMessages = data.detail.map(err => `${err.loc[err.loc.length - 1]}: ${err.msg}`);
-            throw new Error(errorMessages.join(", "));
+          if (data.detail) {
+            if (Array.isArray(data.detail)) {
+              const errorStrings = data.detail.map(err => {
+                const field = err.loc ? err.loc[err.loc.length - 1] : "Field";
+                return `${field}: ${err.msg}`;
+              });
+              throw new Error(errorStrings.join(" | "));
+            } else if (typeof data.detail === 'object') {
+              throw new Error(JSON.stringify(data.detail));
+            } else {
+              throw new Error(String(data.detail));
+            }
           }
-          throw new Error(data.detail || "Failed to update profile");
+          throw new Error("Failed to update profile.");
         }
 
         onFinalSubmit(formData); 

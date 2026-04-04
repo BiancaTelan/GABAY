@@ -47,9 +47,9 @@ class PatientProfileUpdate(BaseModel):
     dob: str
     gender: str
     address: str
-    emergencyContact: str
-    emergencyContactNum: str
-    emergencyEmail: str
+    emergencyContact: Optional[str] = None
+    emergencyContactNum: Optional[str] = None
+    emergencyEmail: Optional[str] = None
     
 # ==========================================
 # USER SCHEMAS (Accounts & Authentication)
