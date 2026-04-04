@@ -1,14 +1,15 @@
 import os
-import smtplib
+import resend
 import logging
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from dotenv import load_dotenv
 
 load_dotenv()
-SENDER_EMAIL = os.getenv("SENDER_EMAIL")
-SENDER_PASSWORD = os.getenv("SENDER_PASSWORD")
+resend.api_key = os.getenv("RESEND_API_KEY")
+
 FRONTEND_URL = os.getenv("FRONTEND_URL")
+
+ADMIN_RECEIVING_EMAIL = os.getenv("SENDER_EMAIL") 
+RESEND_FROM_EMAIL = "GABAY System <onboarding@resend.dev>"
 
 logger = logging.getLogger(__name__)
 
@@ -16,32 +17,28 @@ logger = logging.getLogger(__name__)
 # EMAIL VERIFICATION FUNCTION
 # ==========================================
 def send_verification_email(recipient_email: str, token: str):
-    if not SENDER_EMAIL or not SENDER_PASSWORD:
-        logger.error("Failed to send email: Missing SMTP credentials in environment variables.")
+    if not resend.api_key:
+        logger.error("Failed to send email: Missing RESEND_API_KEY in environment variables.")
         return
 
     try:
-        subject = "GABAY System: Verify Your Email Address"
         verification_link = f"{FRONTEND_URL}/verify-email?token={token}"
         
-        body = f"""Welcome to the GABAY System!
-        
-Please verify your email address by clicking the link below:
-{verification_link}
-        
-This link is valid for 12 hours."""
+        html_body = f"""
+        <h2>Welcome to the GABAY System!</h2>
+        <p>Please verify your email address by clicking the link below:</p>
+        <p><a href="{verification_link}">{verification_link}</a></p>
+        <br>
+        <p><em>This link is valid for 12 hours.</em></p>
+        """
 
-        msg = MIMEMultipart()
-        msg['From'] = SENDER_EMAIL
-        msg['To'] = recipient_email
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'plain'))
-
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls() 
-        server.login(SENDER_EMAIL, SENDER_PASSWORD)
-        server.sendmail(SENDER_EMAIL, recipient_email, msg.as_string())
-        server.quit()
+        response = resend.Emails.send({
+            "from": RESEND_FROM_EMAIL,
+            "to": recipient_email,
+            "subject": "GABAY System: Verify Your Email Address",
+            "html": html_body
+        })
+        logger.info(f"Verification email sent to {recipient_email}. Response: {response}")
 
     except Exception as e:
         print(f"FAILED TO SEND EMAIL: {e}")
@@ -51,33 +48,27 @@ This link is valid for 12 hours."""
 # EMAIL OTP FUNCTION
 # ==========================================
 def send_otp_email(recipient_email: str, otp: str):
-    if not SENDER_EMAIL or not SENDER_PASSWORD:
-        logger.error("Failed to send OTP: Missing SMTP credentials in environment variables.")
+    if not resend.api_key:
+        logger.error("Failed to send OTP: Missing RESEND_API_KEY.")
         return
 
     try:
-        subject = "GABAY System: Password Reset OTP"
-        body = f"""Hello,
-        
-We received a request to reset the password for your GABAY System account.
-        
-Your One-Time Password (OTP) is: {otp}
-        
-This code is valid for a short time. Please enter it on the website to reset your password.
-        
-If you did not request a password reset, please ignore this email."""
+        html_body = f"""
+        <p>Hello,</p>
+        <p>We received a request to reset the password for your GABAY System account.</p>
+        <h3>Your One-Time Password (OTP) is: <strong>{otp}</strong></h3>
+        <p>This code is valid for a short time. Please enter it on the website to reset your password.</p>
+        <br>
+        <p><small>If you did not request a password reset, please ignore this email.</small></p>
+        """
 
-        msg = MIMEMultipart()
-        msg['From'] = SENDER_EMAIL
-        msg['To'] = recipient_email
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'plain'))
-
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls() 
-        server.login(SENDER_EMAIL, SENDER_PASSWORD)
-        server.sendmail(SENDER_EMAIL, recipient_email, msg.as_string())
-        server.quit()
+        response = resend.Emails.send({
+            "from": RESEND_FROM_EMAIL,
+            "to": recipient_email,
+            "subject": "GABAY System: Password Reset OTP",
+            "html": html_body
+        })
+        logger.info(f"OTP email sent to {recipient_email}. Response: {response}")
 
     except Exception as e:
         print(f"FAILED TO SEND EMAIL: {e}")
@@ -87,70 +78,56 @@ If you did not request a password reset, please ignore this email."""
 # EMAIL NOTIFICATION EMAIL
 # ==========================================
 def send_notification_email(recipient_email: str, subject: str, body: str):
-   
-    if not SENDER_EMAIL or not SENDER_PASSWORD:
-        print("Error: Email credentials are missing from the .env file.")
+    if not resend.api_key:
+        print("Error: RESEND_API_KEY is missing from the .env file.")
         return
 
     try:
-        msg = MIMEMultipart()
-        msg['From'] = SENDER_EMAIL
-        msg['To'] = recipient_email
-        msg['Subject'] = subject
+        formatted_body = body.replace('\n', '<br>')
+        html_body = f"<p>{formatted_body}</p>"
 
-        msg.attach(MIMEText(body, 'plain'))
-
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls() 
-        server.login(SENDER_EMAIL, SENDER_PASSWORD)
-        
-        text = msg.as_string()
-        server.sendmail(SENDER_EMAIL, recipient_email, text)
-        
-        print(f"Successfully sent background email to {recipient_email}")
+        response = resend.Emails.send({
+            "from": RESEND_FROM_EMAIL,
+            "to": recipient_email,
+            "subject": subject,
+            "html": html_body
+        })
+        print(f"Successfully sent background email to {recipient_email}. Response: {response}")
         
     except Exception as e:
         print(f"Failed to send email: {e}")
-        
-    finally:
-        server.quit()
 
 # ==========================================
 # CONTACT US EMAIL FUNCTION
 # ==========================================
 def send_contact_us_email(name: str, user_email: str, subject: str, message: str):
     """Forwards a Contact Us form submission to the hospital's admin email."""
-    if not SENDER_EMAIL or not SENDER_PASSWORD:
-        logger.error("Failed to send Contact Us email: Missing SMTP credentials.")
+    if not resend.api_key:
+        logger.error("Failed to send Contact Us email: Missing RESEND_API_KEY.")
         return
 
     try:
         email_subject = f"New GABAY Inquiry: {subject}"
+        formatted_message = message.replace('\n', '<br>')
         
-        body = f"""You have received a new message from the GABAY System Contact Form.
-        
-From: {name}
-Email: {user_email}
-Subject: {subject}
+        html_body = f"""
+        <h3>New Contact Form Submission</h3>
+        <p><strong>From:</strong> {name}</p>
+        <p><strong>Email:</strong> {user_email}</p>
+        <p><strong>Subject:</strong> {subject}</p>
+        <hr>
+        <p><strong>Message:</strong></p>
+        <p>{formatted_message}</p>
+        """
 
-Message:
-{message}
-"""
-
-        msg = MIMEMultipart()
-        msg['From'] = SENDER_EMAIL
-        msg['To'] = SENDER_EMAIL
-        msg['Subject'] = email_subject
-        
-        msg.add_header('reply-to', user_email)
-        
-        msg.attach(MIMEText(body, 'plain'))
-
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls() 
-        server.login(SENDER_EMAIL, SENDER_PASSWORD)
-        server.sendmail(SENDER_EMAIL, SENDER_EMAIL, msg.as_string())
-        server.quit()
+        response = resend.Emails.send({
+            "from": RESEND_FROM_EMAIL,
+            "to": ADMIN_RECEIVING_EMAIL,
+            "subject": email_subject,
+            "reply_to": user_email,
+            "html": html_body
+        })
+        logger.info(f"Contact Us email forwarded to admin. Response: {response}")
 
     except Exception as e:
         print(f"FAILED TO SEND EMAIL: {e}")
