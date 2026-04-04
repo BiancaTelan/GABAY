@@ -33,6 +33,7 @@ import RescheduleAppointment from './pages/staff/RescheduleAppointment';
 import BookSchedule from './pages/staff/BookScheduleForm';
 import DoctorList from './pages/staff/DoctorsList';
 import DoctorScheduleCalendar from './pages/staff/DoctorScheduleCalendar';
+import StaffNoShows from './pages/staff/AppointmentsNoShow';
 import StaffNotifs from './pages/staff/StaffNotifs';
 
 import AdminLogin from './pages/admin/AdminLogin';
@@ -238,6 +239,7 @@ function App() {
           <Route path="book-schedule" element={<BookSchedule />} />
           <Route path="doctors" element={<DoctorList />} />
           <Route path="doctor-schedule" element={<DoctorScheduleCalendar />} />
+          <Route path="no-show-appointments" element={<StaffNoShows />} />
 
           <Route path="s-account" element={<PersonnelAccount />} />
           <Route path="s-notifs" element={<StaffNotifs />} />

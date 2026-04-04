@@ -9,14 +9,21 @@ import ConfirmRescheduleModal from '../../components/ConfirmRescheduleModal';
 export default function RescheduleAppointmentPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const appointment = location.state?.appointment;
+  const rawData = location.state?.appointment || location.state?.patientData;
+  
+  const appointment = rawData ? {
+    id: rawData.id,
+    ...rawData,
+    name: rawData.name || rawData.patientName,
+    appointmentDate: rawData.appointmentDate || rawData.previousDate || new Date().toISOString(),
+    hospitalNo: rawData.hospitalNo || rawData.hospitalNumber || 'N/A'
+  } : null;
 
   const [selectedDate, setSelectedDate] = useState(
     appointment?.appointmentDate ? new Date(appointment.appointmentDate) : null
   );
   const [selectedBatch, setSelectedBatch] = useState(appointment?.batch || 'Morning');
   const [reason, setReason] = useState('');
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -28,22 +35,24 @@ export default function RescheduleAppointmentPage() {
   const handleOpenModal = (e) => {
     e.preventDefault();
 
-    // VALIDATION
-    const originalDate = new Date(appointment?.appointmentDate).setHours(0,0,0,0);
-    const newDate = selectedDate ? new Date(selectedDate).setHours(0,0,0,0) : null;
-    
-    const hasNotChanged = 
-      newDate === originalDate && 
-      selectedBatch === appointment?.batch;
+    const originalDate = new Date(appointment?.appointmentDate).setHours(0, 0, 0, 0);
+    const newDate = selectedDate ? new Date(selectedDate).setHours(0, 0, 0, 0) : null;
+    const today = new Date().setHours(0, 0, 0, 0);
+
+    const hasNotChanged = newDate === originalDate && selectedBatch === appointment?.batch;
 
     if (!selectedDate) return setError('Please select a new appointment date.');
     
+    if (newDate < today) {
+      return setError('The new appointment date cannot be in the past.');
+    }
+
     if (hasNotChanged) {
       return setError('No changes detected. Please select a different date or batch to reschedule.');
     }
 
     if (!reason.trim()) return setError('Please provide a reason for rescheduling.');
-    
+
     setError('');
     setShowConfirmModal(true);
   };
@@ -55,19 +64,25 @@ export default function RescheduleAppointmentPage() {
 
       setTimeout(() => {
         try {
-          console.log('Rescheduled:', { id: appointment?.id, reason });
           setLoading(false);
           setShowConfirmModal(false);
-          resolve(); 
+          resolve();
 
           setTimeout(() => {
-            navigate('/staff/appointments', { state: { tab: 'approved' } });
+            const isNoShow = location.state?.patientData?.source === 'no-show';
+            const destination = isNoShow ? '/staff/no-show-appointments' : '/staff/appointments';
+        
+            const navigationState = isNoShow 
+              ? { updatedId: appointment?.id, newStatus: 'Rescheduled' } 
+              : { tab: 'approved' };
+
+            navigate(destination, { state: navigationState });
           }, 800);
         } catch (err) {
           setLoading(false);
           reject(err);
         }
-      }, 400); 
+      }, 400);
     });
   };
 
@@ -95,7 +110,9 @@ export default function RescheduleAppointmentPage() {
         <div className="bg-gabay-blue px-6 py-4 mb-6">
           <h1 className="font-montserrat text-3xl font-bold text-white">Appointment Management</h1>
           <p className="font-poppins text-sm text-white mt-1">
-            Appointment Management &gt; Approved Schedules &gt; Reschedule
+            Appointment Management &gt; 
+            {location.state?.patientData?.source === 'no-show' ? ' No Show Records ' : ' Approved Schedules '} 
+            &gt; Reschedule
           </p>
         </div>
 
@@ -103,8 +120,6 @@ export default function RescheduleAppointmentPage() {
           <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6">
             <form onSubmit={handleOpenModal}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                
-                {/* Patient Details */}
                 <div className="space-y-4">
                   <h3 className="font-montserrat text-lg font-semibold text-gabay-teal mb-4 uppercase tracking-wide">Patient Information</h3>
                   <ReadOnlyField label="Hospital Number" value={appointment?.hospitalNo || 'N/A'} />
@@ -124,7 +139,6 @@ export default function RescheduleAppointmentPage() {
                   </div>
                 </div>
 
-                {/* Reschedule Inputs */}
                 <div className="space-y-5">
                   <h3 className="font-montserrat text-lg font-semibold text-gabay-teal mb-4 uppercase tracking-wide">Update Schedule Details</h3>
                   <div>
@@ -135,7 +149,7 @@ export default function RescheduleAppointmentPage() {
                         onChange={(d) => setSelectedDate(d)}
                         minDate={new Date()}
                         dateFormat="MM/dd/yyyy"
-                        wrapperClassName="w-full" // Ensures the DatePicker wrapper takes full width
+                        wrapperClassName="w-full"
                         customInput={
                           <div className="relative w-full">
                             <input

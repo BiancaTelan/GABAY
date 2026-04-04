@@ -64,7 +64,7 @@ export default function DoctorScheduleCalendar() {
         <div className="text-left">
           <h1 className="font-montserrat text-3xl font-bold text-white tracking-tight">Doctor List & Schedule</h1>
           <p className="font-poppins text-sm text-white/90 mt-1">
-            Doctors &gt; <span className="text-white font-medium underline underline-offset-4 decoration-gabay-teal">Doctors Schedule</span>
+            Doctors &gt; <span className="text-white font-medium underline underline-offset-4">Doctors Schedule</span>
           </p>
         </div>
         <button 

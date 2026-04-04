@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { 
   PlusCircle, Search, ChevronLeft, ChevronRight, 
@@ -12,7 +12,6 @@ import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 
 export default function StaffDoctors() {
   const navigate = useNavigate();
-
   const { doctors: initialDoctors = [] } = useOutletContext() || {};
 
   const [doctors, setDoctors] = useState(initialDoctors);
@@ -27,6 +26,22 @@ export default function StaffDoctors() {
   const [doctorToDelete, setDoctorToDelete] = useState(null);
 
   const itemsPerPage = 10;
+
+  const filteredDoctors = useMemo(() => {
+    return doctors.filter(doc =>
+      doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      doc.department.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [searchTerm, doctors]);
+
+  const totalPages = Math.ceil(filteredDoctors.length / itemsPerPage);
+  const paginatedDoctors = filteredDoctors.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const entryStart = filteredDoctors.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+  const entryEnd = Math.min(currentPage * itemsPerPage, filteredDoctors.length);
 
   const handleAddNewDoctor = (newDoctorData) => {
     const newDoctor = {
@@ -64,17 +79,6 @@ export default function StaffDoctors() {
       setDoctorToDelete(null);
     }
   };
-
-  const filteredDoctors = doctors.filter(doc =>
-    doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doc.department.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const totalPages = Math.ceil(filteredDoctors.length / itemsPerPage);
-  const paginatedDoctors = filteredDoctors.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
 
   const StatusPicker = ({ doctor }) => {
     const isOpen = activeDropdown === doctor.id;
@@ -116,16 +120,16 @@ export default function StaffDoctors() {
   return (
     <div className="space-y-6">
       {/* Title & Breadcrumb */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gabay-blue px-6 py-6 mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gabay-blue px-6 py-6 mb-4 font-poppins">
         <div className="text-left">
           <h1 className="font-montserrat text-3xl font-bold text-white tracking-tight">Doctor List & Schedule</h1>
-          <p className="font-poppins text-sm text-white/90 mt-1">
-            Doctors &gt; <span className="text-white font-medium underline underline-offset-4 decoration-gabay-teal">Doctor List</span>
+          <p className="text-sm text-white/90 mt-1">
+            Doctors &gt; <span className="text-white font-medium underline underline-offset-4">Doctor List</span>
           </p>
         </div>
         <button 
           onClick={() => navigate('/staff/doctor-schedule')}
-          className="flex items-center gap-2 px-5 py-2.5 bg-white text-gabay-blue font-bold font-poppins text-sm rounded-lg hover:bg-teal-50 transition-all shadow-lg active:scale-95 group"
+          className="flex items-center gap-2 px-5 py-2.5 bg-white text-gabay-blue font-bold text-sm rounded-lg hover:bg-teal-50 transition-all shadow-lg active:scale-95 group"
         >
           View Doctor Schedules
           <ChevronRightIcon size={18} className="group-hover:translate-x-1 transition-transform" />
@@ -152,7 +156,7 @@ export default function StaffDoctors() {
               <input 
                 type="text" 
                 value={searchTerm} 
-                onChange={(e) => setSearchTerm(e.target.value)} 
+                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} 
                 placeholder="Search doctor..." 
                 className="border border-gray-300 rounded-md px-3 py-1.5 w-64 pr-10 focus:ring-2 focus:ring-gabay-teal/20 outline-none text-sm" 
               />
@@ -191,7 +195,7 @@ export default function StaffDoctors() {
                       </div>
                     </td>
                     <td className="px-6 py-4 font-bold text-gabay-navy">{doctor.department}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <StatusPicker doctor={doctor} />
                         <button 
@@ -208,21 +212,39 @@ export default function StaffDoctors() {
             </table>
           </div>
 
-          {/* Pagination */}
-          <div className="p-6 bg-white flex items-center justify-between border-t border-gray-100">
-            <div className="flex items-center gap-1">
-              <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} className="p-2 text-gray-400 hover:bg-gray-100 rounded-full">
-                <ChevronLeft size={24} />
+          {/* PERSONNEL STYLE PAGINATION FOOTER */}
+          <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <button 
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                className="p-1.5 rounded-lg hover:bg-white border border-transparent hover:border-gray-200 disabled:opacity-30 transition-all"
+              >
+                <ChevronLeft size={20} />
               </button>
-              <button className="w-9 h-9 flex items-center justify-center bg-gabay-blue text-white rounded-full font-bold">
-                {currentPage}
-              </button>
-              <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} className="p-2 text-gray-400 hover:bg-gray-100 rounded-full">
-                <ChevronRight size={24} />
+              <div className="flex gap-1">
+                {[...Array(totalPages)].map((_, i) => (
+                  <button 
+                    key={i}
+                    onClick={() => setCurrentPage(i + 1)}
+                    className={`w-8 h-8 rounded-lg text-xs font-poppins font-bold transition-all ${
+                      currentPage === i + 1 ? 'bg-gabay-blue text-white shadow-md' : 'hover:bg-white border border-transparent hover:border-gray-200 text-gray-500'
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+              <button 
+                disabled={currentPage === totalPages || totalPages === 0}
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                className="p-1.5 rounded-lg hover:bg-white border border-transparent hover:border-gray-200 disabled:opacity-30 transition-all"
+              >
+                <ChevronRight size={20} />
               </button>
             </div>
-            <p className="text-gray-400 font-bold text-sm">
-              Showing {(currentPage-1)*itemsPerPage + 1} - {Math.min(currentPage*itemsPerPage, filteredDoctors.length)} of {filteredDoctors.length} entries
+            <p className="text-[10px] md:text-xs text-gray-400 font-poppins font-medium">
+              Showing {entryStart} - {entryEnd} of {filteredDoctors.length} entries
             </p>
           </div>
         </div>
