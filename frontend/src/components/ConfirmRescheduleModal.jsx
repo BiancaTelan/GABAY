@@ -17,7 +17,7 @@ export default function ConfirmRescheduleModal({
     try {
       await onConfirm();
       toast.success('Appointment Rescheduled Successfully!', {
-        duration: 4000,
+        duration: 2000,
         position: 'top-center',
         style: {
           fontFamily: 'Poppins, sans-serif',
@@ -33,7 +33,7 @@ export default function ConfirmRescheduleModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-150">
         <h3 className="font-montserrat text-2xl font-bold text-gabay-blue text-center mb-6">
           Confirm Rescheduling
         </h3>

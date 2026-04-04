@@ -1,19 +1,12 @@
-// src/components/StaffHeader.jsx
-import { Bell, Calendar, UserCircle } from 'lucide-react';
+import { Bell, Calendar } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { useContext, useState } from 'react';
+import { useContext } from 'react';
 import { AuthContext } from '../authContext';
 import gabayLogo from '../assets/gabayLogo.png';
 
 export default function StaffHeader() {
-  const { userInfo, logout } = useContext(AuthContext);
+  const { userInfo } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [showUserMenu, setShowUserMenu] = useState(false);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/admin/login');
-  };
 
   return (
     <header className="font-poppins sticky top-0 z-50 bg-white border-b border-gray-200 py-3">
@@ -47,45 +40,35 @@ export default function StaffHeader() {
           </nav>
         </div>
 
-        {/* Right: Icons and user menu */}
+        {/* Right: Icons and Direct Account Link */}
         <div className="flex items-center gap-3">
           <div className="hidden md:flex items-center gap-3">
             <button
+              onClick={() => navigate('/staff/doctor-schedule')}
               className="p-2 rounded-xl transition-all text-gray-400 hover:bg-blue-50 hover:text-gabay-blue"
               title="Calendar"
             >
               <Calendar size={24} />
             </button>
             <button
+              onClick={() => navigate('/staff/s-notifs')}
               className="p-2 rounded-xl transition-all text-gray-400 hover:bg-blue-50 hover:text-gabay-blue relative"
               title="Notifications"
             >
               <Bell size={24} />
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
-
-            <div className="relative">
-              <button
-                onClick={() => setShowUserMenu(!showUserMenu)}
-                className="p-2 rounded-full transition-all text-gray-400 hover:bg-gray-100 hover:text-gabay-blue"
-                title="Account"
-              >
-                <UserCircle size={24} />
-              </button>
-              {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-100">
-                  <div className="px-4 py-2 text-sm text-gray-700 border-b">
-                    {userInfo?.email || 'Staff'}
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                  >
-                    Logout
-                  </button>
-                </div>
-              )}
-            </div>
+    
+            <button
+              onClick={() => navigate('/staff/s-account')}
+              className="flex items-center justify-center p-0.5 rounded-full border-2 border-transparent hover:border-gabay-blue transition-all overflow-hidden"
+            >
+                <img 
+                  src={userInfo?.profilePhoto || "/default-avatar.png"} 
+                  alt="Staff" 
+                  className="h-9 w-9 rounded-full object-cover bg-gray-100" 
+                />
+            </button>
           </div>
         </div>
       </div>

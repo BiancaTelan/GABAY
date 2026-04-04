@@ -27,8 +27,21 @@ export default function RescheduleAppointmentPage() {
 
   const handleOpenModal = (e) => {
     e.preventDefault();
+
+    // VALIDATION
+    const originalDate = new Date(appointment?.appointmentDate).setHours(0,0,0,0);
+    const newDate = selectedDate ? new Date(selectedDate).setHours(0,0,0,0) : null;
+    
+    const hasNotChanged = 
+      newDate === originalDate && 
+      selectedBatch === appointment?.batch;
+
     if (!selectedDate) return setError('Please select a new appointment date.');
-    if (!selectedBatch) return setError('Please select a batch.');
+    
+    if (hasNotChanged) {
+      return setError('No changes detected. Please select a different date or batch to reschedule.');
+    }
+
     if (!reason.trim()) return setError('Please provide a reason for rescheduling.');
     
     setError('');
@@ -43,20 +56,18 @@ export default function RescheduleAppointmentPage() {
       setTimeout(() => {
         try {
           console.log('Rescheduled:', { id: appointment?.id, reason });
-          
           setLoading(false);
           setShowConfirmModal(false);
           resolve(); 
 
           setTimeout(() => {
             navigate('/staff/appointments', { state: { tab: 'approved' } });
-          }, 2000);
-          
+          }, 800);
         } catch (err) {
           setLoading(false);
           reject(err);
         }
-      }, 1000); 
+      }, 400); 
     });
   };
 
@@ -118,12 +129,13 @@ export default function RescheduleAppointmentPage() {
                   <h3 className="font-montserrat text-lg font-semibold text-gabay-teal mb-4 uppercase tracking-wide">Update Schedule Details</h3>
                   <div>
                     <label className="block font-poppins font-medium text-gabay-navy text-md mb-1">Date</label>
-                    <div className="relative">
+                    <div className="relative w-full">
                       <DatePicker
                         selected={selectedDate}
                         onChange={(d) => setSelectedDate(d)}
                         minDate={new Date()}
                         dateFormat="MM/dd/yyyy"
+                        wrapperClassName="w-full" // Ensures the DatePicker wrapper takes full width
                         customInput={
                           <div className="relative w-full">
                             <input
@@ -168,7 +180,7 @@ export default function RescheduleAppointmentPage() {
                       required
                     />
                   </div>
-                  {error && <p className="text-red-500 text-sm font-poppins">{error}</p>}
+                  {error && <p className="text-red-500 text-sm font-poppins font-medium">{error}</p>}
                 </div>
               </div>
 

@@ -26,7 +26,7 @@ export default function QueueStatusModal({ isOpen, onClose, patient, onUpdate })
             variant="teal"
             onClick={() => onUpdate(patient, 'completed')}
           >
-            COMPLETED
+            SERVED
           </Button>
           <Button
             variant="teal-outline"

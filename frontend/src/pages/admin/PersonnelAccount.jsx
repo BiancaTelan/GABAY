@@ -40,8 +40,13 @@ export default function PersonnelAccount() {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      if (!token) return;
+      if (!token || token.split('.').length !== 3) {
+        console.error("Invalid token");
+        return;
+      }
       try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
         const payload = JSON.parse(atob(token.split('.')[1]));
         const userEmail = payload.sub;
 
@@ -55,11 +60,11 @@ export default function PersonnelAccount() {
           setLocalUserInfo(data);
         }
       } catch (error) {
-        console.error(`Failed to fetch ${userRole} profile:`, error);
+        console.error(`Failed to fetch ${displayRole} profile:`, error);
       }
     };
     fetchProfile();
-  }, [token, apiBase, userRole]);
+  }, [token, apiBase, displayRole]);
 
   const handleInputChange = (e) => {
     let { name, value } = e.target;

@@ -31,6 +31,9 @@ import StaffDashboard from './pages/staff/StaffDashboard';
 import StaffAppointments from './pages/staff/StaffAppointments';
 import RescheduleAppointment from './pages/staff/RescheduleAppointment';
 import BookSchedule from './pages/staff/BookScheduleForm';
+import DoctorList from './pages/staff/DoctorsList';
+import DoctorScheduleCalendar from './pages/staff/DoctorScheduleCalendar';
+import StaffNotifs from './pages/staff/StaffNotifs';
 
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminLayout from './components/AdminLayout';
@@ -227,12 +230,17 @@ function App() {
         </Route>
           
         {/* STAFF ROUTES */}
-        <Route path="/staff" element={<StaffLayout />}>
+        <Route path="/staff" element={<StaffLayout />}> {/* element={<StaffRoute><StaffLayout /></StaffRoute>}>*/}
           <Route index element={<StaffDashboard />} />
           <Route path="dashboard" element={<StaffDashboard />} />
           <Route path="appointments" element={<StaffAppointments />} />
           <Route path="reschedule" element={<RescheduleAppointment />} />
           <Route path="book-schedule" element={<BookSchedule />} />
+          <Route path="doctors" element={<DoctorList />} />
+          <Route path="doctor-schedule" element={<DoctorScheduleCalendar />} />
+
+          <Route path="s-account" element={<PersonnelAccount />} />
+          <Route path="s-notifs" element={<StaffNotifs />} />
         </Route>
 
         {/* ADMIN ROUTES */}

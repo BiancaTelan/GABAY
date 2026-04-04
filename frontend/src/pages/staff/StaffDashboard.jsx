@@ -1,4 +1,3 @@
-// src/pages/staff/StaffDashboard.jsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CalendarCheck, CalendarX, CalendarOff, CalendarClock, Plus } from 'lucide-react';
@@ -81,29 +80,33 @@ export default function StaffDashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gabay-blue px-6 py-4 mb-4">
-        <div>
-          <h1 className="font-montserrat text-3xl font-bold text-white">Dashboard</h1>
-          <p className="font-poppins text-sm text-white mt-1">
-            Dashboard Overview &gt; <span className="text-white font-medium">Queue Management</span>
-          </p>
-        </div>
-        <div className="flex gap-4">
-          <button className="px-4 py-2 bg-white border border-gray-200 text-gray-700 font-medium font-poppins text-sm rounded-lg hover:bg-gray-50 transition">
-            Today
-          </button>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gabay-blue px-6 py-6 mb-4">
+      <div>
+        <h1 className="font-montserrat text-3xl font-bold text-white tracking-tight">
+          Dashboard
+        </h1>
+        <p className="font-poppins text-sm text-white/90 mt-1">
+          Dashboard Overview &gt; <span className="text-white font-medium underline underline-offset-4">
+            Queue Management
+          </span>
+        </p>
       </div>
+      <div className="flex gap-4">
+        <p className="px-5 py-2.5 bg-white border border-transparent text-gabay-blue font-bold font-poppins text-sm rounded-lg">
+          Today
+        </p>
+      </div>
+    </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[5fr_2fr] gap-6">
         {/* LEFT COLUMN */}
         <div className="space-y-6">
           {/* Statistics Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
-            <StatCard title="Appointments Approved" value={stats.approved} icon={CalendarCheck} color="green" onClick={() => navigate('/staff/approved-appointments')} />
-            <StatCard title="Appointments Cancelled" value={stats.cancelled} icon={CalendarX} color="red" onClick={() => navigate('/staff/cancelled-appointments')} />
-            <StatCard title="Appointments No Show" value={stats.noShow} icon={CalendarOff} color="blue" onClick={() => navigate('/staff/no-show-appointments')} />
-            <StatCard title="Appointments for Approval" value={stats.forApproval} icon={CalendarClock} color="gray" onClick={() => navigate('/staff/for-approval-appointments')} />
+            <StatCard title="Appointments Approved" value={stats.approved} icon={CalendarCheck} color="green" onClick={() => navigate('/staff/appointments', { state: { activeTab: 'approved' } })} />
+            <StatCard title="Appointments Cancelled" value={stats.cancelled} icon={CalendarX} color="red" onClick={() => navigate('/staff/appointments', { state: { activeTab: 'canceled' } })} />
+            <StatCard title="Appointments No Show" value={stats.noShow} icon={CalendarOff} color="blue" onClick={() => navigate('/staff/no-show-appointments', { state: { activeTab: 'noShow' } })} />
+            <StatCard title="Appointments for Approval" value={stats.forApproval} icon={CalendarClock} color="gray" onClick={() => navigate('/staff/appointments', { state: { activeTab: 'pending' } })} />
           </div>
 
           {/* Scheduled Appointment List */}
@@ -113,7 +116,7 @@ export default function StaffDashboard() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {patients.map((patient, idx) => (
-                <div key={idx} className="relative bg-blue-100 py-2 px-6 rounded-xl shadow-sm border border-blue-200/50">
+                <div key={idx} className="relative bg-gray-100 py-2 px-6 rounded-xl shadow-sm border border-gray-200">
                   <div className="space-y-1">
                     <h3 className="font-poppins font-bold text-md">{patient.name}</h3>
                     <p className="font-poppins text-md">{patient.hospitalNumber}</p>
@@ -168,7 +171,6 @@ export default function StaffDashboard() {
         </div>
       </div>
 
-      {/* Queue Status Modal */}
       {selectedPatient && (
         <QueueStatusModal
           isOpen={modalOpen}
@@ -178,7 +180,6 @@ export default function StaffDashboard() {
         />
       )}
 
-      {/* Appointment Details Modal */}
       {selectedAppointment && (
         <AppointmentDetailsModal
           isOpen={appointmentModalOpen}

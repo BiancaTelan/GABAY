@@ -1,16 +1,17 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Search, ChevronLeft, ChevronRight, SquarePen, Funnel } from 'lucide-react';
 import ApproveScheduleModal from '../../components/ApproveSchedModal';
 import BookScheduleForm from './BookScheduleForm';
 
 export default function StaffAppointments() {
+  const location = useLocation();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('pending');
+  const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'pending');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState('approve'); // only 'approve' now
+  const [modalMode, setModalMode] = useState('approve');
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
 
@@ -24,6 +25,13 @@ export default function StaffAppointments() {
   const [showNewPatient, setShowNewPatient] = useState(false);
 
   const itemsPerPage = 6;
+
+  useEffect(() => {
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+      setCurrentPage(1);
+    }
+  }, [location.state]);
 
   // Sample Data
   const [pendingAppointments, setPendingAppointments] = useState([
@@ -161,11 +169,17 @@ useEffect(() => {
   return (
     <div className="space-y-6">
       {/* Title & Breadcrumb */}
-      <div className="bg-gabay-blue px-6 py-4 mb-6">
-        <h1 className="font-montserrat text-3xl font-bold text-white">Appointment Management</h1>
-        <p className="font-poppins text-sm text-white mt-1">
-          Appointment Management &gt; {tabs.find(t => t.id === activeTab)?.label || 'Pending Approval'}
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gabay-blue px-6 py-6 mb-4">
+        <div>
+          <h1 className="font-montserrat text-3xl font-bold text-white tracking-tight">
+            Appointment Management
+          </h1>
+          <p className="font-poppins text-sm text-white/90 mt-1">
+            Appointment Management &gt; <span className="text-white font-medium underline underline-offset-4">
+              {tabs.find(t => t.id === activeTab)?.label || 'Pending Approval'}
+            </span>
+          </p>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -340,12 +354,10 @@ useEffect(() => {
         </>
       )}
 
-      {/* Book Schedule Form */}
       {activeTab === 'book' && (
         <BookScheduleForm onSuccess={() => {}} />
       )}
 
-      {/* Approve Modal */}
       {selectedAppointment && modalMode === 'approve' && (
         <ApproveScheduleModal isOpen={modalOpen} onClose={() => setModalOpen(false)} appointment={selectedAppointment} onApprove={handleApprove} />
       )}
