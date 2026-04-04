@@ -44,6 +44,7 @@ This link is valid for 12 hours."""
         server.quit()
 
     except Exception as e:
+        print(f"FAILED TO SEND EMAIL: {e}")
         logger.error(f"Failed to send verification email to {recipient_email}. Error: {e}")
 
 # ==========================================
@@ -79,6 +80,7 @@ If you did not request a password reset, please ignore this email."""
         server.quit()
 
     except Exception as e:
+        print(f"FAILED TO SEND EMAIL: {e}")
         logger.error(f"Failed to send OTP email to {recipient_email}. Error: {e}")
 
 # ==========================================
@@ -151,4 +153,5 @@ Message:
         server.quit()
 
     except Exception as e:
+        print(f"FAILED TO SEND EMAIL: {e}")
         logger.error(f"Failed to process Contact Us form from {user_email}. Error: {e}")
