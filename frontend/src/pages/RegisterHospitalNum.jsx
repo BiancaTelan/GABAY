@@ -112,7 +112,6 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
           method: 'PUT',
           headers: { 
             'Content-Type': 'application/json',
-            // Always ensure the token is sent so backend knows who to update
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           },
           body: JSON.stringify(formData)
