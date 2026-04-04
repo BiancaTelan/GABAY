@@ -1,17 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Input from '../components/input';
 import Button from '../components/button';
 import { phonePattern, dobPattern, minAgeRequirement } from '../utils/constants';
 
-
 export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
   const navigate = useNavigate(); 
   
+  const userData = initialData?.user || initialData || {};
+
   const [formData, setFormData] = useState({
-    firstname: initialData?.firstname || "",
-    surname: initialData?.surname || "",
-    email: initialData?.email || "",
+    firstname: userData.firstname || "",
+    surname: userData.surname || "",
+    email: userData.email || "",
     hospital_num: "",
     contactNumber: "",
     dob: "",
@@ -22,6 +23,20 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState(''); 
   const [isSubmitting, setIsSubmitting] = useState(false); 
+
+  useEffect(() => {
+    if (!formData.email) {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          setFormData(prev => ({ ...prev, email: payload.sub || prev.email }));
+        } catch (e) {
+          console.error("Token parse error");
+        }
+      }
+    }
+  }, []);
 
   const handleInputChange = (e) => {
     let { name, value } = e.target;
@@ -102,6 +117,10 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
         const data = await response.json();
 
         if (!response.ok) {
+          if (Array.isArray(data.detail)) {
+            const errorMessages = data.detail.map(err => `${err.loc[err.loc.length - 1]}: ${err.msg}`);
+            throw new Error(errorMessages.join(", "));
+          }
           throw new Error(data.detail || "Failed to update profile");
         }
 
@@ -109,10 +128,7 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
 
       } catch (error) {
         console.error("Profile Update Error:", error);
-        const displayError = typeof error.message === 'string' 
-          ? error.message 
-          : JSON.stringify(error.message);
-        setServerError(displayError);
+        setServerError(error.message);
       } finally {
         setIsSubmitting(false);
       }
@@ -131,7 +147,7 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
       )}
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-5">
-        <Input label="Full Name" value={`${formData.firstname} ${formData.surname}`} readOnly noHover />
+        <Input label="Full Name" value={`${formData.firstname} ${formData.surname}`.trim()} readOnly noHover />
         <Input label="Email Address" value={formData.email} readOnly noHover />
         
         <Input 
@@ -202,9 +218,8 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
         </div>
 
         <div className="md:col-span-2 flex justify-end items-center mt-6">
-
-          <Button variant="teal" type="submit" className="w-55 py-3 text-[16px] font-semibold tracking-normal">
-            UPDATE MY ACCOUNT
+          <Button variant="teal" type="submit" disabled={isSubmitting} className="w-55 py-3 text-[16px] font-semibold tracking-normal disabled:opacity-70">
+            {isSubmitting ? "UPDATING..." : "UPDATE MY ACCOUNT"}
           </Button>
         </div>
       </form>
