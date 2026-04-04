@@ -28,9 +28,9 @@ app.add_middleware(
     allow_headers=["*"], 
 )
 
-app.include_router(user_auth.router)
-app.include_router(appointments.router)
-app.include_router(patients.router)
+app.include_router(user_auth.router, prefix="/api")
+app.include_router(appointments.router, prefix="/api")
+app.include_router(patients.router, prefix="/api")
 
 @app.get("/", tags=["Health"])
 def root():
