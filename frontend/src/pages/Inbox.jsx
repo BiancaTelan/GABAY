@@ -162,7 +162,7 @@ export default function Inbox() {
 
       navigate('/appointment-confirmed', {
         state: {
-          ppatientName: patientFullName,
+          patientName: patientFullName,
           department: note.department,
           date: note.date,
           doctor: note.doctor,

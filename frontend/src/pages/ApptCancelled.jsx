@@ -4,12 +4,13 @@ import Logo from '../assets/caintaHospitalLogo.png';
 export default function AppointmentCancelled() {
   const navigate = useNavigate();
   const location = useLocation();
+  
   const { id, patientName, department, date, doctor } = location.state || {
     id: 1,
-    patientName: 'Juan Dela Cruz',
-    department: 'Internal Medicine',
-    date: '03/16/2026',
-    doctor: 'Dr. Ritchie Cruz',
+    patientName: 'Patient',
+    department: 'Department',
+    date: 'TBD',
+    doctor: 'Doctor',
   };
 
   return (
@@ -31,7 +32,7 @@ export default function AppointmentCancelled() {
           Appointment Cancelled
         </h2>
         <p className="font-poppins text-lg text-center text-gabay-navy mb-10">
-          For Patient: <span className="font-semibold">{patientFullName}</span>
+          For Patient: <span className="font-semibold">{patientName}</span>
         </p>
         <p className="font-poppins text-lg text-center mb-10">
           We’re sorry that you declined your appointment confirmation. Click{' '}
