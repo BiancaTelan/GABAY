@@ -222,7 +222,8 @@ def get_appointment_history(email: str, db: Session = Depends(get_db)):
         return {
             "appointments": history,
             "is_verified": user.is_verified,
-            "unread_count": unread_count 
+            "unread_count": unread_count,
+            "patient_name": f"{patient.firstname} {patient.surname}"
         }
         
     except Exception as e:
