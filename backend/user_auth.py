@@ -1,5 +1,7 @@
+from jose import JWTError
 import jwt
 import random
+from fastapi import BackgroundTasks
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -8,14 +10,14 @@ from datetime import timedelta
 from db_connection import get_db
 from db_model import User, Patient, roleEnum
 from py_schema import PatientSignUp, ForgotPasswordRequest, ResetPasswordOTPRequest, VerifyOTPRequest, ChangeEmailRequest, ChangePasswordRequest
-from security import verify_password, create_access_token, get_password_hash, ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY, ALGORITHM
+from security import create_verification_token, verify_password, create_access_token, get_password_hash, ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY, ALGORITHM
+from email_utils import send_notification_email, send_otp_email, send_verification_email
 
 router = APIRouter(prefix="/auth", tags=["Authentication & Registration"])
 
 # ---------------------------------------------------------
 # 1. LOGIN ROUTE
 # ---------------------------------------------------------
-
 @router.post("/login", summary="Create access token for user")
 def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(), 
@@ -57,7 +59,7 @@ def login_for_access_token(
 # 2. SIGN-UP ROUTE
 # ---------------------------------------------------------
 @router.post("/signup", status_code=status.HTTP_201_CREATED)
-def register_patient(patient_data: PatientSignUp, db: Session = Depends(get_db)):
+def register_patient(background_tasks: BackgroundTasks, patient_data: PatientSignUp, db: Session = Depends(get_db)):
     try:
         existing_user = db.query(User).filter(User.email == patient_data.email).first()
         if existing_user:
@@ -87,13 +89,20 @@ def register_patient(patient_data: PatientSignUp, db: Session = Depends(get_db))
         
         db.commit()
 
-        return {"message": "Account created successfully. Logging you in"}
+        verification_token = create_verification_token(new_user.email)
+        
+        background_tasks.add_task(
+        send_verification_email, 
+        recipient_email=new_user.email, 
+        token=verification_token
+        )
+
+        return {"message": "Account created successfully. Please check your email to verify your account. Logging you in"}
 
     except HTTPException:
         raise 
         
     except Exception as e:
-        print(f"\n❌ FATAL BACKEND ERROR: {str(e)}\n")
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -103,25 +112,26 @@ def register_patient(patient_data: PatientSignUp, db: Session = Depends(get_db))
 # ---------------------------------------------------------
 # 3. FORGOT PASSWORD
 # ---------------------------------------------------------
-
 OTP_STORE = {}
 
 @router.post("/forgot-password")
-def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db)):
+def forgot_password(
+    request: ForgotPasswordRequest, 
+    background_tasks: BackgroundTasks, # <--- INJECT THIS
+    db: Session = Depends(get_db)
+):
     user = db.query(User).filter(User.email == request.email).first()
     
     if user:
         otp = str(random.randint(100000, 999999))
         
         OTP_STORE[request.email] = otp
-        
-        # PRINT TO THE TERMINAL
-        print("\n" + "="*50)
-        print("🚨 GABAY OTP REQUESTED 🚨")
-        print(f"For User: {request.email}")
-        print(f"Your 6-digit Verification Code is: {otp}")
-        print("="*50 + "\n")
 
+        background_tasks.add_task(
+            send_otp_email,
+            recipient_email=request.email,
+            otp=otp
+        )
     return {"message": "If that email is registered, an OTP has been sent."}
 
 
@@ -176,7 +186,7 @@ def change_email(request: ChangeEmailRequest, db: Session = Depends(get_db)):
     return {"message": "Email updated successfully."}
 
 # ---------------------------------------------------------
-# 6. CHANGE PASSWORD
+# 5. CHANGE PASSWORD
 # ---------------------------------------------------------
 @router.put("/change-password")
 def change_password(request: ChangePasswordRequest, db: Session = Depends(get_db)):
@@ -189,3 +199,33 @@ def change_password(request: ChangePasswordRequest, db: Session = Depends(get_db
     db.commit()
     
     return {"message": "Password updated successfully."}
+
+# ---------------------------------------------------------
+# 7. EMAIL VERIFICATION
+# ---------------------------------------------------------
+@router.get("/verify-email")
+def verify_email(token: str, db: Session = Depends(get_db)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        token_type: str = payload.get("type")
+
+        if email is None or token_type != "email_verification":
+            raise HTTPException(status_code=400, detail="Invalid verification token.")
+
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found.")
+
+        if user.is_verified:
+            return {"message": "Email is already verified!"}
+
+        user.is_verified = True
+        db.commit()
+
+        return {"message": "Email verified successfully! You can now log in."}
+
+    except JWTError:
+        raise HTTPException(status_code=400, detail="Token is invalid or has expired.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -10,6 +10,7 @@ import { emailPattern, namePattern } from '../utils/constants';
 export default function SignUp() {
     const navigate = useNavigate();
     const { login } = useContext(AuthContext); 
+    const [successMsg, setSuccessMsg] = useState('');
     
     const [formData, setFormData] = useState({
       firstname: '',
@@ -77,7 +78,7 @@ export default function SignUp() {
       };
 
       try {
-        const response = await fetch('/api/auth/signup', {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/signup`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -86,7 +87,7 @@ export default function SignUp() {
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.detail || 'Failed to create account. Please try again.');
+          setSuccessMsg(data.message);
         }
 
         setSuccessMsg("Account created successfully! Redirecting...");
@@ -95,7 +96,7 @@ export default function SignUp() {
         urlEncodedData.append('username', payload.email); 
         urlEncodedData.append('password', payload.password);
 
-        const loginResponse = await fetch('/api/auth/login', {
+        const loginResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: urlEncodedData.toString(),

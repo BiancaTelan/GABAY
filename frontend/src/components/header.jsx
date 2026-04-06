@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import gabayLogo from '../assets/gabayLogo.png';
 import Button from '../components/button';
+import { AuthContext } from '../authContext';
 import { Calendar, Mail, User, ClipboardClock, Menu, X } from 'lucide-react';
 
 export default function Header({ isLoggedIn }) {
+  const { unreadCount } = useContext(AuthContext);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -65,10 +67,16 @@ export default function Header({ isLoggedIn }) {
                 </button>
 
                 <button onClick={() => navigate('/inbox')}
-                  className={`p-2 rounded-xl transition-all ${isActive('/inbox') 
+                  className={`relative p-2 rounded-xl transition-all ${isActive('/inbox') 
                   ? 'bg-gabay-blue text-white shadow-md' : 'bg-transparent text-gray-400 hover:bg-blue-50 hover:text-gabay-blue'}`}
                   title="Inbox">
                   <Mail size={24} />
+                  {/* The Red Badge */}
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white">
+                      {unreadCount}
+                    </span>
+                  )}
                 </button>
 
                 <button onClick={() => navigate('/account')}
@@ -130,11 +138,18 @@ export default function Header({ isLoggedIn }) {
                   <Calendar size={24} />
                 </button>
 
+                {/* MOBILE INBOX BUTTON WITH BADGE */}
                 <button onClick={() => handleNav('/inbox')} 
-                  className={`p-3 rounded-lg flex justify-center transition-all ${isActive('/inbox') 
+                  className={`relative p-3 rounded-lg flex justify-center transition-all ${isActive('/inbox') 
                   ? 'bg-gabay-blue text-white shadow-md' 
                   : 'bg-transparent text-gray-400 hover:bg-blue-50 hover:text-gabay-blue'}`}>
                   <Mail size={24} />
+                  {/* The Red Badge */}
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white">
+                      {unreadCount}
+                    </span>
+                  )}
                 </button>
 
                 <button onClick={() => handleNav('/account')} 

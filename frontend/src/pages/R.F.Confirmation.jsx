@@ -19,7 +19,7 @@ export default function ReservationConfirmation() {
         const userEmail = payload.sub;
         setEmail(userEmail);
 
-        const response = await fetch(`/api/patients/profile/${userEmail}`);
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/patients/profile/${userEmail}`);
         if (response.ok) {
           const data = await response.json();
           setPatientName(`${data.firstname} ${data.surname}`);

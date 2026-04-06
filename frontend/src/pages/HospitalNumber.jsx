@@ -20,7 +20,7 @@ export default function HospitalNumber({ onNavigate }) {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const userEmail = payload.sub;
 
-      const response = await fetch('/api/patients/generate-hospital-number', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/patients/generate-hospital-number`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: userEmail })

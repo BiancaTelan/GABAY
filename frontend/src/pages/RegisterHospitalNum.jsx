@@ -1,17 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Input from '../components/input';
 import Button from '../components/button';
 import { phonePattern, dobPattern, minAgeRequirement } from '../utils/constants';
-
+import { AuthContext } from '../authContext';
 
 export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
   const navigate = useNavigate(); 
   
+  const { userInfo } = useContext(AuthContext);
+
+  const userData = initialData?.user || initialData || userInfo || {};
+
   const [formData, setFormData] = useState({
-    firstname: initialData?.firstname || "",
-    surname: initialData?.surname || "",
-    email: initialData?.email || "",
+    firstname: userData.firstname || "",
+    surname: userData.surname || "",
+    email: userData.email || "",
     hospital_num: "",
     contactNumber: "",
     dob: "",
@@ -22,6 +26,17 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState(''); 
   const [isSubmitting, setIsSubmitting] = useState(false); 
+
+  useEffect(() => {
+    if ((!formData.firstname || !formData.email) && userInfo) {
+      setFormData(prev => ({
+        ...prev,
+        firstname: userInfo.firstname || prev.firstname,
+        surname: userInfo.surname || prev.surname,
+        email: userInfo.email || prev.email
+      }));
+    }
+  }, [userInfo]);
 
   const handleInputChange = (e) => {
     let { name, value } = e.target;
@@ -93,26 +108,39 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
       setIsSubmitting(true);
       
       try {
-        const response = await fetch('/api/patients/update-profile', {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/patients/update-profile`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
           body: JSON.stringify(formData)
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.detail || "Failed to update profile");
+          if (data.detail) {
+            if (Array.isArray(data.detail)) {
+              const errorStrings = data.detail.map(err => {
+                const field = err.loc ? err.loc[err.loc.length - 1] : "Field";
+                return `${field}: ${err.msg}`;
+              });
+              throw new Error(errorStrings.join(" | "));
+            } else if (typeof data.detail === 'object') {
+              throw new Error(JSON.stringify(data.detail));
+            } else {
+              throw new Error(String(data.detail));
+            }
+          }
+          throw new Error("Failed to update profile.");
         }
 
         onFinalSubmit(formData); 
 
       } catch (error) {
         console.error("Profile Update Error:", error);
-        const displayError = typeof error.message === 'string' 
-          ? error.message 
-          : JSON.stringify(error.message);
-        setServerError(displayError);
+        setServerError(error.message);
       } finally {
         setIsSubmitting(false);
       }
@@ -131,7 +159,7 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
       )}
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-5">
-        <Input label="Full Name" value={`${formData.firstname} ${formData.surname}`} readOnly noHover />
+        <Input label="Full Name" value={`${formData.firstname} ${formData.surname}`.trim()} readOnly noHover />
         <Input label="Email Address" value={formData.email} readOnly noHover />
         
         <Input 
@@ -202,9 +230,8 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
         </div>
 
         <div className="md:col-span-2 flex justify-end items-center mt-6">
-
-          <Button variant="teal" type="submit" className="w-55 py-3 text-[16px] font-semibold tracking-normal">
-            UPDATE MY ACCOUNT
+          <Button variant="teal" type="submit" disabled={isSubmitting} className="w-55 py-3 text-[16px] font-semibold tracking-normal disabled:opacity-70">
+            {isSubmitting ? "UPDATING..." : "UPDATE MY ACCOUNT"}
           </Button>
         </div>
       </form>

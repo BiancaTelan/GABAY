@@ -3,7 +3,7 @@ import gabayLogo from '../assets/gabayLogo.png';
 import Button from '../components/button';
 import Input from '../components/input';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { useState, useContext } from 'react';
+import { useState, useContext} from 'react';
 import { emailPattern } from '../utils/constants';
 import { AuthContext } from '../authContext';
 
@@ -50,7 +50,7 @@ export default function Login() {
     urlEncodedData.append('password', formData.password);
 
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: urlEncodedData.toString(),

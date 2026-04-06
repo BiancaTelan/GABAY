@@ -3,13 +3,14 @@ import shutil
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List
 from dependencies import get_current_user, RoleChecker
 from py_schema import PatientResponse 
 from db_connection import get_db
-from db_model import User, Patient, Appointment, Department, Doctor, AppointmentStatus,roleEnum
+from db_model import User, Patient, Appointment, Department, Doctor, AppointmentStatus, roleEnum
+from email_utils import send_notification_email
 
 class StatusUpdate(BaseModel):
     status: str
@@ -32,7 +33,6 @@ def get_all_hospital_schedules():
     
     return {"message": "Secure hospital schedule data returned."}
 
-
 # ---------------------------------------------------------
 # ROUTE 2: General Authenticated Access (All logged-in users)
 # ---------------------------------------------------------
@@ -46,7 +46,7 @@ def get_my_profile(current_user: User = Depends(get_current_user)):
     }
 
 # ---------------------------------------------------------
-# ROUTE 3: Main Reservation Endpoint 
+# ROUTE 3: Main Rappointment Endpoint 
 # ---------------------------------------------------------
 
 router = APIRouter(prefix="/appointments", tags=["Appointments"])
@@ -79,6 +79,7 @@ def get_departments_and_doctors(db: Session = Depends(get_db)):
 
 @router.post("/book")
 async def book_appointment(
+    background_tasks: BackgroundTasks,
     email: str = Form(...),
     department: str = Form(...),
     doctor_name: str = Form(...),
@@ -140,28 +141,33 @@ async def book_appointment(
         db.add(new_appointment)
         db.commit()
 
-        # ---------------------------------------------------------
-        # 8. TERMINAL EMAIL SIMULATION
-        # ---------------------------------------------------------
-        print("\n" + "="*60)
-        print("📩 NEW APPOINTMENT REQUEST SUBMITTED")
-        print("="*60)
-        print(f"To: {user.email}")
-        print(f"Subject: Appointment Request Received - Cainta Municipal Hospital\n")
-        print(f"Dear {patient.firstname} {patient.surname},")
-        print(f"We have successfully received your appointment request for the {department.department} department.")
-        print(f"It is currently PENDING APPROVAL by our hospital staff.\n")
-        print("📝 RESERVATION DETAILS:")
-        print(f"  - Type: {appointment_type} OPD")
-        print(f"  - Preferred Date(s): {start_date} to {end_date or start_date}")
-        print(f"  - Assigned Doctor: {doctor_name}")
-        print(f"  - Reason: {reason}")
-        if file_path:
-            print(f"  - Referral Document: Securely Attached ({referral_file.filename})")
-        print("\nWe will send another email once your schedule is officially confirmed.")
-        print("="*60 + "\n")
+        subject = "GABAY: Appointment Request Received - Cainta Municipal Hospital"
+
+        body = f"""Dear {patient.firstname} {patient.surname},
+
+        We have successfully received your appointment request for the {department.department} department.
+        It is currently PENDING APPROVAL by our hospital staff.
+
+        📝 RESERVATION DETAILS:
+        - Type: {appointment_type} OPD
+        - Preferred Date(s): {start_date} to {end_date or start_date}
+        - Assigned Doctor: {doctor_name}
+        - Reason: {reason}
+
+        We will send another email once your schedule is officially confirmed.
+
+        Thank you for using the GABAY System!
+        """
+
+        background_tasks.add_task(
+            send_notification_email, 
+            recipient_email=user.email, 
+            subject=subject, 
+            body=body
+        )
 
         return {"message": "Reservation submitted successfully!"}
+    
 
     except Exception as e:
         db.rollback()
@@ -190,10 +196,15 @@ def get_appointment_history(email: str, db: Session = Depends(get_db)):
         )
 
         history = []
+        unread_count = 0
         for appt in appointments:
             dept = db.query(Department).filter(Department.deptID == appt.deptID).first()
             doc = db.query(Doctor).filter(Doctor.docID == appt.docID).first() if appt.docID else None
             status = db.query(AppointmentStatus).filter(AppointmentStatus.statusID == appt.statusID).first()
+            status_name = status.statusName if status else "Pending Approval"
+
+            if "Pending" in status_name:
+                unread_count += 1
 
             history.append({
                 "id": appt.appointmentID,
@@ -204,19 +215,23 @@ def get_appointment_history(email: str, db: Session = Depends(get_db)):
                 "type": appt.type,
                 "reason": appt.purposeDetailed or "No reason provided.",
                 "referral": appt.referral_doc or None,
-
                 "createdAt": appt.createdAt.strftime("%m/%d/%Y") if appt.createdAt else "Recently"
             })
 
 
-        return {"appointments": history}
+        return {
+            "appointments": history,
+            "is_verified": user.is_verified,
+            "unread_count": unread_count,
+            "patient_name": f"{patient.firstname} {patient.surname}"
+        }
         
     except Exception as e:
         print(f"Error fetching history: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch appointment history.")
 
 # ---------------------------------------------------------
-    # ROUTE 5: Update Appointment Status Patient side
+#ROUTE 5: Update Appointment Status Patient side
 # ---------------------------------------------------------
 
 @router.put("/{appointment_id}/status")

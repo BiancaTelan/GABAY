@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react'; 
 import { Toaster } from 'react-hot-toast';
-import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation, Navigate, Outlet } from 'react-router-dom';
 import { AuthContext } from './authContext';
 import Header from './components/header';
 import Home from './pages/home';
@@ -25,6 +25,7 @@ import AppointmentConfirmed from './pages/ApptConfirmed';
 import AppointmentCancelled from './pages/ApptCancelled';
 import ForgotPassword from './pages/ForgotPassword';
 import Footer from './components/footer';
+import VerifyEmail from './pages/VerifyEmail';
 
 import StaffLayout from './components/StaffLayout';
 import StaffDashboard from './pages/staff/StaffDashboard';
@@ -50,20 +51,53 @@ import AdminCalendar from './pages/admin/AdminCalendar';
 
 import PersonnelAccount from './pages/admin/PersonnelAccount';
 
+const PatientRoute = () => {
+  const { token, userRole } = useContext(AuthContext);
+  const location = useLocation();
+  const isLoggedIn = !!token;
+  
+  if (!isLoggedIn || userRole !== 'Patient') {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  return <Outlet />; // Fixes the nested routing issue
+};
+
+const StaffRoute = () => {
+  const { token, userRole } = useContext(AuthContext);
+  const location = useLocation();
+  const isLoggedIn = !!token;
+
+  if (!isLoggedIn || userRole !== 'staff') {
+    return <Navigate to="/admin/login" state={{ from: location }} replace />;
+  }
+  return <Outlet />;
+};
+
+const AdminRoute = () => {
+  const { token, userRole } = useContext(AuthContext);
+  const location = useLocation();
+  const isLoggedIn = !!token;
+
+  if (!isLoggedIn || userRole !== 'admin') {
+    return <Navigate to="/admin/login" state={{ from: location }} replace />;
+  }
+  return <Outlet />;
+};
+
 function App() { 
   const navigate = useNavigate();
   const location = useLocation();
-  const { token, userRole, userInfo, logout } = useContext(AuthContext);
+  const { token, userInfo, logout, updateUnreadCount } = useContext(AuthContext);
   
   const [registrationData, setRegistrationData] = useState(null);
   const [showBlockerModal, setShowBlockerModal] = useState(false);
   const [formMode, setFormMode] = useState('fill');
 
   const isAdminPage = location.pathname.startsWith('/admin');
+  const isStaffPage = location.pathname.startsWith('/staff');
+  const isLoginPage = ['/login', '/signup', '/admin/login'].includes(location.pathname);
+  const showHeader = !isLoginPage && !isAdminPage && !isStaffPage;
   const isLoggedIn = !!token;
-  const isPatient = userRole === 'patient';
-  const isStaff = userRole === 'staff';
-  const isAdmin = userRole === 'admin';
 
   const handleCompleteSignUp = (data) => {
     setRegistrationData(data); 
@@ -109,7 +143,7 @@ function App() {
         payload.append('referral_file', data.referralImage);
       }
 
-      const response = await fetch('/api/appointments/book', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/book`, {
         method: 'POST',
         body: payload
       });
@@ -119,7 +153,7 @@ function App() {
       try {
         result = textResponse ? JSON.parse(textResponse) : {};
       } catch (err) {
-        throw new Error("Server encountered an error. Check the Python backend terminal.");
+        throw new Error("Server encountered an error.");
       }
 
       if (!response.ok) {
@@ -129,7 +163,9 @@ function App() {
           
         throw new Error(errorMessage);
       }
-      // ------------------------------
+      if (updateUnreadCount) {
+        updateUnreadCount(prevCount => prevCount + 1);
+      }
 
       setFormMode('fill');
       navigate('/reservation-confirmation'); 
@@ -145,32 +181,6 @@ function App() {
     if (destination === 'generatedNumber') navigate('/generated-number', { state: data });
     if (destination === 'account') navigate('/account');
   };
-
-  const PatientRoute = ({ children }) => {
-    if (!isLoggedIn || !isPatient) {
-      return <Navigate to="/login" state={{ from: location }} replace />;
-    }
-    return children;
-  };
-
-  const StaffRoute = ({ children }) => {
-  if (!isLoggedIn || !isStaff) {
-    return <Navigate to="/admin/login" state={{ from: location }} replace />;
-  }
-  return children;
-  };
-
-   const AdminRoute = ({ children }) => {
-    if (!isLoggedIn || !isAdmin) {
-      return <Navigate to="/admin/login" state={{ from: location }} replace />;
-    }
-    return children;
-  };
-
-   const isLoginPage = ['/login', '/signup', '/admin/login'].includes(location.pathname);
-   
-   const isStaffPage = location.pathname.startsWith('/staff');
-   const showHeader = !isLoginPage && !isAdminPage && !isStaffPage;   
 
   return (
     <div className="min-h-screen bg-white font-sans relative">
@@ -200,73 +210,78 @@ function App() {
           <Route path="/signup" element={<SignUp />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/admin/login" element={<AdminLogin />} />
-          {/* Protected Routes */}
-          <Route element={<PatientRoute />}>
-          <Route path="/departments" element={<DepartmentList onReserveGeneral={() => { setFormMode('fill'); navigate('/general-form'); }} onReserveSpecialty={() => { setFormMode('fill'); navigate('/specialty-form'); }} />} />
-          <Route path="/account" element={<Account userInfo={userInfo} onLogout={handleLogout} onUpdateProfile={() => {}} />} />
-          <Route path="/hospital-number" element={<HospitalNumber onNavigate={handleNavigation} />} />
-          <Route path="/register-number" element={<RegisterHospitalNumber initialData={registrationData} onFinalSubmit={handleFinalRegistration} />} />
-          <Route path="/generated-number" element={<GeneratedHospitalNumber onNavigate={handleNavigation} />} />
-          <Route path="/prevAppt" element={<AppointmentHistory />} />
-          <Route path="/inbox" element={<Inbox userInfo={userInfo} />} />
-          <Route path="/calendar" element={<Calendar />} />
-          <Route path="/appointment-confirmed" element={<AppointmentConfirmed />} />
-          <Route path="/appointment-cancelled" element={<AppointmentCancelled />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
 
-          <Route path="/reschedule/:appointmentId" element={
-                <RescheduleForm userInfo={userInfo} />
-          } />
+          {/* Protected Patient Routes */}
+            <Route element={<PatientRoute />}>
+            <Route path="/departments" element={<DepartmentList onReserveGeneral={() => { setFormMode('fill'); navigate('/general-form'); }} onReserveSpecialty={() => { setFormMode('fill'); navigate('/specialty-form'); }} />} />
+            <Route path="/account" element={<Account userInfo={userInfo} onLogout={handleLogout} onUpdateProfile={() => {}} />} />
+            <Route path="/hospital-number" element={<HospitalNumber onNavigate={handleNavigation} />} />
+            <Route path="/register-number" element={<RegisterHospitalNumber initialData={registrationData} onFinalSubmit={handleFinalRegistration} />} />
+            <Route path="/generated-number" element={<GeneratedHospitalNumber onNavigate={handleNavigation} />} />
+            <Route path="/prevAppt" element={<AppointmentHistory />} />
+            <Route path="/inbox" element={<Inbox userInfo={userInfo} />} />
+            <Route path="/calendar" element={<Calendar />} />
+            <Route path="/appointment-confirmed" element={<AppointmentConfirmed />} />
+            <Route path="/appointment-cancelled" element={<AppointmentCancelled />} />
+            <Route path="/reschedule/:appointmentId" element={
+                  <RescheduleForm userInfo={userInfo} />
+            } />
+            
+            <Route path="/general-form" element={
+                <GeneralForm userInfo={userInfo} mode={formMode} onConfirm={handleFormSubmission} />
+            } />
+
+            <Route path="/specialty-form" element={
+              <SpecialtyForm userInfo={userInfo} mode={formMode} onConfirm={handleFormSubmission} />
+            } />
+
+            <Route path="/reservation-confirmation" element={  
+                <ReservationConfirmation userInfo={userInfo} />
+            } />
+          </Route>
           
-          <Route path="/general-form" element={
-              <GeneralForm userInfo={userInfo} mode={formMode} onConfirm={handleFormSubmission} />
-          } />
+          {/* STAFF ROUTES */}
+          <Route element={<StaffRoute />}>
+              <Route path="/staff/dashboard" element={<StaffLayout />}>
+                <Route index element={<StaffDashboard />} />
+                <Route path="dashboard" element={<StaffDashboard />} />
+                <Route path="appointments" element={<StaffAppointments />} />
+                <Route path="reschedule" element={<RescheduleAppointment />} />
+                <Route path="book-schedule" element={<BookSchedule />} />
+                <Route path="doctors" element={<DoctorList />} />
+                <Route path="doctor-schedule" element={<DoctorScheduleCalendar />} />
+                <Route path="no-show-appointments" element={<StaffNoShows />} />
 
-          <Route path="/specialty-form" element={
-            <SpecialtyForm userInfo={userInfo} mode={formMode} onConfirm={handleFormSubmission} />
-          } />
+                <Route path="s-account" element={<PersonnelAccount />} />
+                <Route path="s-notifs" element={<StaffNotifs />} /> 
+              </Route>
+            </Route>
 
-          <Route path="/reservation-confirmation" element={  
-              <ReservationConfirmation userInfo={userInfo} />
-          } />
-        </Route>
-          
-        {/* STAFF ROUTES */}
-        <Route path="/staff" element={<StaffLayout />}> {/* element={<StaffRoute><StaffLayout /></StaffRoute>}>*/}
-          <Route index element={<StaffDashboard />} />
-          <Route path="dashboard" element={<StaffDashboard />} />
-          <Route path="appointments" element={<StaffAppointments />} />
-          <Route path="reschedule" element={<RescheduleAppointment />} />
-          <Route path="book-schedule" element={<BookSchedule />} />
-          <Route path="doctors" element={<DoctorList />} />
-          <Route path="doctor-schedule" element={<DoctorScheduleCalendar />} />
-          <Route path="no-show-appointments" element={<StaffNoShows />} />
+          {/* ADMIN ROUTES */}
+          <Route element={<AdminRoute />}>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="users" element={<Users />} />
+              <Route path="personnel" element={<Personnel />} />
+              <Route path="departments" element={<Departments />} />
+              <Route path="appointments" element={<Appointments />} /> 
+              <Route path="audit-logs" element={<AuditLogs />} />
+              <Route path="system-logs" element={<SystemLogs />} />
 
-          <Route path="s-account" element={<PersonnelAccount />} />
-          <Route path="s-notifs" element={<StaffNotifs />} />
-        </Route>
+              <Route path="a-account" element={<PersonnelAccount />} />
+              <Route path="a-notifs" element={<AdminNotifs />} />
+              <Route path="a-calendar" element={<AdminCalendar />} />
 
-        {/* ADMIN ROUTES */}
-          <Route path="/admin" element={<AdminLayout />}> {/* element={<AdminRoute><AdminLayout /></AdminRoute>}>*/}
-            <Route index element={<AdminDashboard />} />
-            <Route path="users" element={<Users />} />
-            <Route path="personnel" element={<Personnel />} />
-            <Route path="departments" element={<Departments />} />
-            <Route path="appointments" element={<Appointments />} /> 
-            <Route path="audit-logs" element={<AuditLogs />} />
-            <Route path="system-logs" element={<SystemLogs />} />
-
-            <Route path="a-account" element={<PersonnelAccount />} />
-            <Route path="a-notifs" element={<AdminNotifs />} />
-            <Route path="a-calendar" element={<AdminCalendar />} />
-
-            {/*<Route path="reports" element={<Reports />} />
-            <Route path="a-settings" element={<AdminSettings />} />
-            <Route path="a-help" element={<AdminHelp />} />
-            <Route path="a-tools" element={<AdminTools />} />*/}
-          </Route>  
-        
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
+              {/*<Route path="reports" element={<Reports />} />
+              <Route path="a-settings" element={<AdminSettings />} />
+              <Route path="a-help" element={<AdminHelp />} />
+              <Route path="a-tools" element={<AdminTools />} />*/}
+            </Route>  
+          </Route>
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+    
 
         <ConfirmationModal 
           isOpen={showBlockerModal}

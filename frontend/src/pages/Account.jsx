@@ -37,7 +37,7 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const userEmail = payload.sub;
 
-        const response = await fetch(`/api/patients/profile/${userEmail}`);
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/patients/profile/${userEmail}`);
         if (response.ok) {
           const data = await response.json();
           setLocalUserInfo(data);
@@ -98,10 +98,31 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
       type: 'danger',
       title: 'Delete Account',
       message: 'This action is permanent. Your hospital records and appointment history will be removed from the GABAY system.',
-      onConfirm: () => {
-        console.log("Account Deleted");
-        onLogout(); 
-        navigate('/'); 
+      onConfirm: async () => {
+        closeModal();
+        
+        try {
+          const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/patients/delete-account`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "Failed to delete account.");
+          }
+
+          console.log("Account successfully deleted from database.");
+          onLogout(); 
+          navigate('/'); 
+          
+        } catch (error) {
+          console.error("Error deleting account:", error);
+          alert(error.message);
+        }
       }
     });
   };
@@ -162,7 +183,7 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
 const handleSave = async () => {
     if (validate()) {
       try {
-        const response = await fetch('/api/patients/update-profile', {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/patients/update-profile`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(localUserInfo)
@@ -244,7 +265,27 @@ const handleSave = async () => {
               
 
               <Input label="Hospital Number" value={localUserInfo.hospital_num} readOnly noHover />
-              <Input label="Email Address" name="email" value={localUserInfo.email} readOnly={true} noHover={true} error={errors.email} isEditing={false} required />
+              <div className="relative">
+                <Input 
+                  label={
+                    <div className="flex items-center gap-2">
+                      Email Address
+                      {localUserInfo.is_verified === false && (
+                        <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wider uppercase">
+                          Unverified
+                        </span>
+                      )}
+                    </div>
+                  } 
+                  name="email" 
+                  value={localUserInfo.email} 
+                  readOnly={true} 
+                  noHover={true} 
+                  error={errors.email} 
+                  isEditing={false} 
+                  required 
+                />
+              </div>
               
               <div className="flex flex-col">
                 <label className="text-sm font-medium text-gabay-navy mb-1">Gender</label>
