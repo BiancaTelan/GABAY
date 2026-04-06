@@ -13,6 +13,8 @@ export default function Inbox() {
   const [allNotifications, setAllNotifications] = useState([]);
   const itemsPerPage = 3;
 
+  const [patientFullName, setPatientFullName] = useState('Patient');
+
   useEffect(() => {
     if (updateUnreadCount) {
       updateUnreadCount(0);
@@ -30,6 +32,8 @@ export default function Inbox() {
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/history/${userEmail}`);
         if (response.ok) {
           const data = await response.json();
+
+          setPatientFullName(data.patient_name || 'Patient');
           
           const dynamicNotifications = data.appointments.map(appt => {
             const statusLower = appt.status.toLowerCase();
@@ -158,7 +162,7 @@ export default function Inbox() {
 
       navigate('/appointment-confirmed', {
         state: {
-          patientName: userInfo ? `${userInfo.firstname} ${userInfo.surname}` : 'Patient',
+          patientName: patientFullName,
           department: note.department,
           date: note.date,
           doctor: note.doctor,
@@ -183,7 +187,7 @@ export default function Inbox() {
       navigate('/appointment-cancelled', {
         state: {
           id: note.id,
-          patientName: userInfo ? `${userInfo.firstname} ${userInfo.surname}` : 'Patient',
+          patientName: patientFullName,
           department: note.department,
           date: note.date,
           doctor: note.doctor,

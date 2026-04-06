@@ -4,12 +4,12 @@ import Logo from '../assets/caintaHospitalLogo.png';
 export default function AppointmentConfirmed() {
   const navigate = useNavigate();
   const location = useLocation();
- 
+  
   const { patientName, department, date, doctor } = location.state || {
-    patientName: 'Juan Dela Cruz',
-    department: 'Internal Medicine',
-    date: '03/16/2026',
-    doctor: 'Dr. Ritchie Cruz',
+    patientName: 'Patient',
+    department: 'Department',
+    date: 'TBD',
+    doctor: 'Doctor',
   };
 
   return (
