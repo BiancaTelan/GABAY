@@ -1,4 +1,5 @@
 import React, { useState, useContext } from 'react'; 
+import { Toaster } from 'react-hot-toast';
 import { Routes, Route, useNavigate, useLocation, Navigate, Outlet } from 'react-router-dom';
 import { AuthContext } from './authContext';
 import Header from './components/header';
@@ -28,6 +29,13 @@ import VerifyEmail from './pages/VerifyEmail';
 
 import StaffLayout from './components/StaffLayout';
 import StaffDashboard from './pages/staff/StaffDashboard';
+import StaffAppointments from './pages/staff/StaffAppointments';
+import RescheduleAppointment from './pages/staff/RescheduleAppointment';
+import BookSchedule from './pages/staff/BookScheduleForm';
+import DoctorList from './pages/staff/DoctorsList';
+import DoctorScheduleCalendar from './pages/staff/DoctorScheduleCalendar';
+import StaffNoShows from './pages/staff/AppointmentsNoShow';
+import StaffNotifs from './pages/staff/StaffNotifs';
 
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminLayout from './components/AdminLayout';
@@ -38,6 +46,10 @@ import Departments from './pages/admin/Departments';
 import Appointments from './pages/admin/Appointments';
 import AuditLogs from './pages/admin/AuditLogs';
 import SystemLogs from './pages/admin/SystemLogs';
+import AdminNotifs from './pages/admin/AdminNotifs';
+import AdminCalendar from './pages/admin/AdminCalendar';
+
+import PersonnelAccount from './pages/admin/PersonnelAccount';
 
 const PatientRoute = () => {
   const { token, userRole } = useContext(AuthContext);
@@ -172,6 +184,15 @@ function App() {
 
   return (
     <div className="min-h-screen bg-white font-sans relative">
+      <Toaster 
+        position="top-center" 
+        reverseOrder={false} 
+        toastOptions={{
+          style: {
+            fontFamily: 'Poppins, sans-serif', // Match your GABAY branding
+          },
+        }}
+      />
       {showHeader && !isAdminPage && (
         <Header 
           isLoggedIn={isLoggedIn} 
@@ -224,6 +245,16 @@ function App() {
           <Route element={<StaffRoute />}>
               <Route path="/staff/dashboard" element={<StaffLayout />}>
                 <Route index element={<StaffDashboard />} />
+                <Route path="dashboard" element={<StaffDashboard />} />
+                <Route path="appointments" element={<StaffAppointments />} />
+                <Route path="reschedule" element={<RescheduleAppointment />} />
+                <Route path="book-schedule" element={<BookSchedule />} />
+                <Route path="doctors" element={<DoctorList />} />
+                <Route path="doctor-schedule" element={<DoctorScheduleCalendar />} />
+                <Route path="no-show-appointments" element={<StaffNoShows />} />
+
+                <Route path="s-account" element={<PersonnelAccount />} />
+                <Route path="s-notifs" element={<StaffNotifs />} /> 
               </Route>
             </Route>
 
@@ -235,17 +266,16 @@ function App() {
               <Route path="personnel" element={<Personnel />} />
               <Route path="departments" element={<Departments />} />
               <Route path="appointments" element={<Appointments />} /> 
-              
               <Route path="audit-logs" element={<AuditLogs />} />
-              <Route path="system-logs" element={<SystemLogs />} />                
-              
+              <Route path="system-logs" element={<SystemLogs />} />
+
+              <Route path="a-account" element={<PersonnelAccount />} />
+              <Route path="a-notifs" element={<AdminNotifs />} />
+              <Route path="a-calendar" element={<AdminCalendar />} />
+
               {/*<Route path="reports" element={<Reports />} />
-              
               <Route path="a-settings" element={<AdminSettings />} />
               <Route path="a-help" element={<AdminHelp />} />
-              <Route path="a-account" element={<AdminAccount />} />
-              <Route path="a-notifs" element={<AdminNotifications />} />
-              <Route path="a-calendar" element={<AdminCalendar />} />
               <Route path="a-tools" element={<AdminTools />} />*/}
             </Route>  
           </Route>

@@ -106,14 +106,14 @@ export default function Users() {
 
         {/* RIGHT GROUP */}
         <div className="flex flex-row gap-2 w-full lg:w-auto">
-          <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium">
+          <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium hover:bg-teal-50 transition-colors">
             <Download size={16} /> Export as CSV
           </button>
           
           <div className="relative flex-1 lg:flex-none">
             <button 
               onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium hover:bg-teal-50 transition-colors"
             >
               <Funnel size={16} /> Filter ({filters.genders.length + filters.statuses.length})
             </button>
@@ -154,7 +154,7 @@ export default function Users() {
                         <input type="checkbox" checked={filters.genders.includes(g)} onChange={(e) => {
                           const newGenders = e.target.checked ? [...filters.genders, g] : filters.genders.filter(x => x !== g);
                           setFilters({...filters, genders: newGenders});
-                        }} className="w-4 h-4 rounded bg-gabay-blue" /> {g}
+                        }} className="w-4 h-4 rounded accent-gabay-blue" /> {g}
                       </label>
                     ))}
                   </div>
@@ -168,7 +168,7 @@ export default function Users() {
                         <input type="checkbox" checked={filters.statuses.includes(s)} onChange={(e) => {
                           const newStatus = e.target.checked ? [...filters.statuses, s] : filters.statuses.filter(x => x !== s);
                           setFilters({...filters, statuses: newStatus});
-                        }} className="w-4 h-4 rounded bg-gabay-blue" /> {s}
+                        }} className="w-4 h-4 rounded accent-gabay-blue" /> {s}
                       </label>
                     ))}
                   </div>
@@ -206,7 +206,7 @@ export default function Users() {
             <tbody className="divide-y divide-gray-100">
               {pagedData.map((user) => (
                 <tr key={user.id} className={`hover:bg-gray-50 transition-colors ${selectedIds.includes(user.id) ? 'bg-blue-50/50' : ''}`} onClick={() => toggleSelection(user.id)}>
-                  <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}><input type="checkbox" className="w-4 h-4 rounded bg-gabay-blue" checked={selectedIds.includes(user.id)} onChange={() => toggleSelection(user.id)} /></td>
+                  <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}><input type="checkbox" className="w-4 h-4 rounded accent-gabay-blue" checked={selectedIds.includes(user.id)} onChange={() => toggleSelection(user.id)} /></td>
                   <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gray-700 font-medium">{user.id}</td>
                   <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gabay-blue font-medium">{user.name}</td>
                   <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gray-700">{user.email}</td>

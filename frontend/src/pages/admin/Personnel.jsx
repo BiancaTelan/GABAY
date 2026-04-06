@@ -120,7 +120,7 @@ export default function Personnel() {
         </div>
 
         <div className="flex flex-row gap-2 w-full lg:w-auto">
-          <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium">
+          <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium hover:bg-teal-50 transition-colors">
             <Download size={16} /> Export as CSV
           </button>
           
@@ -128,7 +128,7 @@ export default function Personnel() {
           <div className="relative flex-1 lg:flex-none">
             <button 
               onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium hover:bg-teal-50 transition-colors"
             >
               <Funnel size={16} /> Filter ({filters.roles.length + filters.statuses.length + filters.deptType.length})
             </button>
@@ -174,7 +174,7 @@ export default function Personnel() {
                 <label key={type} className="flex items-center gap-2 text-sm font-poppins cursor-pointer group">
                   <input 
                     type="checkbox" 
-                    className="w-4 h-4 rounded bg-gabay-blue"
+                    className="w-4 h-4 rounded accent-gabay-blue"
                     checked={filters.deptType.includes(type)}
                     onChange={(e) => {
                       const newTypes = e.target.checked ? [...filters.deptType, type] : filters.deptType.filter(x => x !== type);
@@ -195,7 +195,7 @@ export default function Personnel() {
                 <label key={r} className="flex items-center gap-2 text-sm cursor-pointer group">
                   <input 
                     type="checkbox" 
-                    className="w-4 h-4 rounded bg-gabay-blue"
+                    className="w-4 h-4 rounded accent-gabay-blue"
                     checked={filters.roles.includes(r)}
                     onChange={(e) => {
                       const newRoles = e.target.checked ? [...filters.roles, r] : filters.roles.filter(x => x !== r);
@@ -216,7 +216,7 @@ export default function Personnel() {
                 <label key={s} className="flex items-center gap-2 text-sm cursor-pointer group">
                   <input 
                     type="checkbox" 
-                    className="w-4 h-4 rounded bg-gabay-blue"
+                    className="w-4 h-4 rounded accent-gabay-blue"
                     checked={filters.statuses.includes(s)}
                     onChange={(e) => {
                       const newStatus = e.target.checked ? [...filters.statuses, s] : filters.statuses.filter(x => x !== s);
@@ -293,8 +293,8 @@ export default function Personnel() {
                   <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gray-700 font-medium">{person.id}</td>
                   <td className="px-4 py-4">
                      <span className={`px-3 py-0.5 rounded-full text-[12px] md:text-[11px] font-poppins font-bold ${
-                       person.role === 'DOCTOR' ? 'bg-teal-100 text-teal-700' : 
-                       person.role === 'ADMIN' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+                       person.role === 'DOCTOR' ? 'bg-orange-100 text-gabay-orange' : 
+                       person.role === 'ADMIN' ? 'bg-blue-100 text-blue-700' : 'bg-teal-100 text-teal-700'
                      }`}>
                        {person.role}
                      </span>
