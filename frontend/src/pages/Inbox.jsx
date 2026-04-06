@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Calendar, Mail, Info, Check, X } from 'lucide-react';
 import { AuthContext } from '../authContext'; 
 
-export default function Inbox({ userInfo }) {
+export default function Inbox() {
   const navigate = useNavigate();
-  const { token, updateUnreadCount } = useContext(AuthContext);
+  const { token, userInfo, updateUnreadCount } = useContext(AuthContext);
   const [activeFilter, setActiveFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
