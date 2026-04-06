@@ -31,7 +31,7 @@ export default function AppointmentCancelled() {
           Appointment Cancelled
         </h2>
         <p className="font-poppins text-lg text-center text-gabay-navy mb-10">
-          For Patient: <span className="font-semibold">{patientName}</span>
+          For Patient: <span className="font-semibold">{patientFullName}</span>
         </p>
         <p className="font-poppins text-lg text-center mb-10">
           We’re sorry that you declined your appointment confirmation. Click{' '}

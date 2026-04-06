@@ -4,13 +4,6 @@ import Logo from '../assets/caintaHospitalLogo.png';
 export default function AppointmentConfirmed() {
   const navigate = useNavigate();
   const location = useLocation();
- 
-  const { patientName, department, date, doctor } = location.state || {
-    patientName: 'Juan Dela Cruz',
-    department: 'Internal Medicine',
-    date: '03/16/2026',
-    doctor: 'Dr. Ritchie Cruz',
-  };
 
   return (
     <main className="flex items-center justify-center min-h-[calc(100vh-64px)] px-4 py-12 bg-gray-50">
@@ -31,7 +24,7 @@ export default function AppointmentConfirmed() {
           Appointment Confirmed
         </h2>
         <p className="font-poppins text-center text-lg text-gabay-navy mb-10">
-          For Patient: <span className="font-semibold">{patientName}</span>
+          For Patient: <span className="font-semibold">{patientFullName}</span>
         </p>
         <p className="font-poppins text-center text-lg mb-10">
           Thank you for confirming! Please attend your {department} consultation on the scheduled appointment date{' '}
