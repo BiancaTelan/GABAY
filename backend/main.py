@@ -14,10 +14,14 @@ app = FastAPI(
     version="1.0.0"
 )
 origins = [
+    # --- PATIENT PORTAL URLS ---
     "http://localhost:5173",     
     "http://127.0.0.1:5173",
     "https://gabay-system.vercel.app",
-    # "https://gabay-system.com" # domain for production, replace with actual domain when deployed
+   
+    # --- ADMIN PORTAL URLS ---
+    "http://localhost:5174",     
+    "http://127.0.0.1:5174"
 ]
 
 app.add_middleware(
