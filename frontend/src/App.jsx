@@ -59,7 +59,7 @@ const PatientRoute = () => {
   if (!isLoggedIn || userRole !== 'Patient') {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
-  return <Outlet />; // Fixes the nested routing issue
+  return <Outlet />; 
 };
 
 const StaffRoute = () => {
@@ -189,7 +189,7 @@ function App() {
         reverseOrder={false} 
         toastOptions={{
           style: {
-            fontFamily: 'Poppins, sans-serif', // Match your GABAY branding
+            fontFamily: 'Poppins, sans-serif', 
           },
         }}
       />
