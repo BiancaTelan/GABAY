@@ -259,7 +259,7 @@ function App() {
             </Route>
 
           {/* ADMIN ROUTES */}
-          <Route element={<AdminRoute />}>
+          <Route element={<AdminRoute />}> {/* DONT REMOVE element={<AdminRoute><AdminLayout /></AdminRoute>}>*/}
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
               <Route path="users" element={<Users />} />
