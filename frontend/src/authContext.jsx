@@ -3,10 +3,11 @@ import { createContext, useState, useEffect } from 'react';
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(localStorage.getItem('token') || null);
+  const [token, setToken] = useState( localStorage.getItem('token') || null);
   const [userRole, setUserRole] = useState(localStorage.getItem('role') || null);
   const [userInfo, setUserInfo] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  
 
   useEffect(() => {
     let intervalId; 
@@ -49,7 +50,7 @@ export const AuthProvider = ({ children }) => {
   }, [token]);
   const updateUnreadCount = (count) => {
     setUnreadCount(count);
-  };
+  };   
 
   const login = (newToken, role, userData) => {
     setToken(newToken);

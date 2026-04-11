@@ -209,6 +209,17 @@ export default function AdminLogin() {
             Contact a system admin if you have trouble accessing your personnel account.
           </p>
         </div>
+        <button 
+  onClick={() => {
+    // These keys must match what your AuthContext/AdminRoute uses!
+    localStorage.setItem('token', 'fake-dev-token');
+    localStorage.setItem('role', 'ADMIN'); 
+    window.location.href = '/admin';
+  }}
+  className="text-[10px] text-gray-300 mt-5 opacity-50 hover:opacity-100"
+>
+  DEV BYPASS: Enter Admin Dashboard
+</button>
       </div>
     </div>
   );
