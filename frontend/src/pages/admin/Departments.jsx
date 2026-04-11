@@ -216,7 +216,7 @@ const toggleSelection = (id) => {
                   <td className="px-4 py-4 text-sm font-poppins font-medium text-gabay-blue">{dept.name}</td>
                   <td className="px-4 py-4 text-center">
                     <span className={`px-3 py-0.5 rounded-full text-[11px] font-poppins font-bold tracking-wider ${
-                      dept.type === 'SPECIALTY' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+                      dept.type === 'SPECIALTY' ? 'bg-orange-50 text-gabay-orange border border-orange-400' : 'bg-blue-50 text-blue-600 border border-blue-500'
                     }`}>
                       {dept.type}
                     </span>

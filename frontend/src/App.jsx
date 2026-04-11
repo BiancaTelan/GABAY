@@ -273,7 +273,7 @@ function App() {
               <Route path="a-notifs" element={<AdminNotifs />} />
               <Route path="a-calendar" element={<AdminCalendar />} />
 
-              {/*<Route path="reports" element={<Reports />} />
+              {/*
               <Route path="a-settings" element={<AdminSettings />} />
               <Route path="a-help" element={<AdminHelp />} />
               <Route path="a-tools" element={<AdminTools />} />*/}

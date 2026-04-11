@@ -14,11 +14,11 @@ const rawAuditData = [
 ];
 
 const roleStyles = {
-  PATIENT: 'bg-purple-100 text-gabay-violet',
-  STAFF: 'bg-teal-100 text-teal-700',
-  ADMIN: 'bg-blue-100 text-blue-700',
-  DOCTOR: 'bg-orange-100 text-gabay-orange',
-  SYSTEM: 'bg-gray-100 text-gray-500',
+  PATIENT: 'bg-purple-50 text-gabay-violet border border-violet-500',
+  STAFF: 'bg-teal-50 text-teal-600 border border-teal-500',
+  ADMIN: 'bg-blue-50 text-blue-600 border border-blue-500',
+  DOCTOR: 'bg-orange-50 text-gabay-orange border border-orange-400',
+  SYSTEM: 'bg-gray-50 text-gray-500 border border-gray-400',
 };
 
 export default function AuditLogs() {
@@ -192,7 +192,7 @@ export default function AuditLogs() {
                   </td>
                   <td className="px-4 py-4 text-sm font-poppins font-medium text-blue-600 underline cursor-pointer">{log.user}</td>
                   <td className="px-4 py-4 text-center">
-                    <span className={`px-3 py-0.5 rounded-full text-[10px] font-poppins font-bold tracking-wider ${roleStyles[log.role]}`}>
+                    <span className={`px-3 py-0.5 rounded-full text-[11px] font-poppins font-bold tracking-wider ${roleStyles[log.role]}`}>
                       {log.role}
                     </span>
                   </td>

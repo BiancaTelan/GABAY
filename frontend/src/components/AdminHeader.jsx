@@ -33,8 +33,6 @@ export default function AdminHeader({ isCollapsed, setIsCollapsed, isLoggedIn })
 
       <div className="flex items-center gap-2 md:gap-4">
         {/* Placeholder / Spacer */}
-        <div className="w-10 h-10 bg-gray-100 rounded-md hidden md:block"></div>
-        
         <button onClick={() => navigate('/admin/a-calendar')} 
         className="p-2 text-gabay-blue hover:bg-blue-50 rounded-lg transition">
           <Calendar size={23} />

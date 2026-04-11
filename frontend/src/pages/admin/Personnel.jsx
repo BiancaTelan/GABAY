@@ -293,8 +293,8 @@ export default function Personnel() {
                   <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gray-700 font-medium">{person.id}</td>
                   <td className="px-4 py-4">
                      <span className={`px-3 py-0.5 rounded-full text-[12px] md:text-[11px] font-poppins font-bold ${
-                       person.role === 'DOCTOR' ? 'bg-orange-100 text-gabay-orange' : 
-                       person.role === 'ADMIN' ? 'bg-blue-100 text-blue-700' : 'bg-teal-100 text-teal-700'
+                       person.role === 'DOCTOR' ? 'bg-orange-50 text-gabay-orange border border-orange-400' : 
+                       person.role === 'ADMIN' ? 'bg-blue-50 text-blue-600 border border-blue-500' : 'bg-teal-50 text-teal-600 border border-teal-500'
                      }`}>
                        {person.role}
                      </span>

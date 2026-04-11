@@ -9,12 +9,34 @@ export default function AdminCalendar() {
   const [dailyCapacity, setDailyCapacity] = useState(25);
   const [isEditingCapacity, setIsEditingCapacity] = useState(false);
   
-  const modalRef = useRef(null); // For clicking outside to exit
+  const modalRef = useRef(null);
 
-  // Data States
   const [appointments, setAppointments] = useState([]);
   const [holidays, setHolidays] = useState([]);
   const [events, setEvents] = useState([]);
+  const handleInputChange = (e) => {
+    let val = e.target.value.replace(/\D/g, "");
+    if (val.length > 2) {
+      val = val.substring(0, 2) + "/" + val.substring(2, 6);
+    }
+    e.target.value = val;
+  };
+
+  const handleJumpToDate = (e) => {
+    const val = e.target.value;
+    if (!val) {
+      setCurrentMonth(new Date());
+      return;
+    }
+
+  const [month, year] = val.split('/');
+    if (month && year && year.length === 4) {
+      const newDate = new Date(parseInt(year), parseInt(month) - 1);
+      if (!isNaN(newDate.getTime())) {
+        setCurrentMonth(newDate);
+      }
+    }
+  };
 
   useEffect(() => {
     // BACKEND DEV: API: GET /api/admin/calendar-data?month=${format(currentMonth, 'yyyy-MM')}
@@ -28,25 +50,13 @@ export default function AdminCalendar() {
       { date: new Date(2026, 3, 9), title: "Araw ng Kagitingan" },
     ]);
     setEvents([{ date: new Date(2026, 3, 7), title: "SYSTEM UPDATE" }]);
-    
-    // Updated with full status breakdown to ensure data consistency
     setAppointments([
-      { 
-        date: new Date(2026, 3, 13), 
-        confirmed: 3, canceled: 2, noShow: 2, completed: 17 
-      },
-      { 
-        date: new Date(2026, 3, 14), 
-        confirmed: 2, canceled: 1, noShow: 0, completed: 4 
-      },
-      { 
-        date: new Date(2026, 3, 17), 
-        confirmed: 5, canceled: 3, noShow: 1, completed: 4 
-      },
+      { date: new Date(2026, 3, 13), confirmed: 3, canceled: 2, noShow: 2, completed: 17 },
+      { date: new Date(2026, 3, 14), confirmed: 2, canceled: 1, noShow: 0, completed: 4 },
+      { date: new Date(2026, 3, 17), confirmed: 5, canceled: 3, noShow: 1, completed: 4 },
     ]);
   };
 
-  // Helper to calculate total from breakdown
   const getDayData = (day) => {
     const data = appointments.find(a => isSameDay(day, a.date));
     if (!data) return { total: 0, confirmed: 0, canceled: 0, noShow: 0, completed: 0 };
@@ -57,12 +67,27 @@ export default function AdminCalendar() {
   };
 
   const handleDateClick = (day) => setSelectedDate(day);
-  const handleDoubleClick = (day) => {
-    setSelectedDate(day);
-    setIsModalOpen(true);
+  const handleDoubleClick = (day) => { setSelectedDate(day); setIsModalOpen(true); };
+
+  // --- LOGIC: FUNCTIONAL HOLIDAYS & EVENTS ---
+  const handleAddHoliday = () => {
+    const title = prompt("Enter Holiday Name (e.g., Labor Day):");
+    if (title) {
+      const newHoliday = { date: selectedDate, title: title.toUpperCase() };
+      // BACKEND DEV: POST /api/admin/holidays { date: selectedDate, title }
+      setHolidays(prev => [...prev, newHoliday]);
+    }
   };
 
-  // Close modal on outside click
+  const handleAddEvent = () => {
+    const title = prompt("Enter Event Name (e.g., Blood Drive):");
+    if (title) {
+      const newEvent = { date: selectedDate, title: title.toUpperCase() };
+      // BACKEND DEV: POST /api/admin/events { date: selectedDate, title }
+      setEvents(prev => [...prev, newEvent]);
+    }
+  };
+
   const handleOverlayClick = (e) => {
     if (modalRef.current && !modalRef.current.contains(e.target)) {
       setIsModalOpen(false);
@@ -71,11 +96,11 @@ export default function AdminCalendar() {
 
   const renderHeader = () => (
     <div className="flex items-center justify-center gap-4 md:gap-8 mb-4">
-      <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-2 hover:bg-gray-100 rounded-full"><ChevronLeft className="text-gray-400" /></button>
-      <h2 className="text-2xl md:text-4xl font-black text-gabay-blue uppercase tracking-tighter">
+      <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><ChevronLeft className="text-gray-400" /></button>
+      <h2 className="text-2xl md:text-4xl font-montserrat font-extrabold text-gabay-blue uppercase tracking-tight select-none">
         {format(currentMonth, 'MMMM yyyy')}
       </h2>
-      <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-2 hover:bg-gray-100 rounded-full"><ChevronRight className="text-gray-400" /></button>
+      <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><ChevronRight className="text-gray-400" /></button>
     </div>
   );
 
@@ -84,7 +109,7 @@ export default function AdminCalendar() {
     return (
       <div className="grid grid-cols-7 border-b">
         {days.map(d => (
-          <div key={d} className="py-2 md:py-3 text-center font-bold text-white bg-gabay-blue border-x border-white/10 text-[10px] md:text-xs">
+          <div key={d} className="py-2 md:py-3 text-center font-semibold font-montserrat text-white bg-gabay-blue border-x border-white/10 text-[10px] md:text-base">
             {d}
           </div>
         ))}
@@ -112,34 +137,34 @@ export default function AdminCalendar() {
         daysInRow.push(
           <div
             key={day}
-            className={`min-h-[80px] md:min-h-[110px] border p-1 md:p-2 transition-all cursor-pointer relative flex flex-col
+            className={`min-h-[80px] md:min-h-[110px] border p-1 md:p-2 transition-all cursor-pointer relative font-poppins flex flex-col group
               ${!isSameMonth(day, monthStart) ? 'bg-gray-50 text-gray-300' : 'text-gabay-blue'}
-              ${isSelected ? 'ring-2 ring-inset ring-gabay-teal z-10' : ''}`}
+              ${isSelected ? 'ring-2 ring-inset ring-gray-400 z-10' : 'hover:bg-teal-50/30'}`}
             onClick={() => handleDateClick(cloneDay)}
             onDoubleClick={() => handleDoubleClick(cloneDay)}
           >
             <span className="font-bold text-sm md:text-base">{format(day, 'd')}</span>
             
-            <div className="mt-1 space-y-1 flex-1">
+            <div className="mt-1 space-y-1 flex-1 overflow-hidden">
               {holiday && (
-                <div className="bg-red-500 text-white text-[8px] md:text-[9px] p-0.5 md:p-1 rounded font-bold text-center leading-tight uppercase">
+                <div className="bg-orange-400 text-white text-[7px] md:text-[9px] p-0.5 md:p-1 rounded font-medium text-center leading-tight uppercase truncate">
                   {holiday.title}
                 </div>
               )}
               {event && (
-                <div className="bg-gabay-teal text-white text-[8px] md:text-[9px] p-0.5 md:p-1 rounded font-bold text-center leading-tight uppercase">
+                <div className="bg-gabay-teal text-white text-[7px] md:text-[9px] p-0.5 md:p-1 rounded font-medium text-center leading-tight uppercase truncate">
                   {event.title}
                 </div>
               )}
               {dayStats.total > 0 && (
-                <div className="bg-gray-200 text-gray-600 text-[8px] md:text-[9px] p-0.5 md:p-1 rounded font-bold text-center uppercase mt-auto">
-                  {dayStats.total} APPOINTMENTS
+                <div className="bg-gray-200 text-gray-600 text-[7px] md:text-[9px] p-0.5 md:p-1 rounded font-medium text-center uppercase mt-auto truncate">
+                  {dayStats.total} <span className="hidden md:inline">APPOINTMENTS</span><span className="md:hidden">APPT.</span>
                 </div>
               )}
             </div>
             
             {isSelected && (
-              <button onClick={() => setIsModalOpen(true)} className="absolute top-1 right-1 p-1 bg-gabay-blue/80 text-white rounded-full hover:bg-gabay-blue">
+              <button onClick={(e) => { e.stopPropagation(); setIsModalOpen(true); }} className="absolute top-1 right-1 p-1 bg-gabay-blue/80 text-white rounded-full hover:bg-gabay-blue transition-all">
                 <Eye size={12} />
               </button>
             )}
@@ -149,7 +174,7 @@ export default function AdminCalendar() {
       }
       rows.push(<div className="grid grid-cols-7" key={day}>{daysInRow}</div>);
     }
-    return <div className="border shadow-sm rounded-sm overflow-hidden">{rows}</div>;
+    return <div className="border border-t-0 shadow-sm rounded-sm overflow-hidden">{rows}</div>;
   };
 
   const selectedDayStats = getDayData(selectedDate);
@@ -157,29 +182,52 @@ export default function AdminCalendar() {
   const selectedDayEvent = events.find(e => isSameDay(selectedDate, e.date));
 
   return (
-    <div className="max-w-6xl mx-auto p-4 md:p-6 font-poppins">
+    <div className="max-w-5xl mx-auto p-4 md:p-6 font-poppins select-none animate-in fade-in duration-500">
       {renderHeader()}
       {renderDays()}
       {renderCells()}
 
-      <div className="mt-4 flex flex-col gap-2">
-        <div className="flex items-center gap-2 text-gabay-teal font-semibold text-xs md:text-sm">
-          <span>Daily Slot Capacity:</span>
+      {/* FOOTER SECTION */}
+      <div className="mt-4 flex flex-row justify-between items-center gap-2">
+        
+        {/* LEFT: Slots */}
+        <div className="flex items-center gap-1.5 text-gabay-teal font-semibold text-[10px] sm:text-xs md:text-sm">
+          <span className="whitespace-nowrap">Daily Capacity:</span>
+          <div className="flex items-center gap-1">
+            <input 
+              type="number" 
+              disabled={!isEditingCapacity}
+              value={dailyCapacity}
+              onChange={(e) => setDailyCapacity(Number(e.target.value))}
+              className={`w-8 md:w-10 text-center focus:outline-none transition-all ${
+                isEditingCapacity ? 'border-b border-gabay-teal bg-white font-bold' : 'bg-transparent text-gray-500'
+              }`}
+            />
+            {!isEditingCapacity ? (
+              <button onClick={() => setIsEditingCapacity(true)} className="text-gabay-teal p-1 border border-gabay-teal rounded hover:bg-teal-50"><Edit2 size={12}/></button>
+            ) : (
+              <div className="flex gap-1">
+                <button onClick={() => setIsEditingCapacity(false)} className="text-red-500"><X size={12}/></button>
+                <button onClick={() => setIsEditingCapacity(false)} className="text-green-500"><Check size={12}/></button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT: Go to Month */}
+        <div className="flex items-center gap-1.5 text-gray-400 font-semibold text-[10px] sm:text-xs md:text-sm">
+          <span className="whitespace-nowrap uppercase tracking-tighter">Go to:</span>
           <input 
-            type="number" 
-            disabled={!isEditingCapacity}
-            value={dailyCapacity}
-            onChange={(e) => setDailyCapacity(Number(e.target.value))}
-            className={`w-12 border rounded text-center ${isEditingCapacity ? 'border-gabay-teal bg-white' : 'border-transparent bg-transparent'}`}
+            type="text" 
+            placeholder="MM/YYYY"
+            maxLength={7}
+            defaultValue={format(currentMonth, 'MM/yyyy')}
+            key={format(currentMonth, 'MM/yyyy')} 
+            onChange={handleInputChange}
+            onBlur={handleJumpToDate}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleJumpToDate(e); }}
+            className="border border-gray-200 rounded-lg px-2 py-1 text-gabay-teal font-medium focus:outline-none focus:border-gabay-teal bg-white w-[85px] md:w-28 text-center"
           />
-          {!isEditingCapacity ? (
-            <button onClick={() => setIsEditingCapacity(true)} className="p-1 bg-gabay-teal text-white rounded"><Edit2 size={12}/></button>
-          ) : (
-            <div className="flex gap-1">
-              <button onClick={() => setIsEditingCapacity(false)} className="p-1 bg-red-500 text-white rounded"><X size={12}/></button>
-              <button onClick={() => setIsEditingCapacity(false)} className="p-1 bg-green-500 text-white rounded"><Check size={12}/></button>
-            </div>
-          )}
         </div>
       </div>
 
@@ -190,47 +238,56 @@ export default function AdminCalendar() {
         >
           <div 
             ref={modalRef}
-            className="bg-white rounded-2xl w-full max-w-md p-6 md:p-8 relative animate-in zoom-in duration-200 shadow-2xl"
+            className="bg-white rounded-2xl w-full max-w-sm p-6 md:p-8 relative animate-in zoom-in duration-200 shadow-2xl border border-gray-100"
           >
-            <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><X size={20}/></button>
+            <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"><X size={20}/></button>
             
             <div className="flex items-center justify-center gap-4 mb-6">
-               <ChevronLeft className="text-gray-300 cursor-pointer hover:text-gabay-blue" onClick={() => setSelectedDate(prev => addDays(prev, -1))} />
-               <h2 className="text-2xl md:text-3xl font-bold text-gabay-blue uppercase">{format(selectedDate, 'MMMM d')}</h2>
-               <ChevronRight className="text-gray-300 cursor-pointer hover:text-gabay-blue" onClick={() => setSelectedDate(prev => addDays(prev, 1))} />
+               <ChevronLeft className="text-gray-300 cursor-pointer hover:text-gabay-blue transition-colors" onClick={() => setSelectedDate(prev => addDays(prev, -1))} />
+               <h2 className="text-2xl md:text-3xl font-bold text-gabay-blue uppercase tracking-tight">{format(selectedDate, 'MMMM d')}</h2>
+               <ChevronRight className="text-gray-300 cursor-pointer hover:text-gabay-blue transition-colors" onClick={() => setSelectedDate(prev => addDays(prev, 1))} />
             </div>
 
-            {/* Display Active Holiday/Event on Modal */}
             {(selectedDayHoliday || selectedDayEvent) && (
               <div className="mb-6 flex flex-wrap justify-center gap-2">
-                {selectedDayHoliday && <span className="px-3 py-1 bg-red-100 text-red-600 text-[10px] font-bold rounded-full uppercase tracking-wider">{selectedDayHoliday.title}</span>}
-                {selectedDayEvent && <span className="px-3 py-1 bg-teal-100 text-teal-600 text-[10px] font-bold rounded-full uppercase tracking-wider">{selectedDayEvent.title}</span>}
+                {selectedDayHoliday && <span className="px-3 py-1 bg-red-50 text-red-500 text-[9px] font-bold rounded-full uppercase tracking-wider border border-red-100">{selectedDayHoliday.title}</span>}
+                {selectedDayEvent && <span className="px-3 py-1 bg-teal-50 text-teal-600 text-[9px] font-bold rounded-full uppercase tracking-wider border border-teal-100">{selectedDayEvent.title}</span>}
               </div>
             )}
 
             <div className="grid grid-cols-2 gap-4 md:gap-8 mb-8 text-center border-b pb-6">
                <div>
-                 <p className="text-gabay-teal font-bold text-sm mb-0.5">CONFIRMED: {selectedDayStats.confirmed}</p>
-                 <p className="text-red-500 font-bold text-sm">CANCELED: {selectedDayStats.canceled}</p>
+                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Confirmed</p>
+                 <p className="text-gabay-teal font-extrabold text-lg">{selectedDayStats.confirmed}</p>
+                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-4 mb-1">Canceled</p>
+                 <p className="text-red-500 font-extrabold text-lg">{selectedDayStats.canceled}</p>
                </div>
                <div>
-                 <p className="text-gray-400 font-bold text-sm mb-0.5">NO-SHOW: {selectedDayStats.noShow}</p>
-                 <p className="text-green-500 font-bold text-sm">COMPLETED: {selectedDayStats.completed}</p>
+                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">No-Show</p>
+                 <p className="text-gray-500 font-extrabold text-lg">{selectedDayStats.noShow}</p>
+                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-4 mb-1">Completed</p>
+                 <p className="text-green-500 font-extrabold text-lg">{selectedDayStats.completed}</p>
                </div>
             </div>
 
             <div className="text-center mb-8">
-              <h3 className="text-lg font-bold text-gabay-blue mb-3">TOTAL APPOINTMENTS: {selectedDayStats.total}</h3>
-              <div className="inline-block bg-gray-100 px-4 py-1.5 rounded-lg text-gray-500 font-bold text-sm">
-                 SLOTS AVAILABLE: {Math.max(0, dailyCapacity - selectedDayStats.total)}/{dailyCapacity}
+              <h3 className="text-xs font-bold text-gabay-blue/60 uppercase tracking-widest mb-2">Total Appointments: {selectedDayStats.total}</h3>
+              <div className="inline-block bg-gray-50 border border-gray-100 px-4 py-1.5 rounded-lg text-gray-600 font-extrabold text-sm">
+                 SLOTS AVAILABLE: {Math.max(0, dailyCapacity - selectedDayStats.total)} / {dailyCapacity}
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button className="flex-1 py-2.5 bg-red-500 text-white rounded-full font-bold uppercase text-[10px] hover:bg-red-600">
+            <div className="flex flex-col gap-2">
+              <button 
+                onClick={handleAddHoliday}
+                className="w-full py-2.5 bg-red-500 text-white rounded-xl font-bold uppercase text-[10px] hover:bg-red-600 transition-colors shadow-sm"
+              >
                 + Mark as Holiday
               </button>
-              <button className="flex-1 py-2.5 bg-gabay-teal text-white rounded-full font-bold uppercase text-[10px] hover:bg-teal-600">
+              <button 
+                onClick={handleAddEvent}
+                className="w-full py-2.5 bg-gabay-teal text-white rounded-xl font-bold uppercase text-[10px] hover:bg-teal-600 transition-colors shadow-sm"
+              >
                 + Add Event
               </button>
             </div>

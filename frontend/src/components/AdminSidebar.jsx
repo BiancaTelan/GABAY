@@ -22,7 +22,6 @@ export default function AdminSidebar({ isCollapsed, setIsCollapsed }) {
       items: [
         { name: 'Audit Logs', path: '/admin/audit-logs', icon: <Activity size={22} /> },
         { name: 'System Logs', path: '/admin/system-logs', icon: <Terminal size={22} /> },
-        { name: 'Reports', path: '/admin/reports', icon: <FileBarChart size={22} /> },
       ]
     }
   ];

@@ -20,10 +20,10 @@ const rawAppointments = [
 ];
 
 const statusStyles = {
-  Approved: 'bg-amber-100 text-amber-700',
-  Completed: 'bg-green-50 text-gabay-green',
-  Cancelled: 'bg-red-50 text-gabay-red',
-  Pending: 'bg-gray-100 text-gray-400',
+  Approved: 'bg-orange-50 text-gabay-orange border border-orange-400',
+  Completed: 'bg-green-50 text-green-500 border border-green-400',
+  Cancelled: 'bg-red-50 text-red-500 border border-red-400',
+  Pending: 'bg-gray-50 text-gray-500 border border-gray-400',
 };
 
 export default function Appointments() {
