@@ -92,7 +92,8 @@ origins = [
    
     # --- ADMIN PORTAL URLS ---
     "http://localhost:5174",     
-    "http://127.0.0.1:5174"
+    "http://127.0.0.1:5174",
+    "https://gabay-systempersonnel.vercel.app"
 ]
 
 app.add_middleware(
