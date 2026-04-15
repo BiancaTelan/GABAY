@@ -104,3 +104,66 @@ def send_contact_us_email(name: str, user_email: str, subject: str, message: str
     """
     
     send_brevo_email(ADMIN_RECEIVING_EMAIL, email_subject, html_body, reply_to=user_email)
+
+# ==========================================
+# PERSONNEL CREDENTIALS EMAIL FUNCTION
+# ==========================================
+def send_personnel_credentials_email(recipient_email: str, name: str, role: str, raw_password: str):
+
+    brevo_api_key = os.getenv("BREVO_API_KEY")
+    if not brevo_api_key:
+        print("❌ ERROR: BREVO_API_KEY is missing from your .env file!")
+        return
+
+    subject = f"Welcome to GABAY - Your {role} Account Credentials"
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+        <h2 style="color: #0b3b60; text-align: center;">Welcome to GABAY</h2>
+        <p>Hello <strong>{name}</strong>,</p>
+        <p>An administrator has created a new GABAY <strong>{role}</strong> account for you. You can now log into the Administrative Portal using the credentials below:</p>
+        
+        <div style="background-color: #f4f6f8; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <p style="margin: 0 0 10px 0;"><strong>Email:</strong> {recipient_email}</p>
+            <p style="margin: 0;"><strong>Temporary Password:</strong> <span style="font-family: monospace; letter-spacing: 1px;">{raw_password}</span></p>
+        </div>
+        
+        <p style="color: #d9534f; font-size: 14px;"><em><strong>Important:</strong> For security purposes, please log in and change your password immediately via your account settings.</em></p>
+        
+        <br>
+        <p style="font-size: 14px; color: #666;">Thank you,<br>GABAY System Administration</p>
+    </div>
+    """
+
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {
+        "accept": "application/json",
+        "api-key": brevo_api_key,
+        "content-type": "application/json"
+    }
+    
+    payload = {
+        "sender": {
+            "name": "GABAY Admin System",
+            "email": "gabay.system@gmail.com"
+        },
+        "to": [
+            {
+                "email": recipient_email,
+                "name": name
+            }
+        ],
+        "subject": subject,
+        "htmlContent": html_content
+    }
+
+    try:
+        response = requests.post(url, json=payload, headers=headers)
+        
+        if response.status_code == 201:
+            print(f"✅ SUCCESS: Credentials email sent to {recipient_email} via Brevo")
+        else:
+            print(f"❌ BREVO ERROR: Failed to send email. Status Code: {response.status_code}")
+            print(response.json())
+            
+    except Exception as e:
+        print(f"❌ CRITICAL ERROR: Could not connect to Brevo. {str(e)}")

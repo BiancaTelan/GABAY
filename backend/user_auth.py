@@ -23,6 +23,23 @@ def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(), 
     db: Session = Depends(get_db)
 ):
+    
+    print("\n" + "="*30)
+    print(f"--- INCOMING LOGIN ATTEMPT ---")
+    print(f"Email received: [{form_data.username}]")
+    print(f"Password received: [{form_data.password}]")
+    
+    user = db.query(User).filter(User.email == form_data.username).first()
+    
+    if not user:
+        print("❌ RESULT: Email NOT FOUND in database.")
+    else:
+        print("✅ RESULT: Email found! Checking password...")
+        is_valid = verify_password(form_data.password, user.passwordHash)
+        print(f"❌ Password Valid? {is_valid}")
+        print(f"✅ Is Active? {user.isActive}")
+    print("="*30 + "\n")
+    
     user = db.query(User).filter(User.email == form_data.username).first()
     
     if not user or not verify_password(form_data.password, user.passwordHash):
@@ -117,7 +134,7 @@ OTP_STORE = {}
 @router.post("/forgot-password")
 def forgot_password(
     request: ForgotPasswordRequest, 
-    background_tasks: BackgroundTasks, # <--- INJECT THIS
+    background_tasks: BackgroundTasks, 
     db: Session = Depends(get_db)
 ):
     user = db.query(User).filter(User.email == request.email).first()

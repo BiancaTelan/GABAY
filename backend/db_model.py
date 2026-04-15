@@ -19,6 +19,10 @@ class actionTypeEnum(enum.Enum):
     DELETE = "DELETE"
     LOGIN = "LOGIN"
     LOGOUT = "LOGOUT"
+    APPROVE = "APPROVE"
+    RESCHEDULE = "RESCHEDULE"
+    DENY = "DENY"
+    BOOK = "BOOK"
 
 class queueStatusEnum(enum.Enum):
     Waiting = "Waiting"
@@ -59,9 +63,10 @@ class Department(Base):
     deptID: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     department: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     type: Mapped[str] = mapped_column(String(50), nullable=False)
-
     doctors: Mapped[List["Doctor"]] = relationship(back_populates="department")
     staff: Mapped[List["Staff"]] = relationship(back_populates="department")
+    slotCapacity: Mapped[int] = mapped_column(Integer, default=25)
+    isActive: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # === Relationship ===
     appointments: Mapped[list["Appointment"]] = relationship(back_populates="department")
@@ -127,7 +132,6 @@ class Appointment(Base):
     deptID: Mapped[int] = mapped_column(ForeignKey("departmentTable.deptID", ondelete="RESTRICT"), nullable=False)
     assignedScheduleID: Mapped[Optional[int]] = mapped_column(ForeignKey("scheduleTable.scheduleID", ondelete="SET NULL"))
     statusID: Mapped[int] = mapped_column(ForeignKey("appointmentStatusTable.statusID", ondelete="RESTRICT"), nullable=False)
-     
     purposeDetailed: Mapped[Optional[str]] = mapped_column(Text)
     type: Mapped[Optional[str]] = mapped_column(String(50))
     referral_doc: Mapped[Optional[str]] = mapped_column(String(255)) 
@@ -135,6 +139,9 @@ class Appointment(Base):
     preferredStartDate: Mapped[date] = mapped_column(Date, nullable=False)
     preferredEndDate: Mapped[Optional[date]] = mapped_column(Date)
     createdAt: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    actionBy_userID: Mapped[Optional[int]] = mapped_column(ForeignKey("userTable.userID", ondelete="SET NULL"))
+    actionReason: Mapped[Optional[str]] = mapped_column(Text)
+    actionDate: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
     # === Relationships ===
     patient: Mapped["Patient"] = relationship(back_populates="appointments")
@@ -143,6 +150,7 @@ class Appointment(Base):
     department: Mapped["Department"] = relationship(back_populates="appointments")
     status: Mapped["AppointmentStatus"] = relationship(back_populates="appointments")
     department: Mapped["Department"] = relationship(back_populates="appointments")
+    action_by_user: Mapped[Optional["User"]] = relationship(foreign_keys=[actionBy_userID])
 
 
 class Staff(Base): 
@@ -151,10 +159,17 @@ class Staff(Base):
     staffID: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     userID: Mapped[Optional[int]] = mapped_column(ForeignKey("userTable.userID", ondelete="RESTRICT"), unique=True)
     deptID: Mapped[Optional[int]] = mapped_column(ForeignKey("departmentTable.deptID", ondelete="SET NULL"))
-
     firstname: Mapped[str] = mapped_column(String(100), nullable=False)
     surname: Mapped[str] = mapped_column(String(100), nullable=False)
     position: Mapped[str] = mapped_column(String(100), nullable=False)
+    gender: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
+    contactNumber: Mapped[Optional[str]] = mapped_column(String(15), nullable=True)
+    workingDays: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    workingHours: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    profilePhoto: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    suffix: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
+    dob: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    address: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # === Relationships ===
     user_account: Mapped[Optional["User"]] = relationship(back_populates="staff_profile")
@@ -182,11 +197,15 @@ class SystemLogs(Base):
     __tablename__ = "systemLogTable"
    
     logID: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    userID: Mapped[Optional[int]] = mapped_column(ForeignKey("userTable.userID", ondelete="SET NULL")) # Removed unique=True
-    tableAffected: Mapped[str] = mapped_column(String(50), nullable=False) # Added missing field
+    userID: Mapped[Optional[int]] = mapped_column(ForeignKey("userTable.userID", ondelete="SET NULL")) 
+    tableAffected: Mapped[str] = mapped_column(String(50), nullable=False) 
     actionType: Mapped[actionTypeEnum] = mapped_column(SQLEnum(actionTypeEnum), nullable=False)
     timestamp: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     details: Mapped[Optional[str]] = mapped_column(Text)
+    ipAddress: Mapped[Optional[str]] = mapped_column(String(45), nullable=True)
+    
+    # === Relationships ===
+    user: Mapped[Optional["User"]] = relationship()
    
 
 class DailyQueue(Base):
@@ -200,3 +219,14 @@ class DailyQueue(Base):
     checkInTime: Mapped[Optional[datetime]] = mapped_column(DateTime) # Removed func.now(), check-in happens later
     consultationStart: Mapped[Optional[datetime]] = mapped_column(DateTime)
     consultationEnd: Mapped[Optional[datetime]] = mapped_column(DateTime)
+
+class SystemHealthLog(Base):
+    __tablename__ = "systemHealthLogTable"
+    
+    logID: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    issueType: Mapped[str] = mapped_column(String(50), nullable=False)
+    module: Mapped[str] = mapped_column(String(100), nullable=False)
+    priority: Mapped[str] = mapped_column(String(20), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    recommendedAction: Mapped[str] = mapped_column(Text, nullable=False)

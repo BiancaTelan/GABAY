@@ -4,6 +4,12 @@ from typing import Optional
 import jwt
 from passlib.context import CryptContext
 from dotenv import load_dotenv
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.orm import Session
+from jwt.exceptions import InvalidTokenError
+from db_connection import get_db
+from db_model import User
 
 load_dotenv()
 
@@ -36,10 +42,8 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
         
-    # 'exp' is a standard JWT claim that tells the client when the token expires
     to_encode.update({"exp": expire})
     
-    # Sign the token using your secret key
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
@@ -51,3 +55,32 @@ def create_verification_token(email: str):
     to_encode = {"sub": email, "type": "email_verification", "exp": expire}
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+# ---------------------------------------------------------
+# 4. FastAPI Dependency: Get Current Logged-in User
+# ---------------------------------------------------------
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        
+        email: str = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+            
+    except InvalidTokenError:
+        raise credentials_exception
+
+    user = db.query(User).filter(User.email == email).first()
+    
+    if user is None:
+        raise credentials_exception
+        
+    return user

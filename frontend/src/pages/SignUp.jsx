@@ -10,7 +10,6 @@ import { emailPattern, namePattern } from '../utils/constants';
 export default function SignUp() {
     const navigate = useNavigate();
     const { login } = useContext(AuthContext); 
-    const [successMsg, setSuccessMsg] = useState('');
     
     const [formData, setFormData] = useState({
       firstname: '',
@@ -22,6 +21,7 @@ export default function SignUp() {
 
     const [errors, setErrors] = useState({});
     const [serverError, setServerError] = useState('');           
+    const [successMsg, setSuccessMsg] = useState('');
 
     const handleSubmit = async (e) => {
       e.preventDefault();
