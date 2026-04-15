@@ -97,8 +97,6 @@ class PasswordChangeRequest(BaseModel):
     current_password: str
     new_password: str
 
-
-
 # ---------------------------------------------------------
 # 1. ADMIN & USER MANAGEMENT
 # ---------------------------------------------------------
@@ -1025,6 +1023,7 @@ def update_my_profile(
 
 @router.post("/upload-photo")
 def upload_profile_photo(
+    request: Request,
     profile_photo: UploadFile = File(...), 
     db: Session = Depends(get_db), 
     current_user: User = Depends(get_current_user)
@@ -1045,7 +1044,8 @@ def upload_profile_photo(
     with open(file_location, "wb+") as file_object:
         shutil.copyfileobj(profile_photo.file, file_object)
 
-    photo_url = f"http://127.0.0.1:8000/uploads/{unique_filename}"
+
+    photo_url = f"https://gabay-backend-bmom.onrender.com/uploads/{unique_filename}"
     
     if hasattr(prof, 'profilePhoto'):
         prof.profilePhoto = photo_url
