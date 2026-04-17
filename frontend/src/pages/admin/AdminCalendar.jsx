@@ -207,7 +207,7 @@ export default function AdminCalendar() {
               <button onClick={() => setIsEditingCapacity(true)} className="text-gabay-teal p-1 border border-gabay-teal rounded hover:bg-teal-50"><Edit2 size={12}/></button>
             ) : (
               <div className="flex gap-1">
-                <button onClick={() => setIsEditingCapacity(false)} className="text-red-500"><X size={12}/></button>
+                <button onClick={() => setIsEditingCapacity(false)} className="text-orange-500"><X size={12}/></button>
                 <button onClick={() => setIsEditingCapacity(false)} className="text-green-500"><Check size={12}/></button>
               </div>
             )}
@@ -250,29 +250,29 @@ export default function AdminCalendar() {
 
             {(selectedDayHoliday || selectedDayEvent) && (
               <div className="mb-6 flex flex-wrap justify-center gap-2">
-                {selectedDayHoliday && <span className="px-3 py-1 bg-red-50 text-red-500 text-[9px] font-bold rounded-full uppercase tracking-wider border border-red-100">{selectedDayHoliday.title}</span>}
-                {selectedDayEvent && <span className="px-3 py-1 bg-teal-50 text-teal-600 text-[9px] font-bold rounded-full uppercase tracking-wider border border-teal-100">{selectedDayEvent.title}</span>}
+                {selectedDayHoliday && <span className="px-3 py-1 bg-orange-50 text-orange-500 text-xs font-bold rounded-full uppercase tracking-wider border border-orange-300">{selectedDayHoliday.title}</span>}
+                {selectedDayEvent && <span className="px-3 py-1 bg-teal-50 text-teal-600 text-xs font-bold rounded-full uppercase tracking-wider border border-teal-100">{selectedDayEvent.title}</span>}
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-4 md:gap-8 mb-8 text-center border-b pb-6">
+            <div className="grid grid-cols-2 gap-4 md:gap-8 mb-1 text-center pb-5">
                <div>
-                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Confirmed</p>
-                 <p className="text-gabay-teal font-extrabold text-lg">{selectedDayStats.confirmed}</p>
-                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-4 mb-1">Canceled</p>
-                 <p className="text-red-500 font-extrabold text-lg">{selectedDayStats.canceled}</p>
+                 <p className="text-[12px] text-gray-400 font-medium uppercase tracking-widest mb-1">Confirmed</p>
+                 <p className="text-gabay-teal font-bold text-lg">{selectedDayStats.confirmed}</p>
+                 <p className="text-[12px] text-gray-400 font-medium uppercase tracking-widest mt-4 mb-1">Canceled</p>
+                 <p className="text-red-500 font-bold text-lg">{selectedDayStats.canceled}</p>
                </div>
                <div>
-                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">No-Show</p>
-                 <p className="text-gray-500 font-extrabold text-lg">{selectedDayStats.noShow}</p>
-                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-4 mb-1">Completed</p>
-                 <p className="text-green-500 font-extrabold text-lg">{selectedDayStats.completed}</p>
+                 <p className="text-[12px] text-gray-400 font-medium uppercase tracking-widest mb-1">No-Show</p>
+                 <p className="text-gray-500 font-bold text-lg">{selectedDayStats.noShow}</p>
+                 <p className="text-[12px] text-gray-400 font-medium uppercase tracking-widest mt-4 mb-1">Completed</p>
+                 <p className="text-green-500 font-bold text-lg">{selectedDayStats.completed}</p>
                </div>
             </div>
-
-            <div className="text-center mb-8">
-              <h3 className="text-xs font-bold text-gabay-blue/60 uppercase tracking-widest mb-2">Total Appointments: {selectedDayStats.total}</h3>
-              <div className="inline-block bg-gray-50 border border-gray-100 px-4 py-1.5 rounded-lg text-gray-600 font-extrabold text-sm">
+            <h3 className="text-sm font-semibold uppercase text-gabay-blue text-center mb-3  tracking-wide">Total Appointments: {selectedDayStats.total}</h3>
+            
+            <div className="text-center mb-6 ">
+              <div className="inline-block font-montserrat bg-gray-50 border border-gray-100 px-4 py-1.5 rounded-lg text-gray-600 font-bold text-xs">
                  SLOTS AVAILABLE: {Math.max(0, dailyCapacity - selectedDayStats.total)} / {dailyCapacity}
               </div>
             </div>
@@ -280,13 +280,13 @@ export default function AdminCalendar() {
             <div className="flex flex-col gap-2">
               <button 
                 onClick={handleAddHoliday}
-                className="w-full py-2.5 bg-red-500 text-white rounded-xl font-bold uppercase text-[10px] hover:bg-red-600 transition-colors shadow-sm"
+                className="w-full py-1.5 bg-orange-500 text-white rounded-full font-semibold font-poppins uppercase text-md hover:bg-orange-600 transition-colors shadow-sm"
               >
                 + Mark as Holiday
               </button>
               <button 
                 onClick={handleAddEvent}
-                className="w-full py-2.5 bg-gabay-teal text-white rounded-xl font-bold uppercase text-[10px] hover:bg-teal-600 transition-colors shadow-sm"
+                className="w-full py-1.5 bg-gabay-teal text-white rounded-full font-semibold font-poppins uppercase text-md hover:bg-teal-600 transition-colors shadow-sm"
               >
                 + Add Event
               </button>

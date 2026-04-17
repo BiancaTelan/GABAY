@@ -45,8 +45,6 @@ export default function AdminHeader({ isCollapsed, setIsCollapsed, isLoggedIn })
           <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 border-2 border-white rounded-full"></span>
         </button>
 
-        <div className="h-8 w-[1px] bg-gray-200 mx-1 md:mx-2"></div>
-
         {/* Account Button */}
         <button 
           onClick={() => navigate('/admin/a-account')} 

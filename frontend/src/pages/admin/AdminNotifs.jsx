@@ -180,10 +180,6 @@ export default function AdminNotifs() {
 
       {/* Pagination Container */}
       <div className="mt-8 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-gray-100 pt-6">
-        <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">
-          Showing {indexOfFirstRow + 1}-{Math.min(indexOfLastRow, filteredNotifications.length)} of {filteredNotifications.length} entries
-        </p>
-
         <div className="flex items-center gap-1">
           <button 
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
@@ -197,7 +193,7 @@ export default function AdminNotifs() {
             <button
               key={i + 1}
               onClick={() => setCurrentPage(i + 1)}
-              className={`w-7 h-7 rounded-full text-xs font-bold transition-all ${
+              className={`w-7 h-7 rounded-md text-sm font-bold transition-all ${
                 currentPage === i + 1 ? 'bg-gabay-blue text-white shadow-sm' : 'text-gabay-blue hover:bg-gray-100'
               }`}
             >
@@ -213,6 +209,9 @@ export default function AdminNotifs() {
             <ChevronRight size={18} />
           </button>
         </div>
+        <p className="text-[12px] font-medium text-gray-400 uppercase tracking-wider">
+          Showing {indexOfFirstRow + 1}-{Math.min(indexOfLastRow, filteredNotifications.length)} of {filteredNotifications.length} entries
+        </p>
       </div>
     </div>
   );

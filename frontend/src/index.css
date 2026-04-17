@@ -50,3 +50,8 @@
 .react-datepicker__day--disabled {
   color: #d1d5db !important;
 }
+
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
