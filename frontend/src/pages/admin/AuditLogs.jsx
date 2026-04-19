@@ -190,7 +190,7 @@ export default function AuditLogs() {
                   <td className="px-4 py-4 text-xs font-poppins text-gabay-blue font-medium">
                     {log.date} <br/> <span className="text-gray-400 font-normal">{log.time}</span>
                   </td>
-                  <td className="px-4 py-4 text-sm font-poppins font-medium text-blue-600 underline cursor-pointer">{log.user}</td>
+                  <td className="px-4 py-4 text-sm font-poppins font-medium text-blue-600 cursor-pointer">{log.user}</td>
                   <td className="px-4 py-4 text-center">
                     <span className={`px-3 py-0.5 rounded-full text-[11px] font-poppins font-bold tracking-wider ${roleStyles[log.role]}`}>
                       {log.role}

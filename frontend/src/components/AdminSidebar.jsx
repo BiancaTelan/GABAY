@@ -1,11 +1,29 @@
 import { NavLink } from 'react-router-dom';
+import React, { useState, useContext } from 'react';
 import { 
   LayoutDashboard, Users, UserRoundCog, Building2, 
   CalendarCheck, Activity, Terminal, FileBarChart, 
   LogOut, Settings, Menu 
 } from 'lucide-react';
+import { AuthContext } from '../authContext';
+import ConfirmationModal from '../components/confirmModal';
 
 export default function AdminSidebar({ isCollapsed, setIsCollapsed }) {
+
+  const [modalConfig, setModalConfig] = useState({ isOpen: false, type: '', title: '', message: '', onConfirm: null });
+  const { logout } = useContext(AuthContext);
+  const openLogoutModal = () => {
+    setModalConfig({
+      isOpen: true,
+      type: 'info',
+      title: 'Log Out',
+      message: 'Are you sure you want to log out?',
+      onConfirm: () => {
+        logout();
+      }
+    });
+  };
+  
   const menuGroups = [
     {
       title: "MAIN MENU",
@@ -76,10 +94,18 @@ export default function AdminSidebar({ isCollapsed, setIsCollapsed }) {
           <Settings size={22} /> 
           {!isCollapsed && <span>Settings</span>}
         </button>
-        <button className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2 w-full font-poppins text-gabay-teal hover:bg-teal-50 rounded-lg text-sm transition-all font-semibold`}>
+        <button 
+          onClick={openLogoutModal}
+          className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2 w-full font-poppins text-gabay-teal hover:bg-teal-50 rounded-lg text-sm transition-all font-semibold`}
+        >
           <LogOut size={22} /> 
           {!isCollapsed && <span>Log Out</span>}
         </button>
+        
+        <ConfirmationModal 
+          {...modalConfig} 
+          onClose={() => setModalConfig({ ...modalConfig, isOpen: false })} 
+        />
       </div>
     </aside>
   );

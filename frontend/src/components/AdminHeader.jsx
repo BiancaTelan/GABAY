@@ -27,8 +27,9 @@ export default function AdminHeader({ isCollapsed, setIsCollapsed, isLoggedIn })
         >
           <Menu size={24} />
         </button>
-
-        <img src={gabayLogo} alt="GABAY" className="h-8 md:h-10 w-auto object-contain" />
+        <div className="cursor-pointer shrink-0" onClick={() => handleNav('/admin')}>
+          <img src={gabayLogo} alt="GABAY Logo" className="h-8 md:h-10 w-auto object-contain" />
+        </div>
       </div>
 
       <div className="flex items-center gap-2 md:gap-4">

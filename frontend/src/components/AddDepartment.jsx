@@ -28,7 +28,7 @@ const FormField = ({ label, name, type = "text", placeholder, value, onChange, e
   </div>
 );
 
-export default function AddPersonnel({ isOpen, onClose, editData = null }) {
+export default function AddDepartment({ isOpen, onClose, editData = null }) {
   const modalRef = useRef();
 
   const initialState = {

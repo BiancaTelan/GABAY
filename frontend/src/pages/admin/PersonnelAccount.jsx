@@ -10,7 +10,7 @@ import { AuthContext } from '../../authContext';
 
 export default function PersonnelAccount() {
   const navigate = useNavigate();
-  const { token, onLogout, userRole, userInfo } = useContext(AuthContext);
+  const { token, logout, userRole, userInfo } = useContext(AuthContext);
   const fileInputRef = useRef(null);
 
   // Dynamic values based on role
@@ -178,9 +178,10 @@ export default function PersonnelAccount() {
       type: 'info',
       title: 'Log Out',
       message: 'Are you sure you want to log out?',
-      onConfirm: () => { onLogout(); navigate('/'); }
+      onConfirm: () => { logout(); navigate('/admin/login'); }
     });
   };
+
 
   const getFullDisplayName = () => {
     const { firstname, mi, surname, suffix } = localUserInfo;
@@ -340,7 +341,7 @@ export default function PersonnelAccount() {
           </div>
         </div>
       </div>
-
+      
       <ConfirmationModal {...modalConfig} onClose={() => setModalConfig({...modalConfig, isOpen: false})} />
       <ChangeModal 
         isOpen={isChangeModalOpen} 

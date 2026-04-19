@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import AddPatient from '../../components/AddPatient';
 import { 
   Search, Download, Funnel, Plus, 
   Edit3, MinusCircle, ChevronLeft, ChevronRight 
@@ -23,6 +24,13 @@ export default function Users() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState([]);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+
+  const [isPatientModalOpen, setIsPatientModalOpen] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const handleAddPatient = () => {
+    setSelectedPatient(null);
+    setIsPatientModalOpen(true);
+  };
   
   const [filters, setFilters] = useState({
     sortKey: 'name',
@@ -99,8 +107,13 @@ export default function Users() {
             <Search className="absolute right-3 top-2.5 text-gray-400" size={18} />
           </div>
           
-          <button className="whitespace-nowrap flex items-center justify-center gap-2 px-5 py-2 rounded-full bg-gabay-teal text-white font-medium font-poppins text-sm hover:bg-opacity-90 transition shadow-sm">
-            <Plus size={16} /> <span className="hidden sm:inline"> New User</span><span className="sm:hidden">New User</span>
+          <button 
+            onClick={handleAddPatient}
+            className="whitespace-nowrap flex items-center justify-center gap-2 px-5 py-2 rounded-full bg-gabay-teal text-white font-medium font-poppins text-sm hover:bg-opacity-90 transition shadow-sm active:scale-95"
+          >
+            <Plus size={16} /> 
+            <span className="hidden sm:inline"> New Patient</span>
+            <span className="sm:hidden">Patient</span>
           </button>
         </div>
 
@@ -243,6 +256,11 @@ export default function Users() {
           <p className="text-[10px] md:text-xs text-gray-400 font-poppins font-medium">Showing {entryStart} - {entryEnd} of {filteredData.length} entries</p>
         </div>
       </div>
+      <AddPatient 
+        isOpen={isPatientModalOpen} 
+        onClose={() => setIsPatientModalOpen(false)} 
+        editData={selectedPatient} 
+      />
     </div>
   );
 }
