@@ -50,8 +50,8 @@ export default function ConfirmationModal({ isOpen, onClose, onConfirm, title, m
               onClick={() => { onConfirm(); onClose(); }}
               className={`flex-1 py-2.5 rounded-xl text-white font-bold shadow-md transition-all text-sm uppercase tracking-wide ${
                 (isDanger || isWarning) 
-                  ? 'bg-gabay-red hover:bg-gabay-red2 shadow-red-200' 
-                  : 'bg-gabay-teal hover:bg-teal-600 shadow-teal-200'
+                  ? 'bg-gabay-red hover:bg-gabay-red2' 
+                  : 'bg-gabay-teal hover:bg-teal-600'
               }`}
             >
               {isWarning ? "Understood" : "Confirm"}

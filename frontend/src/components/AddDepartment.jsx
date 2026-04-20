@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Eye, EyeOff, ShieldAlert } from 'lucide-react';
+import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ReactDOM from 'react-dom';
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PASSWORD_MIN_LENGTH = 8;
+const NAME_REGEX = /^[A-Za-z\s]+$/;
 
 const FormField = ({ label, name, type = "text", placeholder, value, onChange, error, children }) => (
   <div className="space-y-1">
-    <label className="text-sm font-medium text-gabay-blue">{label} <span className="text-red-500">*</span></label>
+    <label className="text-sm font-medium text-gabay-blue">{label} {label.includes("Name") && <span className="text-red-500">*</span>}</label>
     <div className="relative">
       {children ? children : (
         <input 
@@ -32,23 +31,19 @@ export default function AddDepartment({ isOpen, onClose, editData = null }) {
   const modalRef = useRef();
 
   const initialState = {
-    firstName: '',
-    lastName: '',
-    role: 'STAFF',
-    department: '',
-    email: '',
-    contactNumber: '',
-    password: '',
-    confirmPassword: ''
+    departmentName: '',
+    departmentType: 'GENERAL',
+    staffCount: 1,
+    doctorCount: 1,
+    slotCapacity: 1
   };
 
   const [formData, setFormData] = useState(initialState);
   const [errors, setErrors] = useState({});
-  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (editData) {
-      setFormData({ ...initialState, ...editData, password: '', confirmPassword: '' });
+      setFormData({ ...initialState, ...editData });
     } else {
       setFormData(initialState);
       setErrors({});
@@ -63,12 +58,8 @@ export default function AddDepartment({ isOpen, onClose, editData = null }) {
     const { name, value } = e.target;
     let finalValue = value;
 
-    if (name === 'firstName' || name === 'lastName') {
+    if (name === 'departmentName') {
       finalValue = value.replace(/[^A-Za-z\s]/g, '');
-    }
-
-    if (name === 'contactNumber') {
-      finalValue = value.replace(/\D/g, '').substring(0, 11);
     }
 
     setFormData(prev => ({ ...prev, [name]: finalValue }));
@@ -77,47 +68,33 @@ export default function AddDepartment({ isOpen, onClose, editData = null }) {
 
   const validate = () => {
     let newErrors = {};
-
-    if (!formData.firstName.trim()) newErrors.firstName = "This field is required";
-    if (!formData.lastName.trim()) newErrors.lastName = "This field is required";
-
-    if (!formData.email.trim()) {
-      newErrors.email = "This field is required";
-    } else if (!EMAIL_REGEX.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
+ 
+    if (!formData.departmentName.trim()) {
+      newErrors.departmentName = "This field is required";
+    } else if (!NAME_REGEX.test(formData.departmentName)) {
+      newErrors.departmentName = "Alphabetical characters only";
     }
 
-    if (!formData.contactNumber.trim()) {
-      newErrors.contactNumber = "This field is required";
-    } else if (formData.contactNumber.length !== 11) {
-      newErrors.contactNumber = "Must be exactly 11 digits";
+    if (parseInt(formData.staffCount) < 1) {
+      newErrors.staffCount = "Must be at least 1";
+    } else if (parseInt(formData.staffCount) > 100) {
+      newErrors.staffCount = "Cannot exceed 100 personnel";
     }
 
-    if (!formData.department) newErrors.department = "Please select a department";
+    if (parseInt(formData.doctorCount) < 1) {
+      newErrors.doctorCount = "Must be at least 1";
+    } else if (parseInt(formData.doctorCount) > 100) {
+      newErrors.doctorCount = "Cannot exceed 100 personnel";
+    }
 
-
-    if (!editData) {
-      const hasNumber = /\d/.test(formData.password);
-      const hasSpecial = /[!@#$%^&*(),.?":{}|<> ]/.test(formData.password);
-
-      if (formData.password.length < PASSWORD_MIN_LENGTH) {
-        newErrors.password = `Minimum ${PASSWORD_MIN_LENGTH} characters required`;
-      } else if (!hasNumber || !hasSpecial) {
-        newErrors.password = "Must contain 1 number & 1 special character";
-      }
-
-      if (formData.password !== formData.confirmPassword) {
-        newErrors.confirmPassword = "Passwords do not match";
-      }
+    if (parseInt(formData.slotCapacity) < 1) {
+      newErrors.slotCapacity = "Must be at least 1";
+    } else if (parseInt(formData.slotCapacity) > 25) {
+      newErrors.slotCapacity = "Capacity cannot exceed 25";
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-
-  const handleResetPassword = () => {
-    /* BACKEND DEV: API: POST /api/admin/personnel/reset-password/${editData.id} */
-    toast.success(`Password reset link sent to ${formData.email}`);
   };
 
   const handleSubmit = async (e) => {
@@ -126,11 +103,11 @@ export default function AddDepartment({ isOpen, onClose, editData = null }) {
 
     try {
       if (editData) {
-        /* BACKEND DEV: PUT /api/admin/personnel/${editData.id} */
-        toast.success("Account updated successfully!");
+        /* BACKEND DEV: PUT /api/admin/departments/${editData.id} */
+        toast.success("Department updated successfully!");
       } else {
-        /* BACKEND DEV: POST /api/admin/personnel/create */
-        toast.success("Account created! Activation link sent via email.");
+        /* BACKEND DEV: POST /api/admin/departments/create */
+        toast.success("Department created successfully!");
       }
       onClose();
     } catch (err) {
@@ -142,111 +119,63 @@ export default function AddDepartment({ isOpen, onClose, editData = null }) {
 
   return ReactDOM.createPortal(
     <div 
-      className="fixed inset-0 z-[10000] h-screen w-screen flex items-center justify-center bg-black/60 backdrop-blur-[2px] p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-[2px] p-4 animate-in fade-in duration-200"
       onClick={handleOverlayClick}
     >
       <div 
         ref={modalRef}
-        className="bg-white rounded-2xl w-full max-w-lg max-h-[95vh] overflow-y-auto p-6 md:p-8 shadow-2xl relative font-poppins text-left"
+        className="bg-white rounded-2xl w-full max-w-lg p-6 md:p-10 shadow-2xl relative font-poppins text-left overflow-x-hidden"
       >
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
           <X size={20} />
         </button>
 
-        <h2 className="text-2xl md:text-3xl font-bold font-montserrat text-gabay-teal text-center mb-6 md:mb-8 text-gabay-teal">
-          {editData ? 'Edit Account' : 'Account Information'}
+        <h2 className="text-2xl md:text-3xl font-bold font-montserrat text-gabay-teal text-center mb-8 md:mb-8">
+          Department Information
         </h2>
 
-        <form onSubmit={handleSubmit} noValidate className="space-y-4 md:space-y-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="First Name" name="firstName" value={formData.firstName} onChange={handleChange} error={errors.firstName} placeholder="Juan" />
-            <FormField label="Last Name" name="lastName" value={formData.lastName} onChange={handleChange} error={errors.lastName} placeholder="Dela Cruz" />
-          </div>
+        <form onSubmit={handleSubmit} noValidate className="space-y-6">
+          {/* Department Name */}
+          <FormField label="Department Name" name="departmentName" value={formData.departmentName} onChange={handleChange} error={errors.departmentName} placeholder="Rheumatology" />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="Role" name="role" error={errors.role}>
-               <select name="role" value={formData.role} onChange={handleChange} className="w-full border-2 border-gray-100 rounded-lg px-4 py-2 text-sm focus:border-gabay-teal outline-none bg-white">
-                <option value="STAFF">STAFF</option>
-                <option value="DOCTOR">DOCTOR</option>
-                <option value="ADMIN">ADMIN</option>
-              </select>
-            </FormField>
-            
-            <FormField label="Department" name="department" error={errors.department}>
-              <select name="department" value={formData.department} onChange={handleChange} className={`w-full border-2 rounded-lg px-4 py-2 text-sm outline-none bg-white transition-all ${errors.department ? 'border-red-500' : 'border-gray-100 focus:border-gabay-teal'}`}>
-                <option value="">Select Department</option>
-                <option value="Cardiology">Cardiology</option>
-                <option value="Dentistry">Dentistry</option>
-                <option value="Internal Medicine">Internal Medicine</option>
-                <option value="Pediatrics">Pediatrics</option>
-              </select>
-            </FormField>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="Email Address" name="email" value={formData.email} onChange={handleChange} error={errors.email} placeholder="juandelacruz@gmail.com" />
-            <FormField label="Contact Number" name="contactNumber" value={formData.contactNumber} onChange={handleChange} error={errors.contactNumber} placeholder="09XXXXXXXXX" />
-          </div>
-
-          {!editData ? (
-            <div className="space-y-4 pt-2 animate-in slide-in-from-top-1">
-              <div className="relative space-y-1">
-                <label className="text-sm font-medium text-gabay-blue">Initial Password <span className="text-red-500">*</span></label>
-                <div className="relative"> 
-                  <input 
-                    name="password" 
-                    value={formData.password} 
-                    onChange={handleChange} 
-                    type={showPassword ? "text" : "password"} 
-                    className={`w-full border-2 rounded-lg px-4 py-2 text-sm outline-none transition-all hide-password-toggle ${errors.password ? 'border-red-500 ring-1 ring-red-100' : 'border-gray-100 focus:border-gabay-teal'}`} 
-                  />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gabay-teal transition-colors">
-                    {showPassword ? <EyeOff size={16}/> : <Eye size={16}/>}
-                  </button>
-                </div>
-                {errors.password && <p className="text-[10px] text-red-500 font-semibold px-1">{errors.password}</p>}
-              </div>
-
-              <div className="relative space-y-1">
-                <label className="text-sm font-medium text-gabay-blue">Confirm Password <span className="text-red-500">*</span></label>
-                <div className="relative">
-                  <input 
-                    name="confirmPassword" 
-                    value={formData.confirmPassword} 
-                    onChange={handleChange} 
-                    type={showPassword ? "text" : "password"} 
-                    className={`w-full border-2 rounded-lg px-4 py-2 text-sm outline-none transition-all hide-password-toggle ${errors.confirmPassword ? 'border-red-500 ring-1 ring-red-100' : 'border-gray-100 focus:border-gabay-teal'}`} 
-                  />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gabay-teal transition-colors">
-                    {showPassword ? <EyeOff size={16}/> : <Eye size={16}/>}
-                  </button>
-                </div>
-                {errors.confirmPassword && <p className="text-[10px] text-red-500 font-semibold px-1">{errors.confirmPassword}</p>}
-              </div>
+          {/* Department Type */}
+          <FormField label="Department Type" name="departmentType" error={errors.departmentType}>
+            <select 
+              name="departmentType" 
+              value={formData.departmentType} 
+              onChange={handleChange} 
+              className="w-full border-2 border-gray-100 rounded-lg px-4 py-2 text-sm focus:border-gabay-teal outline-none bg-white appearance-none cursor-pointer"
+            >
+              <option value="SPECIALTY">SPECIALTY</option>
+              <option value="GENERAL">GENERAL</option>
+            </select>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none pl-2 border-gray-200 text-gray-400">
+               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
             </div>
-          ) : (
-            <div className="pt-2">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                <div className="flex items-start gap-3">
-                  <ShieldAlert className="text-gray-400 mt-0.5" size={18} />
-                  <div>
-                    <p className="text-xs font-bold text-gabay-blue uppercase tracking-wider">Account Security</p>
-                    <p className="text-[10px] text-gray-500 leading-tight">Admin cannot edit passwords directly.</p>
-                  </div>
-                </div>
-                <button type="button" onClick={handleResetPassword} className="w-full sm:w-auto px-4 py-1.5 bg-white border border-gabay-teal text-gabay-teal text-[10px] font-bold rounded-lg hover:bg-teal-50 transition-colors shadow-sm">
-                  RESET PASSWORD
-                </button>
-              </div>
-            </div>
-          )}
+          </FormField>
 
-          <div className="flex flex-col sm:flex-row gap-3 pt-4"> 
-            <button type="button" onClick={onClose} className="order-2 sm:order-1 flex-1 py-2.5 border rounded-full border-gabay-teal text-sm text-gabay-teal font-semibold hover:bg-teal-50 transition-all">
+          {/* Counts Grid */}
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="Staff Count" name="staffCount" type="number" value={formData.staffCount} onChange={handleChange} error={errors.staffCount} />
+            <FormField label="Doctor Count" name="doctorCount" type="number" value={formData.doctorCount} onChange={handleChange} error={errors.doctorCount} />
+          </div>
+
+          {/* Slot Capacity */}
+          <FormField label="Slot Capacity" name="slotCapacity" type="number" value={formData.slotCapacity} onChange={handleChange} error={errors.slotCapacity} />
+
+          <div className="flex flex-col sm:flex-row gap-4 pt-6 justify-center items-center"> 
+            <button 
+              type="button" 
+              onClick={onClose} 
+              className="w-full sm:w-44 py-2 border-2 rounded-full border-gabay-teal text-sm text-gabay-teal font-semibold hover:bg-teal-50 transition-all"
+            >
               CANCEL
             </button>
-            <button type="submit" className="order-1 sm:order-2 flex-1 py-2.5 rounded-full bg-gabay-teal text-white text-sm font-semibold hover:bg-teal-600 shadow-lg shadow-teal-100 transition-all">
-              {editData ? 'UPDATE ACCOUNT' : 'CREATE ACCOUNT'}
+            <button 
+              type="submit" 
+              className="w-full sm:w-64 py-2.5 rounded-full bg-gabay-teal text-white text-sm font-semibold hover:bg-teal-600 shadow-md transition-all uppercase tracking-wide"
+            >
+              {editData ? 'UPDATE DEPARTMENT' : 'CREATE DEPARTMENT'}
             </button>
           </div>
         </form>

@@ -231,10 +231,10 @@ export default function AddPersonnel({ isOpen, onClose, editData = null }) {
                   <ShieldAlert className="text-gray-400 mt-0.5" size={18} />
                   <div>
                     <p className="text-xs font-bold text-gabay-blue uppercase tracking-wider">Account Security</p>
-                    <p className="text-[10px] text-gray-500 leading-tight">Admin cannot edit passwords directly.</p>
+                    <p className="text-[10px] text-gray-500 leading-tight">Only reset password when authorized to.</p>
                   </div>
                 </div>
-                <button type="button" onClick={handleResetPassword} className="w-full sm:w-auto px-4 py-1.5 bg-white border border-gabay-teal text-gabay-teal text-[10px] font-bold rounded-lg hover:bg-teal-50 transition-colors shadow-sm">
+                <button type="button" onClick={handleResetPassword} className="w-full sm:w-auto px-4 py-1.5 bg-white border border-gabay-red text-gabay-red text-[10px] font-semibold rounded-lg hover:bg-red-50 transition-colors shadow-sm">
                   RESET PASSWORD
                 </button>
               </div>
@@ -242,10 +242,10 @@ export default function AddPersonnel({ isOpen, onClose, editData = null }) {
           )}
 
           <div className="flex flex-col sm:flex-row gap-3 pt-4"> 
-            <button type="button" onClick={onClose} className="order-2 sm:order-1 flex-1 py-2.5 border rounded-full border-gabay-teal text-sm text-gabay-teal font-semibold hover:bg-teal-50 transition-all">
+            <button type="button" onClick={onClose} className="order-2 sm:order-1 flex-1 py-2.5 border-2 rounded-full border-gabay-teal text-sm text-gabay-teal font-semibold hover:bg-teal-50 transition-all">
               CANCEL
             </button>
-            <button type="submit" className="order-1 sm:order-2 flex-1 py-2.5 rounded-full bg-gabay-teal text-white text-sm font-semibold hover:bg-teal-600 shadow-lg shadow-teal-100 transition-all">
+            <button type="submit" className="order-1 sm:order-2 flex-1 py-2.5 rounded-full bg-gabay-teal text-white text-sm font-semibold hover:bg-teal-600 shadow-lg transition-all">
               {editData ? 'UPDATE ACCOUNT' : 'CREATE ACCOUNT'}
             </button>
           </div>

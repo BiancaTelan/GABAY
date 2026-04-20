@@ -1,8 +1,12 @@
 import React, { useState, useMemo } from 'react';
+// EDIT 1: Added missing imports for modals and toast
+import toast from 'react-hot-toast';
 import AddPatient from '../../components/AddPatient';
+import DisableModal from '../../components/DisableModal';
+import ConfirmationModal from '../../components/ConfirmModal';
 import { 
   Search, Download, Funnel, Plus, 
-  Edit3, MinusCircle, ChevronLeft, ChevronRight 
+  Edit3, MinusCircle, ChevronLeft, ChevronRight, CircleCheckBig
 } from 'lucide-react';
 
 // --- SAMPLE DATA ---
@@ -26,23 +30,53 @@ export default function Users() {
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
 
   const [isPatientModalOpen, setIsPatientModalOpen] = useState(false);
+  // EDIT 2: Added states for Disable and Reactivate modals
+  const [isDisableModalOpen, setIsDisableModalOpen] = useState(false);
+  const [isReactivateModalOpen, setIsReactivateModalOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
+
   const handleAddPatient = () => {
     setSelectedPatient(null);
     setIsPatientModalOpen(true);
+  };
+
+  // EDIT 3: Added logic handlers for Edit and Disable/Reactivate
+  const handleEditClick = (user) => {
+    setSelectedPatient(user);
+    setIsPatientModalOpen(true);
+  };
+
+  const handleDisableClick = (user) => {
+    setSelectedPatient(user);
+    setIsDisableModalOpen(true);
+  };
+
+  const handleReactivateClick = (user) => {
+    setSelectedPatient(user);
+    setIsReactivateModalOpen(true);
+  };
+
+  const handleDisableConfirm = (reason) => {
+    /* BACKEND DEV: PATCH /api/admin/users/disable/${selectedPatient.id} */
+    toast.success(`${selectedPatient.name}'s account has been deactivated: ${reason}`);
+  };
+
+  const handleReactivateConfirm = () => {
+    /* BACKEND DEV: PATCH /api/admin/users/reactivate/${selectedPatient.id} */
+    toast.success(`${selectedPatient.name}'s account has been reactivated.`);
+    setIsReactivateModalOpen(false);
   };
   
   const [filters, setFilters] = useState({
     sortKey: 'name',
     sortOrder: 'asc',
-    emailFilter: '', // FOR BACKEND: can be partial string or domain
+    emailFilter: '', 
     genders: ['Male', 'Female'], 
     statuses: ['Active', 'Offline', 'Inactive', 'Deactivated']
   });
 
   const itemsPerPage = 10;
 
-  // --- LOGIC: FILTERING & SORTING ---
   const filteredData = useMemo(() => {
     let result = rawUsersData.filter(item => 
       item.name.toLowerCase().includes(search.toLowerCase()) || 
@@ -52,30 +86,24 @@ export default function Users() {
     if (filters.genders.length > 0) result = result.filter(i => filters.genders.includes(i.gender));
     if (filters.statuses.length > 0) result = result.filter(i => filters.statuses.includes(i.status));
 
-    // SORTING
     result.sort((a, b) => {
-    let valA = a[filters.sortKey];
-    let valB = b[filters.sortKey];
-
-    // logic for numeric strings or dates
-    const comparison = valA.localeCompare(valB, undefined, { 
-      numeric: true, 
-      sensitivity: 'base' 
+      let valA = a[filters.sortKey];
+      let valB = b[filters.sortKey];
+      const comparison = valA.localeCompare(valB, undefined, { 
+        numeric: true, 
+        sensitivity: 'base' 
+      });
+      return filters.sortOrder === 'asc' ? comparison : -comparison;
     });
-
-    return filters.sortOrder === 'asc' ? comparison : -comparison;
-  });
 
     return result;
   }, [search, filters]);
 
-  // --- PAGINATION LOGIC ---
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const pagedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const entryStart = (currentPage - 1) * itemsPerPage + 1;
   const entryEnd = Math.min(currentPage * itemsPerPage, filteredData.length);
 
-  // --- SELECTION LOGIC ---
   const handleSelectAll = (e) => {
     if (e.target.checked) setSelectedIds(pagedData.map(i => i.id));
     else setSelectedIds([]);
@@ -88,13 +116,11 @@ export default function Users() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl md:text-3xl font-montserrat font-bold text-gabay-blue">Users List</h1>
+        <h1 className="text-2xl md:text-3xl font-montserrat font-bold text-gabay-blue tracking-tight">Users List</h1>
         <p className="text-xs md:text-sm font-poppins text-gray-500">Main Menu &gt; Users</p>
       </div>
 
-      {/* TOOLBAR */}
       <div className="flex flex-col lg:flex-row justify-between gap-4 items-center">
-        {/* LEFT GROUP */}
         <div className="flex flex-row items-center gap-3 w-full lg:w-auto">
           <div className="relative flex-1 lg:w-96">
             <input 
@@ -117,7 +143,6 @@ export default function Users() {
           </button>
         </div>
 
-        {/* RIGHT GROUP */}
         <div className="flex flex-row gap-2 w-full lg:w-auto">
           <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium hover:bg-teal-50 transition-colors">
             <Download size={16} /> Export as CSV
@@ -136,7 +161,6 @@ export default function Users() {
                 <div>
                   <p className="text-[10px] font-bold font-poppins text-gray-400 uppercase tracking-widest mb-3">Sort By</p>
                   <div className="flex flex-col gap-2">
-                    {/* FIRST DROPDOWN */}
                     <select 
                       value={filters.sortKey}
                       className="w-full text-sm font-poppins border rounded-lg p-2 outline-none"
@@ -146,8 +170,6 @@ export default function Users() {
                       <option value="id">Hospital Number</option>
                       <option value="joinDate">Date Joined</option>
                     </select>
-
-                    {/* SECOND DROPDOWN */}
                     <select 
                       value={filters.sortOrder}
                       className="w-full text-sm font-poppins border rounded-lg p-2 outline-none"
@@ -199,17 +221,18 @@ export default function Users() {
         </div>
       </div>
 
-      {/* TABLE */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left min-w-[1000px]">
             <thead className="bg-gabay-blue font-poppins text-white select-none">
               <tr>
-                <th className="px-4 py-4 text-center"><input type="checkbox" onChange={handleSelectAll} checked={selectedIds.length === pagedData.length} className="w-4 h-4" /></th>
+                <th className="px-4 py-4 text-center">
+                  <input type="checkbox" onChange={handleSelectAll} checked={selectedIds.length === pagedData.length && pagedData.length > 0} className="w-4 h-4" />
+                </th>
                 <th className="px-4 py-4 text-[12px] md:text-xs font-bold uppercase tracking-wider">Hospital Number</th>
                 <th className="px-4 py-4 text-[12px] md:text-xs font-bold uppercase tracking-wider">Name</th>
                 <th className="px-4 py-4 text-[12px] md:text-xs font-bold uppercase tracking-wider">Email</th>
-                <th className="px-4 py-4 text-[12px] md:text-xs font-bold uppercase tracking-wider">Gender</th>
+                <th className="px-4 py-4 text-[12px] md:text-xs font-bold uppercase tracking-wider text-center">Gender</th>
                 <th className="px-4 py-4 text-[12px] md:text-xs font-bold uppercase tracking-wider">Phone Number</th>
                 <th className="px-4 py-4 text-[12px] md:text-xs font-bold uppercase tracking-wider">Status</th>
                 <th className="px-4 py-4 text-[12px] md:text-xs font-bold uppercase tracking-wider">Join Date</th>
@@ -219,11 +242,13 @@ export default function Users() {
             <tbody className="divide-y divide-gray-100">
               {pagedData.map((user) => (
                 <tr key={user.id} className={`hover:bg-gray-50 transition-colors ${selectedIds.includes(user.id) ? 'bg-blue-50/50' : ''}`} onClick={() => toggleSelection(user.id)}>
-                  <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}><input type="checkbox" className="w-4 h-4 rounded accent-gabay-blue" checked={selectedIds.includes(user.id)} onChange={() => toggleSelection(user.id)} /></td>
+                  <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}>
+                    <input type="checkbox" className="w-4 h-4 rounded accent-gabay-blue" checked={selectedIds.includes(user.id)} onChange={() => toggleSelection(user.id)} />
+                  </td>
                   <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gray-700 font-medium">{user.id}</td>
                   <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gabay-blue font-medium">{user.name}</td>
                   <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gray-700">{user.email}</td>
-                  <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gray-700">{user.gender}</td>
+                  <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gray-700 text-center">{user.gender}</td>
                   <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gray-700">{user.phone}</td>
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-1.5 text-[12px] uppercase font-poppins font-medium text-gray-700">
@@ -232,10 +257,16 @@ export default function Users() {
                     </div>
                   </td>
                   <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gray-700">{user.joinDate}</td>
-                  <td className="px-4 py-4 text-center">
+                  <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-center gap-2">
-                      <button className="p-1.5 text-gabay-teal hover:bg-teal-50 rounded-lg transition-colors"><Edit3 size={18}/></button>
-                      <button className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition-colors"><MinusCircle size={18}/></button>
+                      {/* EDIT 4: Wired up Edit and Status Toggle */}
+                      <button onClick={() => handleEditClick(user)} className="p-1.5 text-gabay-teal rounded-lg transition-colors hover:scale-110"><Edit3 size={18}/></button>
+                      
+                      {user.status === 'Deactivated' ? (
+                        <button onClick={() => handleReactivateClick(user)} className="p-1.5 text-gabay-green rounded-lg transition-colors hover:scale-110" title="Reactivate"><CircleCheckBig size={18}/></button>
+                      ) : (
+                        <button onClick={() => handleDisableClick(user)} className="p-1.5 text-red-400 rounded-lg transition-colors hover:scale-110" title="Deactivate"><MinusCircle size={18}/></button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -244,22 +275,40 @@ export default function Users() {
           </table>
         </div>
 
-        {/* PAGE RESULTS */}
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="disabled:opacity-30"><ChevronLeft size={20}/></button>
+            <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="disabled:opacity-30 p-1 rounded-lg hover:bg-white transition-all"><ChevronLeft size={20}/></button>
             {[...Array(totalPages)].map((_, i) => (
-              <button key={i} onClick={() => setCurrentPage(i + 1)} className={`w-8 h-8 rounded-lg text-xs font-poppins font-bold ${currentPage === i + 1 ? 'bg-gabay-blue text-white' : 'text-gray-500'}`}>{i + 1}</button>
+              <button key={i} onClick={() => setCurrentPage(i + 1)} className={`w-8 h-8 rounded-lg text-xs font-poppins font-bold transition-all ${currentPage === i + 1 ? 'bg-gabay-blue text-white shadow-sm' : 'text-gray-500 hover:bg-white'}`}>{i + 1}</button>
             ))}
-            <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="disabled:opacity-30"><ChevronRight size={20}/></button>
+            <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="disabled:opacity-30 p-1 rounded-lg hover:bg-white transition-all"><ChevronRight size={20}/></button>
           </div>
           <p className="text-[10px] md:text-xs text-gray-400 font-poppins font-medium">Showing {entryStart} - {entryEnd} of {filteredData.length} entries</p>
         </div>
       </div>
+
       <AddPatient 
         isOpen={isPatientModalOpen} 
         onClose={() => setIsPatientModalOpen(false)} 
         editData={selectedPatient} 
+      />
+
+      {/* EDIT 5: Placed the Status-related Modals */}
+      <DisableModal 
+        isOpen={isDisableModalOpen}
+        onClose={() => setIsDisableModalOpen(false)}
+        title={`Deactivate ${selectedPatient?.name}`}
+        message="This action will restrict the user from booking appointments and logging into the portal."
+        onConfirm={handleDisableConfirm}
+      />
+
+      <ConfirmationModal 
+        isOpen={isReactivateModalOpen}
+        onClose={() => setIsReactivateModalOpen(false)}
+        onConfirm={handleReactivateConfirm}
+        title="Reactivate Patient"
+        message={`Are you sure you want to restore access for ${selectedPatient?.name}?`}
+        type="info"
       />
     </div>
   );
