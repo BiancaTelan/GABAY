@@ -8,7 +8,8 @@ const HOSPITAL_NO_REGEX = /^\d{2}-\d{6}$/;
 const PASSWORD_MIN_LENGTH = 8;
 const DOB_REGEX = /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/; 
 
-const FormField = ({ label, name, type = "text", placeholder, value, onChange, error }) => (
+// //EDIT: Added '...props' so we can pass 'readOnly' or 'disabled' to the input
+const FormField = ({ label, name, type = "text", placeholder, value, onChange, error, ...props }) => (
   <div className="space-y-1">
     <label className="text-sm font-medium text-gabay-blue">{label} <span className="text-red-500">*</span></label>
     <input 
@@ -18,15 +19,18 @@ const FormField = ({ label, name, type = "text", placeholder, value, onChange, e
       type={type} 
       placeholder={placeholder}
       autoComplete="off"
+      // //EDIT: Added dynamic class for readOnly styling
       className={`w-full border-2 rounded-lg px-4 py-2 text-sm outline-none transition-all ${
+        props.readOnly ? 'bg-gray-50 border-gray-100 text-gray-400 cursor-not-allowed' :
         error ? 'border-red-500 ring-1 ring-red-100' : 'border-gray-100 focus:border-gabay-teal'
       }`} 
+      {...props}
     />
     {error && <p className="text-[10px] text-red-500 font-semibold px-1">{error}</p>}
   </div>
 );
 
-export default function AddPatient({ isOpen, onClose, editData = null }) {
+export default function AddPatient({ isOpen, onClose, onSave, editData = null }) {
   const modalRef = useRef();
   const dateInputRef = useRef(null); 
   
@@ -48,7 +52,13 @@ export default function AddPatient({ isOpen, onClose, editData = null }) {
 
   useEffect(() => {
     if (editData) {
-      setFormData({ ...initialState, ...editData, password: '', confirmPassword: '' });
+      // //EDIT: Mapped editData into formData for editing mode (Requirement 1, 2, 4)
+      setFormData({ 
+        ...initialState, 
+        ...editData, 
+        password: '', 
+        confirmPassword: '' 
+      });
     } else {
       setFormData(initialState);
       setErrors({});
@@ -56,15 +66,15 @@ export default function AddPatient({ isOpen, onClose, editData = null }) {
   }, [editData, isOpen]);
 
   useEffect(() => {
-  if (isOpen) {
-    document.body.style.overflow = 'hidden';
-  } else {
-    document.body.style.overflow = 'unset';
-  }
-  
-  return () => {
-    document.body.style.overflow = 'unset';
-  };
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
   }, [isOpen]);
 
   const handleOverlayClick = (e) => {
@@ -145,7 +155,7 @@ export default function AddPatient({ isOpen, onClose, editData = null }) {
 
     if (!formData.email.trim()) {
       newErrors.email = "This field is required";
-    } else if (!EMAIL_REGEX.test(formData.email)) {
+    } else if (!emailPattern.test(formData.email)) {
       newErrors.email = "Please enter a valid email address";
     }
     if (!formData.contactNumber.trim()) {
@@ -176,6 +186,13 @@ export default function AddPatient({ isOpen, onClose, editData = null }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
+
+    // //EDIT: Triggering the onSave function for dynamic table reflection (Requirement 5 & 6)
+    // //INSTRUCTION FOR BACKEND: For editData, this formData will include hospitalNumber as the key for identifying the record.
+    if (onSave) {
+      onSave(formData);
+    }
+
     onClose();
     toast.success(editData ? "Updated!" : "Account Created! Activation link sent via email.");
   };
@@ -188,7 +205,7 @@ export default function AddPatient({ isOpen, onClose, editData = null }) {
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><X size={20} /></button>
 
         <h2 className="text-2xl md:text-3xl font-bold font-montserrat text-gabay-teal text-center mb-6 md:mb-8 uppercase tracking-tight">
-          {editData ? 'Edit Patient' : 'Account Information'}
+          {editData ? 'Edit Account' : 'Account Information'}
         </h2>
 
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
@@ -198,9 +215,17 @@ export default function AddPatient({ isOpen, onClose, editData = null }) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="Hospital Number" name="hospitalNumber" value={formData.hospitalNumber} onChange={handleChange} error={errors.hospitalNumber} placeholder="26-XXXXXX" />
+            {/* //EDIT: Hospital Number is now readOnly in edit mode (Requirement 3) */}
+            <FormField 
+              label="Hospital Number" 
+              name="hospitalNumber" 
+              value={formData.hospitalNumber} 
+              onChange={handleChange} 
+              error={errors.hospitalNumber} 
+              placeholder="26-XXXXXX" 
+              readOnly={!!editData} 
+            />
             
-            {/* Custom DOB with Picker */}
             <div className="space-y-1 relative">
               <label className="text-sm font-medium text-gabay-blue">Date of Birth <span className="text-red-500">*</span></label>
               <div className="relative">
@@ -209,6 +234,7 @@ export default function AddPatient({ isOpen, onClose, editData = null }) {
                   value={formData.dob} 
                   onChange={handleChange} 
                   placeholder="MM/DD/YYYY"
+                  // //INSTRUCTION FOR BACKEND: The 'dob' field is mapped from the user object. Ensure the API includes this field for existing users.
                   className={`w-full border-2 rounded-lg pl-4 pr-10 py-2 text-sm outline-none transition-all ${
                     errors.dob ? 'border-red-500 ring-1 ring-red-100' : 'border-gray-100 focus:border-gabay-teal'
                   }`} 
@@ -220,7 +246,6 @@ export default function AddPatient({ isOpen, onClose, editData = null }) {
                 >
                   <Calendar size={18} />
                 </button>
-                {/* Hidden Native Picker */}
                 <input 
                   ref={dateInputRef} 
                   type="date" 
@@ -249,7 +274,6 @@ export default function AddPatient({ isOpen, onClose, editData = null }) {
 
           {!editData ? (
             <div className="space-y-4 pt-2">
-              {/* Password */}
               <div className="relative space-y-1">
                 <label className="text-sm font-medium text-gabay-blue">Initial Password <span className="text-red-500">*</span></label>
                 <div className="relative">
@@ -261,7 +285,6 @@ export default function AddPatient({ isOpen, onClose, editData = null }) {
                 {errors.password && <p className="text-[10px] text-red-500 font-semibold px-1">{errors.password}</p>}
               </div>
 
-              {/* Confirm Password */}
               <div className="relative space-y-1">
                 <label className="text-sm font-medium text-gabay-blue">Confirm Password <span className="text-red-500">*</span></label>
                 <div className="relative">

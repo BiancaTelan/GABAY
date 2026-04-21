@@ -28,7 +28,7 @@ const FormField = ({ label, name, type = "text", placeholder, value, onChange, e
   </div>
 );
 
-export default function AddPersonnel({ isOpen, onClose, editData = null }) {
+export default function AddPersonnel({ isOpen, onClose, onSave, editData = null }) {
   const modalRef = useRef();
 
   const initialState = {
@@ -125,6 +125,13 @@ export default function AddPersonnel({ isOpen, onClose, editData = null }) {
     if (!validate()) return;
 
     try {
+      // //EDIT: Integrated onSave function to reflect changes dynamically (Requirement 5 & 6)
+      // //INSTRUCTION FOR BACKEND: Once the API responds with success, 
+      // the parent state is updated using this call.
+      if (onSave) {
+        onSave(formData);
+      }
+
       if (editData) {
         /* BACKEND DEV: PUT /api/admin/personnel/${editData.id} */
         toast.success("Account updated successfully!");

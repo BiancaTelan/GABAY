@@ -7,24 +7,26 @@ import toast from 'react-hot-toast';
 import AddPersonnel from '../../components/AddPersonnel';
 import DisableModal from '../../components/DisableModal';
 import ConfirmationModal from '../../components/ConfirmModal';
+// import { highlightMatch, exportToCSV } from '../../utils/transformers';
 
 // --- SAMPLE DATA ---
+// INSTRUCTION FOR BACKEND: Ensure the API returns a separate 'phone' field or similar for contact details.
 const rawData = [
-  { id: 'DOC001', role: 'DOCTOR', name: 'Zack Arias', dept: 'General IM', isSpecialty: false, schedule: 'M, W, F', email: 'zack@gmail.com', status: 'Active' },
-  { id: 'STF001', role: 'STAFF', name: 'Ana Batungbakal', dept: 'General IM', isSpecialty: false, schedule: 'T, TH', email: 'ana@gmail.com', status: 'Offline' },
-  { id: 'DOC002', role: 'DOCTOR', name: 'Bernice Castro', dept: 'Dermatology', isSpecialty: true, schedule: 'M, W, TH', email: 'bernice@gmail.com', status: 'Inactive' },
-  { id: 'STF002', role: 'STAFF', name: 'Carlos Dala', dept: 'IM - Pulmonology', isSpecialty: true, schedule: 'W, F', email: 'carlos@gmail.com', status: 'Deactivated' },
-  { id: 'ADM001', role: 'ADMIN', name: 'Dante Estacio', dept: 'N/A', isSpecialty: false, schedule: 'M, T, W', email: 'dante@gmail.com', status: 'Active' },
-  { id: 'DOC003', role: 'DOCTOR', name: 'Elena Fajardo', dept: 'General IM', isSpecialty: false, schedule: 'F', email: 'elena@gmail.com', status: 'Active' },
-  { id: 'STF003', role: 'STAFF', name: 'Gina Gomez', dept: 'Pediatrics', isSpecialty: true, schedule: 'M, T', email: 'gina@gmail.com', status: 'Active' },
-  { id: 'DOC004', role: 'DOCTOR', name: 'Harvey Isip', dept: 'Cardiology', isSpecialty: true, schedule: 'W, TF', email: 'harvey@gmail.com', status: 'Offline' },
-  { id: 'STF004', role: 'STAFF', name: 'Irene Javier', dept: 'General IM', isSpecialty: false, schedule: 'M-F', email: 'irene@gmail.com', status: 'Active' },
-  { id: 'DOC005', role: 'DOCTOR', name: 'Jojo Kasilag', dept: 'Neurology', isSpecialty: true, schedule: 'T, TH, S', email: 'jojo@gmail.com', status: 'Inactive' },
-  { id: 'DOC006', role: 'DOCTOR', name: 'Michael Gomez', dept: 'Pediatrics', isSpecialty: false, schedule: 'F', email: 'michael@gmail.com', status: 'Deactivated' },
-  { id: 'STF005', role: 'STAFF', name: 'Alex Simon', dept: 'Pediatrics', isSpecialty: true, schedule: 'M, T', email: 'alex@gmail.com', status: 'Inactive' },
-  { id: 'DOC007', role: 'DOCTOR', name: 'Inigo Bautista', dept: 'Dermatology', isSpecialty: true, schedule: 'T, TH', email: 'inigo@gmail.com', status: 'Offline' },
-  { id: 'ADM002', role: 'ADMIN', name: 'Rachel Mawac', dept: 'N/A', isSpecialty: false, schedule: 'M-F', email: 'rachel@gmail.com', status: 'Active' },
-  { id: 'ADM003', role: 'ADMIN', name: 'Chelly Redondo', dept: 'N/A', isSpecialty: false, schedule: 'TH, F', email: 'chelly@gmail.com', status: 'Active' },
+  { id: 'DOC001', role: 'DOCTOR', name: 'Zack Arias', dept: 'General IM', isSpecialty: false, phone: '09123456789', email: 'zack@gmail.com', status: 'Active' },
+  { id: 'STF001', role: 'STAFF', name: 'Ana Batungbakal', dept: 'General IM', isSpecialty: false, phone: '09223334444', email: 'ana@gmail.com', status: 'Offline' },
+  { id: 'DOC002', role: 'DOCTOR', name: 'Bernice Castro', dept: 'Dermatology', isSpecialty: true, phone: '09334445555', email: 'bernice@gmail.com', status: 'Inactive' },
+  { id: 'STF002', role: 'STAFF', name: 'Carlos Dala', dept: 'IM - Pulmonology', isSpecialty: true, phone: '09445556666', email: 'carlos@gmail.com', status: 'Deactivated' },
+  { id: 'ADM001', role: 'ADMIN', name: 'Dante Estacio', dept: 'N/A', isSpecialty: false, phone: '09556667777', email: 'dante@gmail.com', status: 'Active' },
+  { id: 'DOC003', role: 'DOCTOR', name: 'Elena Fajardo', dept: 'General IM', isSpecialty: false, phone: '09667778888', email: 'elena@gmail.com', status: 'Active' },
+  { id: 'STF003', role: 'STAFF', name: 'Gina Gomez', dept: 'Pediatrics', isSpecialty: true, phone: '09778889999', email: 'gina@gmail.com', status: 'Active' },
+  { id: 'DOC004', role: 'DOCTOR', name: 'Harvey Isip', dept: 'Cardiology', isSpecialty: true, phone: '09889990000', email: 'harvey@gmail.com', status: 'Offline' },
+  { id: 'STF004', role: 'STAFF', name: 'Irene Javier', dept: 'General IM', isSpecialty: false, phone: '09990001111', email: 'irene@gmail.com', status: 'Active' },
+  { id: 'DOC005', role: 'DOCTOR', name: 'Jojo Kasilag', dept: 'Neurology', isSpecialty: true, phone: '09112223333', email: 'jojo@gmail.com', status: 'Inactive' },
+  { id: 'DOC006', role: 'DOCTOR', name: 'Michael Gomez', dept: 'Pediatrics', isSpecialty: false, phone: '09224446666', email: 'michael@gmail.com', status: 'Deactivated' },
+  { id: 'STF005', role: 'STAFF', name: 'Alex Simon', dept: 'Pediatrics', isSpecialty: true, phone: '09335557777', email: 'alex@gmail.com', status: 'Inactive' },
+  { id: 'DOC007', role: 'DOCTOR', name: 'Inigo Bautista', dept: 'Dermatology', isSpecialty: true, phone: '09446668888', email: 'inigo@gmail.com', status: 'Offline' },
+  { id: 'ADM002', role: 'ADMIN', name: 'Rachel Mawac', dept: 'N/A', isSpecialty: false, phone: '09557779999', email: 'rachel@gmail.com', status: 'Active' },
+  { id: 'ADM003', role: 'ADMIN', name: 'Chelly Redondo', dept: 'N/A', isSpecialty: false, phone: '09668880000', email: 'chelly@gmail.com', status: 'Active' },
 ];
 
 export default function Personnel() {
@@ -32,6 +34,10 @@ export default function Personnel() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState([]);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+
+  // INSTRUCTION FOR BACKEND: Initially this will be [] and fetched via useEffect. 
+  // State updates below simulate real-time data refreshing after API calls.
+  const [personnelData, setPersonnelData] = useState(rawData);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDisableModalOpen, setIsDisableModalOpen] = useState(false);
@@ -43,9 +49,39 @@ export default function Personnel() {
     setIsModalOpen(true);       
   };
 
+  // INSTRUCTION FOR BACKEND: For 'Update' requests, ensure the payload accepts firstName, lastName, and contactNumber as separate keys.
   const handleEditClick = (person) => {
-    setSelectedPersonnel(person);
+    const nameParts = person.name.split(' ');
+    const fName = nameParts[0] || '';
+    const lName = nameParts.slice(1).join(' ') || '';
+
+    const mappedData = {
+      ...person,
+      firstName: fName,
+      lastName: lName,
+      contactNumber: person.phone, 
+      department: person.dept
+    };
+
+    setSelectedPersonnel(mappedData);
     setIsModalOpen(true);
+  };
+
+  // INSTRUCTION FOR BACKEND: This simulates a successful response from your PUT /api/personnel/:id endpoint.
+  const handleSavePersonnel = (updatedData) => {
+    setPersonnelData((prev) => 
+      prev.map((p) => 
+        p.id === updatedData.id 
+          ? { 
+              ...p, 
+              ...updatedData, 
+              name: `${updatedData.firstName} ${updatedData.lastName}`.trim(),
+              phone: updatedData.contactNumber,
+              dept: updatedData.department
+            } 
+          : p
+      )
+    );
   };
 
   const handleDisableClick = (person) => {
@@ -61,12 +97,18 @@ export default function Personnel() {
   const handleDisableConfirm = (reason) => {
     /* BACKEND DEV: PATCH /api/admin/personnel/disable/${selectedPersonnel.id} 
         Body: { reason } */
+    setPersonnelData(prev => 
+      prev.map(p => p.id === selectedPersonnel.id ? { ...p, status: 'Deactivated' } : p)
+    );
     toast.success(`${selectedPersonnel.name}'s account has been deactivated.`);
     console.log(`Deactivation Reason: ${reason}`);
   };
 
   const handleReactivateConfirm = () => {
     /* BACKEND DEV: PATCH /api/admin/personnel/reactivate/${selectedPersonnel.id} */
+    setPersonnelData(prev => 
+      prev.map(p => p.id === selectedPersonnel.id ? { ...p, status: 'Offline' } : p)
+    );
     toast.success(`${selectedPersonnel.name}'s account has been restored.`);
     setIsReactivateModalOpen(false);
   };
@@ -82,7 +124,7 @@ export default function Personnel() {
   const itemsPerPage = 10;
 
   const filteredData = useMemo(() => {
-    let result = rawData.filter(item => 
+    let result = personnelData.filter(item => 
       item.name.toLowerCase().includes(search.toLowerCase()) || 
       item.id.toLowerCase().includes(search.toLowerCase())
     );
@@ -107,7 +149,7 @@ export default function Personnel() {
     });
 
     return result;
-  }, [search, filters]);
+  }, [search, filters, personnelData]);
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const pagedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -156,7 +198,8 @@ export default function Personnel() {
         </div>
 
         <div className="flex flex-row gap-2 w-full lg:w-auto">
-          <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium hover:bg-teal-50 transition-colors">
+          <button onClick={() => exportToCSV(filteredData, 'Personnel_List.csv')}
+          className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium hover:bg-teal-50 transition-colors">
             <Download size={16} /> Export as CSV
           </button>
           
@@ -293,7 +336,7 @@ export default function Personnel() {
                 <th className="px-4 py-4 text-[12px] md:text-xs font-poppins font-bold uppercase tracking-wider">Role</th>
                 <th className="px-4 py-4 text-[12px] md:text-xs font-poppins font-bold uppercase tracking-wider">Name</th>
                 <th className="px-4 py-4 text-[12px] md:text-xs font-poppins font-bold uppercase tracking-wider">Department</th>
-                <th className="px-4 py-4 text-[12px] md:text-xs font-poppins font-bold uppercase tracking-wider">Schedule</th>
+                <th className="px-4 py-4 text-[12px] md:text-xs font-poppins font-bold uppercase tracking-wider">Contact Number</th>
                 <th className="px-4 py-4 text-[12px] md:text-xs font-poppins font-bold uppercase tracking-wider">Email</th>
                 <th className="px-4 py-4 text-[12px] md:text-xs font-poppins font-bold uppercase tracking-wider">Status</th>
                 <th className="px-4 py-4 text-[12px] md:text-xs font-poppins font-bold uppercase tracking-wider text-center">Actions</th>
@@ -325,7 +368,7 @@ export default function Personnel() {
                   </td>
                   <td className="px-4 py-4 text-xs font-poppins md:text-sm text-gabay-blue font-medium">{person.name}</td>
                   <td className="px-4 py-4 text-xs font-poppins md:text-sm text-gray-700">{person.dept}</td>
-                  <td className="px-4 py-4 text-xs font-poppins md:text-sm text-gray-700">{person.schedule}</td>
+                  <td className="px-4 py-4 text-xs font-poppins md:text-sm text-gray-700">{person.phone}</td>
                   <td className="px-4 py-4 text-xs font-poppins md:text-sm text-gray-500">{person.email}</td>
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-1.5 text-[11px] uppercase md:text-[12px] font-poppins font-medium text-gray-700">
@@ -342,6 +385,7 @@ export default function Personnel() {
                       <button 
                         onClick={() => handleEditClick(person)}
                         className="p-1.5 text-gabay-teal rounded-lg transition-colors hover:scale-110"
+                        title="Edit"
                       >
                         <Edit3 size={18}/>
                       </button>
@@ -411,6 +455,7 @@ export default function Personnel() {
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         editData={selectedPersonnel} 
+        onSave={handleSavePersonnel} 
       />
 
       <DisableModal 

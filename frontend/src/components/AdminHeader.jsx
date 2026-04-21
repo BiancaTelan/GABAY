@@ -1,6 +1,6 @@
 import { Bell, Calendar, UserCircle, Menu } from 'lucide-react';
 import gabayLogo from '../assets/gabayLogo.png';
-import { useContext } from 'react';
+import { useState, useContext } from 'react';
 import { AuthContext } from '../authContext';
 import { useNavigate, useLocation } from 'react-router-dom'; 
 
@@ -10,6 +10,8 @@ export default function AdminHeader({ isCollapsed, setIsCollapsed, isLoggedIn })
   const location = useLocation();
   
   const isActive = (path) => location.pathname === path;
+  // INSTRUCTION FOR BACKEND: Replace this mock state with data from your Notifications API
+  const [unreadCount, setUnreadCount] = useState(3);
 
   const handleNav = (path) => {
     navigate(path);
@@ -33,17 +35,20 @@ export default function AdminHeader({ isCollapsed, setIsCollapsed, isLoggedIn })
       </div>
 
       <div className="flex items-center gap-2 md:gap-4">
-        {/* Placeholder / Spacer */}
         <button onClick={() => navigate('/admin/a-calendar')} 
         className="p-2 text-gabay-blue hover:bg-blue-50 rounded-lg transition">
           <Calendar size={23} />
         </button>
         
-        <button onClick={() => navigate('/admin/a-notifs')} 
-        className="p-2 text-gabay-blue hover:bg-blue-50 rounded-lg transition relative">
+        <button 
+          onClick={() => { navigate('/admin/a-notifs');
+            setUnreadCount(0); 
+          }} 
+          className="p-2 text-gabay-blue hover:bg-blue-50 rounded-lg transition relative">
           <Bell size={23} />
-          {/* Notification Dot */}
-          <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 border-2 border-white rounded-full"></span>
+          {unreadCount > 0 && (
+            <span className="absolute top-2 right-2.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
+          )}
         </button>
 
         {/* Account Button */}

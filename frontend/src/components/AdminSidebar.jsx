@@ -3,7 +3,7 @@ import React, { useState, useContext } from 'react';
 import { 
   LayoutDashboard, Users, UserRoundCog, Building2, 
   CalendarCheck, Activity, Terminal, FileBarChart, 
-  LogOut, Settings, Menu 
+  LogOut, Settings, Menu, Info
 } from 'lucide-react';
 import { AuthContext } from '../authContext';
 import ConfirmationModal from '../components/confirmModal';
@@ -91,8 +91,8 @@ export default function AdminSidebar({ isCollapsed, setIsCollapsed }) {
 
       <div className="px-4 mt-auto pt-5 border-t border-gray-100 space-y-1">
         <button className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2 w-full font-poppins text-gray-500 hover:text-gray-900 text-sm transition-all`}>
-          <Settings size={22} /> 
-          {!isCollapsed && <span>Settings</span>}
+          <Info size={22} /> 
+          {!isCollapsed && <span>Info</span>}
         </button>
         <button 
           onClick={openLogoutModal}

@@ -8,8 +8,8 @@ import toast from 'react-hot-toast';
 import AddDepartment from '../../components/AddDepartment';
 import DisableModal from '../../components/DisableModal';
 import ConfirmationModal from '../../components/ConfirmModal';
+// import { highlightMatch, exportToCSV } from '../../utils/transformers';
 
-// --- SAMPLE DATA (Added 'status' field) ---
 const rawDeptData = [
   { id: 'GEN001', name: 'General IM', type: 'GENERAL', doctors: 11, staff: 5, usedSlots: 7, totalSlots: 25, status: 'Active' },
   { id: 'SPEC001', name: 'IM - Cardiology', type: 'SPECIALTY', doctors: 5, staff: 2, usedSlots: 3, totalSlots: 25, status: 'Active' },
@@ -29,6 +29,8 @@ export default function Departments() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   
+  const [departments, setDepartments] = useState(rawDeptData);
+
   const [filters, setFilters] = useState({
     sortKey: 'name', 
     sortOrder: 'asc',
@@ -47,8 +49,41 @@ export default function Departments() {
     setIsAddModalOpen(true);
   };
 
+  const handleEditClick = (dept) => {
+    const mappedData = {
+      ...dept,
+      departmentName: dept.name,
+      departmentType: dept.type,
+      staffCount: dept.staff,
+      doctorCount: dept.doctors,
+      slotCapacity: dept.totalSlots
+    };
+    setSelectedDept(mappedData);
+    setIsAddModalOpen(true);
+  };
+
+  // //EDIT: Function to handle local state update after saving in the modal
+  // //INSTRUCTION FOR BACKEND: Once the API is integrated, this function should be called 
+  // ONLY after a successful response from your PUT/PATCH endpoint.
+  const handleSaveDepartment = (updatedData) => {
+    setDepartments((prev) => 
+      prev.map((d) => 
+        d.id === updatedData.id 
+          ? { 
+              ...d, 
+              name: updatedData.departmentName, 
+              type: updatedData.departmentType,
+              staff: updatedData.staffCount,
+              doctors: updatedData.doctorCount,
+              totalSlots: updatedData.slotCapacity
+            } 
+          : d
+      )
+    );
+  };
+
   const filteredData = useMemo(() => {
-    let result = rawDeptData.filter(item => 
+    let result = departments.filter(item => 
       item.name.toLowerCase().includes(search.toLowerCase()) || 
       item.id.toLowerCase().includes(search.toLowerCase())
     );
@@ -67,7 +102,7 @@ export default function Departments() {
     });
 
     return result;
-  }, [search, filters]);
+  }, [search, filters, departments]);
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const pagedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -76,13 +111,14 @@ export default function Departments() {
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedIds(pagedData.map(i => i.id));
+      setSelectedIds(pagedData.filter(i => i.status !== 'Deactivated').map(i => i.id));
     } else {
       setSelectedIds([]);
     }
   };
 
-  const toggleSelection = (id) => {
+  const toggleSelection = (id, status) => {
+    if (status === 'Deactivated') return;
     setSelectedIds(prev => 
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
@@ -99,15 +135,17 @@ export default function Departments() {
   };
 
   const handleDisableConfirm = (reason) => {
+    setDepartments(prev => prev.map(d => d.id === selectedDept.id ? { ...d, status: 'Deactivated' } : d));
     toast.success(`${selectedDept.name} disabled: ${reason}`);
-    /* BACKEND DEV: PATCH /api/admin/departments/disable/${selectedDept.id} */
   };
 
   const handleReactivateConfirm = () => {
-    /* BACKEND DEV: PATCH /api/admin/departments/reactivate/${selectedDept.id} */
+    setDepartments(prev => prev.map(d => d.id === selectedDept.id ? { ...d, status: 'Active' } : d));
     toast.success(`${selectedDept.name} has been reactivated.`);
     setIsReactivateModalOpen(false);
   };
+
+  const getDeactivatedStyle = (status) => status === 'Deactivated' ? 'opacity-40 grayscale pointer-events-none' : '';
 
   return (
     <div className="space-y-6">
@@ -139,7 +177,8 @@ export default function Departments() {
         </div>
 
         <div className="flex flex-row gap-2 w-full lg:w-auto">
-          <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium hover:bg-teal-50 transition-colors">
+          <button onClick={() => exportToCSV(filteredData, 'Departments_List.csv')}
+          className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium hover:bg-teal-50 transition-colors">
             <Download size={16} /> Export as CSV
           </button>
           
@@ -164,6 +203,7 @@ export default function Departments() {
                       <option value="id">Department ID</option>
                       <option value="name">Department Name</option>
                       <option value="usedSlots">Slot Capacity</option>
+                      <option value="status">Deactivated</option>
                     </select>
                     <select 
                       value={filters.sortOrder}
@@ -216,7 +256,7 @@ export default function Departments() {
                   <input 
                     type="checkbox" 
                     onChange={handleSelectAll}
-                    checked={selectedIds.length === pagedData.length && pagedData.length > 0}
+                    checked={selectedIds.length === pagedData.filter(i => i.status !== 'Deactivated').length && pagedData.length > 0}
                     className="w-4 h-4 bg-gabay-blue"
                   />
                 </th>
@@ -231,51 +271,68 @@ export default function Departments() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {pagedData.map((dept) => (
-                <tr key={dept.id} className="hover:bg-gray-50 transition-colors" onClick={() => toggleSelection(dept.id)}>
+                <tr 
+                  key={dept.id} 
+                  className={`transition-colors ${dept.status === 'Deactivated' ? 'bg-gray-50/50' : 'hover:bg-gray-50 cursor-pointer'}`} 
+                  onClick={() => toggleSelection(dept.id, dept.status)}
+                >
                   <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}>
-                    <input type="checkbox" checked={selectedIds.includes(dept.id)} 
-                    onChange={() => toggleSelection(dept.id)} className="w-4 h-4 bg-gabay-blue" />
+                    <input 
+                      type="checkbox" 
+                      disabled={dept.status === 'Deactivated'}
+                      checked={selectedIds.includes(dept.id)} 
+                      onChange={() => toggleSelection(dept.id, dept.status)} 
+                      className="w-4 h-4 bg-gabay-blue disabled:opacity-30" 
+                    />
                   </td>
-                  <td className="px-4 py-4 text-sm text-gray-700 font-medium font-poppins">{dept.id}</td>
-                  <td className="px-4 py-4 text-sm font-poppins font-medium text-gabay-blue">{dept.name}</td>
-                  <td className="px-4 py-4 text-center">
+                  
+                  <td className={`px-4 py-4 text-sm text-gray-700 font-medium font-poppins ${getDeactivatedStyle(dept.status)}`}>{dept.id}</td>
+                  <td className={`px-4 py-4 text-sm font-poppins font-medium text-gabay-blue ${getDeactivatedStyle(dept.status)}`}>{dept.name}</td>
+                  <td className={`px-4 py-4 text-center ${getDeactivatedStyle(dept.status)}`}>
                     <span className={`px-3 py-0.5 rounded-full text-[11px] font-poppins font-bold tracking-wider ${
                       dept.type === 'SPECIALTY' ? 'bg-orange-50 text-gabay-orange border border-orange-400' : 'bg-blue-50 text-blue-600 border border-blue-500'
                     }`}>
                       {dept.type}
                     </span>
                   </td>
-                  <td className="px-4 py-4 text-center text-sm text-gray-700 font-poppins">{dept.doctors}</td>
-                  <td className="px-4 py-4 text-center text-sm text-gray-700 font-poppins">{dept.staff}</td>
-                  <td className="px-4 py-4 text-center text-sm font-poppins font-semibold text-gray-600">
+                  <td className={`px-4 py-4 text-center text-sm text-gray-700 font-poppins ${getDeactivatedStyle(dept.status)}`}>{dept.doctors}</td>
+                  <td className={`px-4 py-4 text-center text-sm text-gray-700 font-poppins ${getDeactivatedStyle(dept.status)}`}>{dept.staff}</td>
+                  <td className={`px-4 py-4 text-center text-sm font-poppins font-semibold text-gray-600 ${getDeactivatedStyle(dept.status)}`}>
                     {dept.usedSlots}/{dept.totalSlots}
                   </td>
-                  <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+
+                  <td className="px-4 py-4 relative z-10" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-center gap-3">
                     <button 
                       onClick={(e) => { 
                         e.stopPropagation(); 
-                        setSelectedDept({ ...dept, departmentName: dept.name }); 
-                        setIsAddModalOpen(true); 
+                        handleEditClick(dept); 
                       }}
                       className="text-gabay-teal hover:scale-110 transition-transform"
+                      title="Edit"
                     >
                       <Edit3 size={18}/>
                     </button>
                     
                     {dept.status === 'Deactivated' ? (
                       <button 
-                        onClick={() => handleReactivateClick(dept)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReactivateClick(dept);
+                        }}
                         className="text-gabay-green hover:scale-110 transition-transform"
-                        title="Reactivate Department"
+                        title="Reactivate"
                       >
                         <CircleCheckBig size={18}/>
                       </button>
                     ) : (
                       <button 
-                        onClick={() => handleDisableClick(dept)}
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          handleDisableClick(dept); 
+                        }}
                         className="text-red-400 hover:scale-110 transition-transform"
-                        title="Disable Department"
+                        title="Disable"
                       >
                         <MinusCircle size={18}/>
                       </button>
@@ -287,7 +344,6 @@ export default function Departments() {
             </tbody>
           </table>
         </div>
-
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
            <div className="flex items-center gap-2">
               <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-1.5 rounded hover:bg-white disabled:opacity-30"><ChevronLeft size={20}/></button>
@@ -298,27 +354,15 @@ export default function Departments() {
         </div>
       </div>
 
+      {/* //EDIT: Passed onSave function to AddDepartment component */}
       <AddDepartment 
         isOpen={isAddModalOpen} 
         onClose={() => setIsAddModalOpen(false)} 
         editData={selectedDept} 
+        onSave={handleSaveDepartment} 
       />
-      <DisableModal 
-        isOpen={isDisableModalOpen}
-        onClose={() => setIsDisableModalOpen(false)}
-        title={`Disable ${selectedDept?.name}`}
-        message="Disabling this department prevents patients from booking new appointments here."
-        onConfirm={handleDisableConfirm}
-      />
-
-      <ConfirmationModal 
-        isOpen={isReactivateModalOpen}
-        onClose={() => setIsReactivateModalOpen(false)}
-        onConfirm={handleReactivateConfirm}
-        title="Reactivate Department"
-        message={`Are you sure you want to reactivate the ${selectedDept?.name} department? Patients will be able to book appointments again.`}
-        type="info" 
-      />
+      <DisableModal isOpen={isDisableModalOpen} onClose={() => setIsDisableModalOpen(false)} title={`Disable ${selectedDept?.name}`} message={`Are you sure you want to deactivate the ${selectedDept?.name} department?`} onConfirm={handleDisableConfirm} />
+      <ConfirmationModal isOpen={isReactivateModalOpen} onClose={() => setIsReactivateModalOpen(false)} onConfirm={handleReactivateConfirm} title="Reactivate Department" message={`Are you sure you want to reactivate the ${selectedDept?.name} department?`} type="info" />
     </div>
   );
 }

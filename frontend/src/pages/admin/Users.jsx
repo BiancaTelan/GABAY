@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-// EDIT 1: Added missing imports for modals and toast
 import toast from 'react-hot-toast';
 import AddPatient from '../../components/AddPatient';
 import DisableModal from '../../components/DisableModal';
@@ -8,6 +7,7 @@ import {
   Search, Download, Funnel, Plus, 
   Edit3, MinusCircle, ChevronLeft, ChevronRight, CircleCheckBig
 } from 'lucide-react';
+// import { highlightMatch, exportToCSV } from '../../utils/transformers';
 
 // --- SAMPLE DATA ---
 const rawUsersData = [
@@ -29,8 +29,10 @@ export default function Users() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
 
+  // //EDIT: Moved data to state to allow automatic updates on the table (Requirement 6)
+  const [usersData, setUsersData] = useState(rawUsersData);
+
   const [isPatientModalOpen, setIsPatientModalOpen] = useState(false);
-  // EDIT 2: Added states for Disable and Reactivate modals
   const [isDisableModalOpen, setIsDisableModalOpen] = useState(false);
   const [isReactivateModalOpen, setIsReactivateModalOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
@@ -40,10 +42,42 @@ export default function Users() {
     setIsPatientModalOpen(true);
   };
 
-  // EDIT 3: Added logic handlers for Edit and Disable/Reactivate
+  // //EDIT: Updated handleEditClick to split name and map phone/id/dob (Requirements 1, 2, 3, 4)
   const handleEditClick = (user) => {
-    setSelectedPatient(user);
+    const nameParts = user.name.split(' ');
+    const fName = nameParts[0] || '';
+    const lName = nameParts.slice(1).join(' ') || '';
+
+    const mappedData = {
+      ...user,
+      firstName: fName,
+      lastName: lName,
+      contactNumber: user.phone, // Requirement 4
+      hospitalNumber: user.id,   // Requirement 3: Passed as 'hospitalNumber' so AddPatient can set field to View Only
+      // //INSTRUCTION FOR BACKEND: Connect the 'dob' field from the database to this object
+      dob: user.dob || ''        // Requirement 2
+    };
+
+    setSelectedPatient(mappedData);
     setIsPatientModalOpen(true);
+  };
+
+  // //EDIT: Added handleSaveUser to reflect changes on the table automatically (Requirement 5 & 6)
+  // //INSTRUCTION FOR BACKEND: This function should be triggered after a successful PUT/PATCH API call.
+  const handleSaveUser = (updatedData) => {
+    setUsersData((prev) => 
+      prev.map((u) => 
+        u.id === updatedData.hospitalNumber 
+          ? { 
+              ...u, 
+              ...updatedData, 
+              name: `${updatedData.firstName} ${updatedData.lastName}`.trim(),
+              phone: updatedData.contactNumber,
+              // dob is automatically included via ...updatedData
+            } 
+          : u
+      )
+    );
   };
 
   const handleDisableClick = (user) => {
@@ -57,12 +91,14 @@ export default function Users() {
   };
 
   const handleDisableConfirm = (reason) => {
-    /* BACKEND DEV: PATCH /api/admin/users/disable/${selectedPatient.id} */
-    toast.success(`${selectedPatient.name}'s account has been deactivated: ${reason}`);
+    // //EDIT: Dynamic status update to Deactivated
+    setUsersData(prev => prev.map(u => u.id === selectedPatient.id ? { ...u, status: 'Deactivated' } : u));
+    toast.success(`${selectedPatient.name}'s account has been deactivated.`);
   };
 
   const handleReactivateConfirm = () => {
-    /* BACKEND DEV: PATCH /api/admin/users/reactivate/${selectedPatient.id} */
+    // //EDIT: Dynamic status update to Offline (Restored)
+    setUsersData(prev => prev.map(u => u.id === selectedPatient.id ? { ...u, status: 'Offline' } : u));
     toast.success(`${selectedPatient.name}'s account has been reactivated.`);
     setIsReactivateModalOpen(false);
   };
@@ -77,8 +113,9 @@ export default function Users() {
 
   const itemsPerPage = 10;
 
+  // //EDIT: useMemo now tracks usersData state instead of rawUsersData
   const filteredData = useMemo(() => {
-    let result = rawUsersData.filter(item => 
+    let result = usersData.filter(item => 
       item.name.toLowerCase().includes(search.toLowerCase()) || 
       item.id.toLowerCase().includes(search.toLowerCase())
     );
@@ -97,7 +134,7 @@ export default function Users() {
     });
 
     return result;
-  }, [search, filters]);
+  }, [search, filters, usersData]);
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const pagedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -144,7 +181,8 @@ export default function Users() {
         </div>
 
         <div className="flex flex-row gap-2 w-full lg:w-auto">
-          <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium hover:bg-teal-50 transition-colors">
+          <button onClick={() => exportToCSV(filteredData, 'Users_List.csv')}
+          className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gabay-teal text-gabay-teal rounded-lg text-sm font-poppins font-medium hover:bg-teal-50 transition-colors">
             <Download size={16} /> Export as CSV
           </button>
           
@@ -161,20 +199,12 @@ export default function Users() {
                 <div>
                   <p className="text-[10px] font-bold font-poppins text-gray-400 uppercase tracking-widest mb-3">Sort By</p>
                   <div className="flex flex-col gap-2">
-                    <select 
-                      value={filters.sortKey}
-                      className="w-full text-sm font-poppins border rounded-lg p-2 outline-none"
-                      onChange={(e) => setFilters({...filters, sortKey: e.target.value})}
-                    >
+                    <select value={filters.sortKey} className="w-full text-sm font-poppins border rounded-lg p-2 outline-none" onChange={(e) => setFilters({...filters, sortKey: e.target.value})}>
                       <option value="name">Name</option>
                       <option value="id">Hospital Number</option>
                       <option value="joinDate">Date Joined</option>
                     </select>
-                    <select 
-                      value={filters.sortOrder}
-                      className="w-full text-sm font-poppins border rounded-lg p-2 outline-none"
-                      onChange={(e) => setFilters({...filters, sortOrder: e.target.value})}
-                    >
+                    <select value={filters.sortOrder} className="w-full text-sm font-poppins border rounded-lg p-2 outline-none" onChange={(e) => setFilters({...filters, sortOrder: e.target.value})}>
                       <option value="asc">Ascending (A-Z / Oldest)</option>
                       <option value="desc">Descending (Z-A / Newest)</option>
                     </select>
@@ -210,9 +240,7 @@ export default function Users() {
                 </div>
 
                 <div className="pt-2 flex gap-2"> 
-                  <button onClick={() => 
-                    setFilters({ sortKey: 'name', sortOrder: 'asc', genders: [], statuses: [] })} 
-                    className="flex-1 py-2 text-xs border border-gray-400 rounded-lg font-poppins font-medium text-gray-400 hover:text-red-500">Reset All</button>
+                  <button onClick={() => setFilters({ sortKey: 'name', sortOrder: 'asc', genders: [], statuses: [] })} className="flex-1 py-2 text-xs border border-gray-400 rounded-lg font-poppins font-medium text-gray-400 hover:text-red-500">Reset All</button>
                   <button onClick={() => setShowFilterDropdown(false)} className="flex-1 py-2 bg-gabay-blue text-white rounded-lg text-xs font-poppins font-medium hover:bg-opacity-90">Apply</button>
                 </div>
               </div>
@@ -259,8 +287,7 @@ export default function Users() {
                   <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gray-700">{user.joinDate}</td>
                   <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-center gap-2">
-                      {/* EDIT 4: Wired up Edit and Status Toggle */}
-                      <button onClick={() => handleEditClick(user)} className="p-1.5 text-gabay-teal rounded-lg transition-colors hover:scale-110"><Edit3 size={18}/></button>
+                      <button onClick={() => handleEditClick(user)} className="p-1.5 text-gabay-teal rounded-lg transition-colors hover:scale-110" title="Edit"><Edit3 size={18}/></button>
                       
                       {user.status === 'Deactivated' ? (
                         <button onClick={() => handleReactivateClick(user)} className="p-1.5 text-gabay-green rounded-lg transition-colors hover:scale-110" title="Reactivate"><CircleCheckBig size={18}/></button>
@@ -291,9 +318,10 @@ export default function Users() {
         isOpen={isPatientModalOpen} 
         onClose={() => setIsPatientModalOpen(false)} 
         editData={selectedPatient} 
+        // //EDIT: Passed handleSaveUser function (Requirement 5)
+        onSave={handleSaveUser}
       />
 
-      {/* EDIT 5: Placed the Status-related Modals */}
       <DisableModal 
         isOpen={isDisableModalOpen}
         onClose={() => setIsDisableModalOpen(false)}

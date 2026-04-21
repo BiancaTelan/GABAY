@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ReactDOM from 'react-dom';
 
-const NAME_REGEX = /^[A-Za-z\s]+$/;
+const NAME_REGEX = /^[A-Za-z\s\-]+$/;
 
 const FormField = ({ label, name, type = "text", placeholder, value, onChange, error, children }) => (
   <div className="space-y-1">
@@ -27,7 +27,7 @@ const FormField = ({ label, name, type = "text", placeholder, value, onChange, e
   </div>
 );
 
-export default function AddDepartment({ isOpen, onClose, editData = null }) {
+export default function AddDepartment({ isOpen, onClose, onSave, editData = null }) {
   const modalRef = useRef();
 
   const initialState = {
@@ -59,7 +59,7 @@ export default function AddDepartment({ isOpen, onClose, editData = null }) {
     let finalValue = value;
 
     if (name === 'departmentName') {
-      finalValue = value.replace(/[^A-Za-z\s]/g, '');
+      finalValue = value.replace(/[^A-Za-z\s\-]/g, '');
     }
 
     setFormData(prev => ({ ...prev, [name]: finalValue }));
@@ -72,7 +72,7 @@ export default function AddDepartment({ isOpen, onClose, editData = null }) {
     if (!formData.departmentName.trim()) {
       newErrors.departmentName = "This field is required";
     } else if (!NAME_REGEX.test(formData.departmentName)) {
-      newErrors.departmentName = "Alphabetical characters only";
+      newErrors.departmentName = "Letters, spaces, and dashes only";
     }
 
     if (parseInt(formData.staffCount) < 1) {
@@ -102,6 +102,13 @@ export default function AddDepartment({ isOpen, onClose, editData = null }) {
     if (!validate()) return;
 
     try {
+      // //EDIT: Triggering the onSave function to update the parent table state
+      // //INSTRUCTION FOR BACKEND: For edit mode, 'formData' includes the 'id' of the record.
+      // Call this function only after a successful 200 OK from the server.
+      if (onSave) {
+        onSave(formData);
+      }
+
       if (editData) {
         /* BACKEND DEV: PUT /api/admin/departments/${editData.id} */
         toast.success("Department updated successfully!");
@@ -130,13 +137,13 @@ export default function AddDepartment({ isOpen, onClose, editData = null }) {
           <X size={20} />
         </button>
 
-        <h2 className="text-2xl md:text-3xl font-bold font-montserrat text-gabay-teal text-center mb-8 md:mb-8">
+        <h2 className="text-2xl md:text-3xl font-bold font-montserrat text-gabay-teal text-center mb-8 md:mb-8 text-gabay-teal">
           Department Information
         </h2>
 
         <form onSubmit={handleSubmit} noValidate className="space-y-6">
           {/* Department Name */}
-          <FormField label="Department Name" name="departmentName" value={formData.departmentName} onChange={handleChange} error={errors.departmentName} placeholder="Rheumatology" />
+          <FormField label="Department Name" name="departmentName" value={formData.departmentName} onChange={handleChange} error={errors.departmentName} placeholder="New Department" />
 
           {/* Department Type */}
           <FormField label="Department Type" name="departmentType" error={errors.departmentType}>
