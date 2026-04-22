@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Eye, Plus, X, Check, Edit2 } from 'lucide-react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, isSameDay, addDays } from 'date-fns';
+import AddEvent from '../../components/AddEvent';
 
 export default function AdminCalendar() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -10,6 +11,9 @@ export default function AdminCalendar() {
   const [isEditingCapacity, setIsEditingCapacity] = useState(false);
   
   const modalRef = useRef(null);
+
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  const [modalDefaultType, setModalDefaultType] = useState('EVENT');
 
   const [appointments, setAppointments] = useState([]);
   const [holidays, setHolidays] = useState([]);
@@ -147,7 +151,7 @@ export default function AdminCalendar() {
             
             <div className="mt-1 space-y-1 flex-1 overflow-hidden">
               {holiday && (
-                <div className="bg-orange-400 text-white text-[7px] md:text-[9px] p-0.5 md:p-1 rounded font-medium text-center leading-tight uppercase truncate">
+                <div className="bg-gabay-red text-white text-[7px] md:text-[9px] p-0.5 md:p-1 rounded font-medium text-center leading-tight uppercase truncate">
                   {holiday.title}
                 </div>
               )}
@@ -165,7 +169,7 @@ export default function AdminCalendar() {
             
             {isSelected && (
               <button onClick={(e) => { e.stopPropagation(); setIsModalOpen(true); }} className="absolute top-1 right-1 p-1 bg-gabay-blue/80 text-white rounded-full hover:bg-gabay-blue transition-all">
-                <Eye size={12} />
+                <Eye size={17} />
               </button>
             )}
           </div>
@@ -191,7 +195,7 @@ export default function AdminCalendar() {
       <div className="mt-4 flex flex-row justify-between items-center gap-2">
         
         {/* LEFT: Slots */}
-        <div className="flex items-center gap-1.5 text-gabay-teal font-semibold text-[10px] sm:text-xs md:text-sm">
+        <div className="flex items-center gap-1.5 text-gabay-teal font-semibold text-[10px] sm:text-base md:text-lg">
           <span className="whitespace-nowrap">Daily Capacity:</span>
           <div className="flex items-center gap-1">
             <input 
@@ -204,18 +208,18 @@ export default function AdminCalendar() {
               }`}
             />
             {!isEditingCapacity ? (
-              <button onClick={() => setIsEditingCapacity(true)} className="text-gabay-teal p-1 border border-gabay-teal rounded hover:bg-teal-50"><Edit2 size={12}/></button>
+              <button onClick={() => setIsEditingCapacity(true)} className="text-gabay-teal p-1 border border-gabay-teal rounded hover:bg-teal-50"><Edit2 size={15}/></button>
             ) : (
               <div className="flex gap-1">
-                <button onClick={() => setIsEditingCapacity(false)} className="text-orange-500"><X size={12}/></button>
-                <button onClick={() => setIsEditingCapacity(false)} className="text-green-500"><Check size={12}/></button>
+                <button onClick={() => setIsEditingCapacity(false)} className="text-orange-500"><X size={17}/></button>
+                <button onClick={() => setIsEditingCapacity(false)} className="text-green-500"><Check size={17}/></button>
               </div>
             )}
           </div>
         </div>
 
         {/* RIGHT: Go to Month */}
-        <div className="flex items-center gap-1.5 text-gray-400 font-semibold text-[10px] sm:text-xs md:text-sm">
+        <div className="flex items-center gap-1.5 text-gray-400 font-semibold text-[10px] sm:text-base md:text-lg">
           <span className="whitespace-nowrap uppercase tracking-tighter">Go to:</span>
           <input 
             type="text" 
@@ -250,7 +254,7 @@ export default function AdminCalendar() {
 
             {(selectedDayHoliday || selectedDayEvent) && (
               <div className="mb-6 flex flex-wrap justify-center gap-2">
-                {selectedDayHoliday && <span className="px-3 py-1 bg-orange-50 text-orange-500 text-xs font-bold rounded-full uppercase tracking-wider border border-orange-300">{selectedDayHoliday.title}</span>}
+                {selectedDayHoliday && <span className="px-3 py-1 bg-red-50 text-gabay-red text-xs font-bold rounded-full uppercase tracking-wider border border-gabay-red">{selectedDayHoliday.title}</span>}
                 {selectedDayEvent && <span className="px-3 py-1 bg-teal-50 text-teal-600 text-xs font-bold rounded-full uppercase tracking-wider border border-teal-100">{selectedDayEvent.title}</span>}
               </div>
             )}
@@ -279,13 +283,13 @@ export default function AdminCalendar() {
 
             <div className="flex flex-col gap-2">
               <button 
-                onClick={handleAddHoliday}
-                className="w-full py-1.5 bg-orange-500 text-white rounded-full font-semibold font-poppins uppercase text-md hover:bg-orange-600 transition-colors shadow-sm"
+                onClick={() => { setModalDefaultType('HOLIDAY'); setIsEventModalOpen(true); }}
+                className="w-full py-1.5 bg-gabay-red text-white rounded-full font-semibold font-poppins uppercase text-md hover:bg-red-700 transition-colors shadow-sm"
               >
                 + Mark as Holiday
               </button>
               <button 
-                onClick={handleAddEvent}
+                onClick={() => { setModalDefaultType('EVENT'); setIsEventModalOpen(true); }}
                 className="w-full py-1.5 bg-gabay-teal text-white rounded-full font-semibold font-poppins uppercase text-md hover:bg-teal-600 transition-colors shadow-sm"
               >
                 + Add Event
@@ -294,6 +298,12 @@ export default function AdminCalendar() {
           </div>
         </div>
       )}
+      <AddEvent 
+              isOpen={isEventModalOpen} 
+              onClose={() => setIsEventModalOpen(false)} 
+              onSave={(data) => console.log("New Event Data:", data)} 
+              defaultType={modalDefaultType}
+            />
     </div>
   );
 }
