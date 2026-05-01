@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import React, { useState, useContext } from 'react';
 import { 
   LayoutDashboard, Users, UserRoundCog, Building2, 
@@ -12,6 +12,7 @@ export default function AdminSidebar({ isCollapsed, setIsCollapsed }) {
 
   const [modalConfig, setModalConfig] = useState({ isOpen: false, type: '', title: '', message: '', onConfirm: null });
   const { logout } = useContext(AuthContext);
+  const navigate = useNavigate();
   const openLogoutModal = () => {
     setModalConfig({
       isOpen: true,
@@ -90,9 +91,9 @@ export default function AdminSidebar({ isCollapsed, setIsCollapsed }) {
       </div>
 
       <div className="px-4 mt-auto pt-5 border-t border-gray-100 space-y-1">
-        <button className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2 w-full font-poppins text-gray-500 hover:text-gray-900 text-sm transition-all`}>
-          <Info size={22} /> 
-          {!isCollapsed && <span>Info</span>}
+        <button onClick={() => navigate('/admin/a-settings')} className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2 w-full font-poppins text-gray-500 hover:text-gray-900 text-sm transition-all`}>
+          <Settings size={22} /> 
+          {!isCollapsed && <span>Settings</span>}
         </button>
         <button 
           onClick={openLogoutModal}
