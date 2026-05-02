@@ -233,15 +233,26 @@ export default function AdminSettings() {
             </label>
             
             <button 
-                disabled={!isEditMode} 
-                className="text-[10px] font-bold text-gabay-teal border border-gabay-teal px-4 py-2 rounded-lg hover:bg-teal-50 disabled:opacity-30 transition-colors"
-            >
-                BACKUP NOW
-            </button>
+              disabled={!isEditMode} 
+              className="text-[10px] font-bold text-gabay-teal border border-gabay-teal px-4 py-2 rounded-lg hover:bg-teal-50 disabled:opacity-30 transition-colors"
+              onClick={async () => {
+                  // // TO THE BACKEND DEV: This triggers the system-wide backup process. 
+                  // // Please ensure the endpoint handles authentication, database dumping, 
+                  // // and returns a 200 status once the process is successfully initiated.
+                  try {
+                      const response = await fetch('/api/admin/backup', { method: 'POST' });
+                      if (response.ok) alert('Backup started successfully!');
+                  } catch (err) {
+                      console.error('Backup failed:', err);
+                  }
+              }}
+          >
+              BACKUP NOW
+          </button>
             </div>
         </div>
 
-        {/* Dual-column dropdown layout mirroring Operational Hours */}
+        {/* SYSTEM BACKUP */}
         <div className={`grid grid-cols-2 gap-4 transition-opacity duration-300 ${tempSettings.autoBackup ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
             <div className="space-y-1">
             <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Frequency</label>

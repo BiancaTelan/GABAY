@@ -5,17 +5,25 @@ import { AuthContext } from '../authContext';
 import { useNavigate, useLocation } from 'react-router-dom'; 
 
 export default function AdminHeader({ isCollapsed, setIsCollapsed, isLoggedIn }) {
-  const { userInfo } = useContext(AuthContext);
+  const { userInfo, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
   
   const isActive = (path) => location.pathname === path;
   // INSTRUCTION FOR BACKEND: Replace this mock state with data from your Notifications API
   const [unreadCount, setUnreadCount] = useState(3);
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const handleNav = (path) => {
     navigate(path);
     // Mobile Menu state [isMenuOpen, setIsMenuOpen] = useState(false).
+  };
+
+  const handleLogout = () => {
+    logout(); 
+    navigate('/login');
+    // // TO THE BACKEND DEV: Ensure the logout function clears the 
+    // // session/token on the server or invalidates the JWT.
   };
 
   return (
@@ -51,17 +59,47 @@ export default function AdminHeader({ isCollapsed, setIsCollapsed, isLoggedIn })
           )}
         </button>
 
-        {/* Account Button */}
-        <button 
-          onClick={() => navigate('/admin/a-account')} 
-          className="flex items-center justify-center p-0.5 rounded-full border-2 border-transparent hover:border-gabay-blue transition-all overflow-hidden"
-        >
-          <img 
-            src={userInfo?.profilePhoto || "/default-avatar.png"} 
-            alt="Admin" 
-            className="h-9 w-9 rounded-full object-cover bg-gray-100" 
-          />
-        </button>
+        {/* Account Button with Dropdown */}
+        <div className="relative"> {/* Added: Relative wrapper to anchor the dropdown */}
+          <button 
+            onClick={() => setShowDropdown(!showDropdown)} // Changed: Now toggles dropdown instead of navigating
+            className="flex items-center justify-center p-0.5 rounded-full border-2 border-transparent hover:border-gabay-blue transition-all overflow-hidden"
+          >
+            <img 
+              src={userInfo?.profilePhoto || "/default-avatar.png"} 
+              alt="Admin" 
+              className="h-9 w-9 rounded-full object-cover bg-gray-100" 
+            />
+          </button>
+
+          {/* Added: Dropdown Menu logic below */}
+          {showDropdown && (
+            <>
+              {/* Click-outside listener (Invisible overlay) */}
+              <div className="fixed inset-0 z-10" onClick={() => setShowDropdown(false)}></div>
+              
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-20">
+                <button 
+                  onClick={() => { navigate('/admin/a-account'); setShowDropdown(false); }}
+                  className="w-full text-left px-4 py-2 text-sm font-poppins text-gray-600 hover:bg-blue-50 hover:text-gabay-blue transition-colors"
+                >
+                  My Account
+                </button>
+
+                <button 
+                  onClick={() => {
+                    // // TO THE BACKEND DEV: Logic to clear session/token goes here.
+                    setShowDropdown(false);
+                    navigate('/login');
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm font-poppins text-red-500 font-bold hover:bg-red-50 transition-colors"
+                >
+                  Log Out
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </header>
   );
