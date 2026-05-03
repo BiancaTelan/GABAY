@@ -4,11 +4,10 @@ from db_connection import get_db
 from db_model import Appointment, SystemLogs, actionTypeEnum, User
 from security import get_current_user
 
-# Assuming this is your staff router
 router = APIRouter(prefix="/staff", tags=["Staff"])
 
 # ---------------------------------------------------------
-# 1. STAFF ACTION: APPROVE APPOINTMENT
+# 1. STAFF ACTION: APPOINTMENT MANAGEMENT 
 # ---------------------------------------------------------
 @router.put("/appointments/{appointment_id}/approve")
 def approve_appointment(
@@ -37,9 +36,6 @@ def approve_appointment(
     
     return {"message": "Appointment approved and logged successfully."}
 
-# ---------------------------------------------------------
-# 1. STAFF ACTION: RESCHEDULE APPOINTMENT
-# ---------------------------------------------------------
 @router.put("/appointments/{appointment_id}/reschedule")
 def reschedule_appointment(
     appointment_id: int, 
@@ -70,9 +66,6 @@ def reschedule_appointment(
     
     return {"message": "Appointment rescheduled and logged successfully."}
 
-# ---------------------------------------------------------
-# 1. STAFF ACTION: DENIED APPOINTMENT
-# ---------------------------------------------------------
 @router.put("/appointments/{appointment_id}/deny")
 def deny_appointment(
     appointment_id: int, 
@@ -98,3 +91,8 @@ def deny_appointment(
     db.commit()
     
     return {"message": "Appointment denied and logged successfully."}
+
+# ---------------------------------------------------------
+# 2. 
+# ---------------------------------------------------------
+
