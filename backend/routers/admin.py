@@ -1080,7 +1080,6 @@ def change_account_email(
     db.commit()
     return {"message": "Email updated successfully!", "new_email": data.new_email}
 
-
 @router.put("/change-password")
 def change_account_password(
     data: PasswordChangeRequest, 
@@ -1099,3 +1098,4 @@ def change_account_password(
     ))
     db.commit()
     return {"message": "Password updated successfully!"}
+
