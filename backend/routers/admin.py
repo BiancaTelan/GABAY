@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request, File, UploadFile
 from sqlalchemy.orm import Session, joinedload
 from db_connection import get_db
-from db_model import Appointment, User, roleEnum, Staff, SystemLogs, actionTypeEnum, Department, Doctor, Schedule, weekDayEnum, SystemHealthLog, AppointmentStatus
+from db_model import Appointment, SystemSettings, User, roleEnum, Staff, SystemLogs, actionTypeEnum, Department, Doctor, Schedule, weekDayEnum, SystemHealthLog, AppointmentStatus
 from security import get_password_hash, get_current_user
 from typing import Optional
 from pydantic import BaseModel, EmailStr
@@ -9,6 +9,7 @@ from email_utils import send_personnel_credentials_email
 from datetime import datetime, date
 from sqlalchemy import func, text, desc
 from passlib.context import CryptContext
+from .backup_utils import perform_database_backup
 import random
 import time
 import psutil
@@ -1098,4 +1099,68 @@ def change_account_password(
     ))
     db.commit()
     return {"message": "Password updated successfully!"}
+
+# ---------------------------------------------------------
+# 15. SYSTEM SETTINGS MANAGEMENT
+# ---------------------------------------------------------
+@router.get("/settings")
+def get_system_settings(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role.value != "Admin":
+        raise HTTPException(status_code=403, detail="Unauthorized. Admins only.")
+
+    settings = db.query(SystemSettings).first()
+    if not settings:
+        settings = SystemSettings()
+        db.add(settings)
+        db.commit()
+        db.refresh(settings)
+
+    return settings
+
+@router.put("/settings")
+def update_system_settings(updated_data: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role.value != "Admin":
+        raise HTTPException(status_code=403, detail="Unauthorized. Admins only.")
+
+    settings = db.query(SystemSettings).first()
+    if not settings:
+        raise HTTPException(status_code=404, detail="Settings not found")
+
+    for key, value in updated_data.items():
+        if hasattr(settings, key):
+            setattr(settings, key, value)
+
+    db.commit()
+    return {"message": "System settings completely updated!"}
+    
+@router.post("/backup")
+def trigger_manual_backup(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    
+    if current_user.role.value != "Admin":
+        raise HTTPException(status_code=403, detail="Unauthorized. Admins only.")
+        
+    result = perform_database_backup()
+    
+    if not result["success"]:
+        print(f"🚨 BACKUP FAILED: {result['error']}")
+        raise HTTPException(status_code=500, detail="Backup failed to generate on the server.")
+
+    try:
+
+        new_log = SystemLogs(
+            userID=current_user.userID,
+            tableAffected="Entire Database",
+            actionType=actionTypeEnum.UPDATE, 
+            details=f"Manual system backup successfully generated. File: {result['filename']}"
+        )
+        db.add(new_log)
+        db.commit()
+    except Exception as e:
+        print(f"⚠️ BACKUP SUCCEEDED, BUT LOGGING FAILED: {e}")
+
+    print(f"✅ BACKUP SUCCESS: Saved to {result['filepath']}")
+    return {
+        "message": "Backup sequence completed successfully!",
+        "filename": result["filename"]
+    }
 

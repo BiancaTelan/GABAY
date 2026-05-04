@@ -230,3 +230,18 @@ class SystemHealthLog(Base):
     priority: Mapped[str] = mapped_column(String(20), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     recommendedAction: Mapped[str] = mapped_column(Text, nullable=False)
+
+class SystemSettings(Base):
+    __tablename__ = "systemSettingsTable"
+
+    settingID: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    startTime: Mapped[str] = mapped_column(String(20), default="08:00 AM")
+    endTime: Mapped[str] = mapped_column(String(20), default="05:00 PM")
+    retentionValue: Mapped[str] = mapped_column(String(10), default="3")
+    retentionUnit: Mapped[str] = mapped_column(String(20), default="years")
+    autoBackup: Mapped[bool] = mapped_column(Boolean, default=False)
+    backupFrequency: Mapped[str] = mapped_column(String(50), default="Weekly")
+    backupTime: Mapped[str] = mapped_column(String(20), default="12:00 AM")
+    maintenanceMode: Mapped[bool] = mapped_column(Boolean, default=False)
+    downtimeReason: Mapped[str] = mapped_column(String(100), default="Maintenance Mode")
+    resumeTimer: Mapped[str] = mapped_column(String(20), default="60")
