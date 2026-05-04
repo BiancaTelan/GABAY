@@ -23,6 +23,8 @@ class actionTypeEnum(enum.Enum):
     RESCHEDULE = "RESCHEDULE"
     DENY = "DENY"
     BOOK = "BOOK"
+    ERROR = "ERROR"
+    WARNING = "WARNING"
 
 class queueStatusEnum(enum.Enum):
     Waiting = "Waiting"
