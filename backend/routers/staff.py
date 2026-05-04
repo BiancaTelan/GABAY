@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, File, UploadFile, Query, BackgroundTasks
 from sqlalchemy.orm import Session
-from sqlalchemy import func, extract
+from sqlalchemy import func, extract, cast, String
 from db_connection import get_db
 from db_model import Appointment, Department, Schedule, Staff, SystemLogs, actionTypeEnum, User, Patient, Doctor, DailyQueue, queueStatusEnum, AppointmentStatus
 from security import get_current_user
@@ -163,7 +163,7 @@ def approve_appointment(
 
     schedule_template = db.query(Schedule).filter(
         Schedule.docID == data.assigned_doctor_id,
-        Schedule.weekDay.ilike(f"%{day_of_week}%") 
+        cast(Schedule.weekDay, String).ilike(f"%{day_of_week}%") # <-- UPDATED
     ).first()
 
     if not schedule_template:
@@ -234,7 +234,7 @@ def reschedule_appointment(
 
     schedule_template = db.query(Schedule).filter(
         Schedule.docID == appointment.docID,
-        Schedule.weekDay.ilike(f"%{day_of_week}%")
+        cast(Schedule.weekDay, String).ilike(f"%{day_of_week}%")
     ).first()
 
     if not schedule_template:
@@ -340,7 +340,7 @@ def staff_book_appointment(
 
     schedule_template = db.query(Schedule).filter(
         Schedule.docID == data.doctor_id,
-        Schedule.weekDay.ilike(f"%{day_of_week}%")
+        cast(Schedule.weekDay, String).ilike(f"%{day_of_week}%") # <-- UPDATED
     ).first()
 
     if not schedule_template:
@@ -679,7 +679,7 @@ def check_schedule_availability(
 
     schedule_template = db.query(Schedule).filter(
         Schedule.docID == doctor_id,
-        Schedule.weekDay.ilike(f"%{day_of_week}%")
+        cast(Schedule.weekDay, String).ilike(f"%{day_of_week}%") # <-- UPDATED
     ).first()
 
     if not schedule_template:
@@ -780,9 +780,11 @@ def get_staff_doctors(db: Session = Depends(get_db), current_staff: User = Depen
         
         parsed_schedules = []
         for s in schedule_records:
+            safe_day = s.weekDay.value if hasattr(s.weekDay, 'value') else str(s.weekDay)
+            
             parsed_schedules.append({
                 "id": s.scheduleID,
-                "day": s.weekDay if s.weekDay else "TBD",
+                "day": safe_day if s.weekDay else "TBD", # <-- UPDATED
                 "time": f"{s.startTime.strftime('%I:%M %p')} - {s.endTime.strftime('%I:%M %p')}" if getattr(s, 'startTime', None) else "TBD"
             })
             
