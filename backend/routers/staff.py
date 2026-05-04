@@ -961,10 +961,11 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
     if not staff_profile or not staff_profile.deptID:
         raise HTTPException(status_code=403, detail="Unauthorized: No department assigned.")
 
-    dept_id = staff_profile.deptID
-    
     ph_tz = ZoneInfo("Asia/Manila")
-    today = datetime.now(ph_tz).date()
+    today = datetime.now(ph_tz)
+    today_date = today.date()
+
+    dept_id = staff_profile.deptID
     current_year = today.year
     current_month = today.month
     today_name = today.strftime('%A') 
@@ -996,9 +997,7 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
         extract('month', Appointment.assignedDate) == current_month
     ).count()
 
-
-    # === 2. DAILY SLOT CAPACITY (Strictly for Today) ===
-    
+    # === 2. DAILY SLOT CAPACITY ===
     department_schedules = db.query(Schedule).join(
         Doctor, Schedule.docID == Doctor.docID
     ).filter(Doctor.deptID == dept_id).all()
@@ -1010,18 +1009,17 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
     
     approved_today = db.query(Appointment).filter(
         Appointment.deptID == dept_id, 
-        Appointment.assignedDate == today,
+        Appointment.assignedDate == today_date,
         Appointment.statusID.in_(valid_approved_ids) 
     ).count()
 
     noshows_today = db.query(Appointment).filter(
         Appointment.deptID == dept_id, 
-        Appointment.assignedDate == today,
+        Appointment.assignedDate == today_date,
         Appointment.statusID == noshow_id
     ).count()
 
     available_slots = (daily_total_slots - approved_today) + noshows_today
-
 
     # === 3. DAILY QUEUE FETCHING (Strictly for Today) ===
     
@@ -1029,7 +1027,7 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
         DailyQueue, Appointment.appointmentID == DailyQueue.appointmentID
     ).filter(
         Appointment.deptID == dept_id,
-        Appointment.assignedDate == today,
+        Appointment.assignedDate == today_date,
         Appointment.statusID.in_(valid_approved_ids), 
         DailyQueue.queueID == None  
     ).all()
@@ -1038,7 +1036,7 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
         Appointment, DailyQueue.appointmentID == Appointment.appointmentID
     ).filter(
         Appointment.deptID == dept_id,
-        Appointment.assignedDate == today,
+        Appointment.assignedDate == today_date,
         DailyQueue.queueStatus.in_([queueStatusEnum.Waiting, queueStatusEnum.inProgress, queueStatusEnum.Completed])
     ).all()
 
