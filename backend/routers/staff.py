@@ -969,7 +969,7 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
 
     pending_id = get_status_id(db, "Pending") 
     approved_id = get_status_id(db, "Approved")
-    rescheduled_id = get_status_id(db, "Reschedule") 
+    rescheduled_id = get_status_id(db, "Rescheduled") 
     cancelled_id = get_status_id(db, "Cancelled")
     noshow_id = get_status_id(db, "No Show")
 
