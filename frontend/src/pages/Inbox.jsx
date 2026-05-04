@@ -53,14 +53,14 @@ export default function Inbox() {
               displayStatus = 'FOR APPROVAL';
               message = 'Please check your email address for further updates with regards to your reserved appointment.';
               icon = Mail;
-            } else if (statusLower.includes('approved')) {
-              title = 'Upcoming Appointment';
-              displayStatus = 'APPROVED - ACTION REQUIRED';
-              message = 'Your schedule has been approved! Please confirm or cancel your attendance below.';
-              showActionButtons = true; // ONLY show buttons if it's waiting for patient confirmation
             } else if (statusLower.includes('confirmed')) {
+              title = 'Upcoming Appointment';
+              displayStatus = 'CONFIRMED - ACTION REQUIRED';
+              message = 'Your schedule has been confirmed! Please approve or cancel your attendance below.';
+              showActionButtons = true; 
+            } else if (statusLower.includes('approved')) {
               title = 'Appointment Confirmed';
-              displayStatus = 'CONFIRMED';
+              displayStatus = 'APPROVED';
               message = 'You have successfully confirmed your attendance. See you there!';
               icon = Check;
             } else if (statusLower.includes('denied') || statusLower.includes('declined')) {

@@ -161,7 +161,6 @@ def approve_appointment(
 
     day_of_week = parsed_date.strftime("%A")
 
-    # Look around line 150
     schedule_template = db.query(Schedule).filter(
         Schedule.docID == data.assigned_doctor_id,
         Schedule.weekDay == day_of_week 
