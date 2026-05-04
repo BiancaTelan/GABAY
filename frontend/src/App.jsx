@@ -48,6 +48,7 @@ import AuditLogs from './pages/admin/AuditLogs';
 import SystemLogs from './pages/admin/SystemLogs';
 import AdminNotifs from './pages/admin/AdminNotifs';
 import AdminCalendar from './pages/admin/AdminCalendar';
+import AdminSettings from './pages/admin/AdminSettings';
 
 import PersonnelAccount from './pages/admin/PersonnelAccount';
 
@@ -259,9 +260,10 @@ function App() {
             </Route>
 
           {/* ADMIN ROUTES */}
-          <Route element={<AdminRoute />}>
+          <Route element={<AdminRoute />}> 
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
+              <Route path="a-settings" element={<AdminSettings />} />
               <Route path="users" element={<Users />} />
               <Route path="personnel" element={<Personnel />} />
               <Route path="departments" element={<Departments />} />
@@ -272,11 +274,7 @@ function App() {
               <Route path="a-account" element={<PersonnelAccount />} />
               <Route path="a-notifs" element={<AdminNotifs />} />
               <Route path="a-calendar" element={<AdminCalendar />} />
-
-              {/*<Route path="reports" element={<Reports />} />
-              <Route path="a-settings" element={<AdminSettings />} />
-              <Route path="a-help" element={<AdminHelp />} />
-              <Route path="a-tools" element={<AdminTools />} />*/}
+              
             </Route>  
           </Route>
           <Route path="*" element={<Navigate to="/" />} />

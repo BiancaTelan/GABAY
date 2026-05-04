@@ -1,11 +1,30 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import React, { useState, useContext } from 'react';
 import { 
   LayoutDashboard, Users, UserRoundCog, Building2, 
   CalendarCheck, Activity, Terminal, FileBarChart, 
-  LogOut, Settings, Menu 
+  LogOut, Settings, Menu, Info
 } from 'lucide-react';
+import { AuthContext } from '../authContext';
+import ConfirmationModal from '../components/confirmModal';
 
 export default function AdminSidebar({ isCollapsed, setIsCollapsed }) {
+
+  const [modalConfig, setModalConfig] = useState({ isOpen: false, type: '', title: '', message: '', onConfirm: null });
+  const { logout } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const openLogoutModal = () => {
+    setModalConfig({
+      isOpen: true,
+      type: 'info',
+      title: 'Log Out',
+      message: 'Are you sure you want to log out?',
+      onConfirm: () => {
+        logout();
+      }
+    });
+  };
+  
   const menuGroups = [
     {
       title: "MAIN MENU",
@@ -22,7 +41,6 @@ export default function AdminSidebar({ isCollapsed, setIsCollapsed }) {
       items: [
         { name: 'Audit Logs', path: '/admin/audit-logs', icon: <Activity size={22} /> },
         { name: 'System Logs', path: '/admin/system-logs', icon: <Terminal size={22} /> },
-        { name: 'Reports', path: '/admin/reports', icon: <FileBarChart size={22} /> },
       ]
     }
   ];
@@ -73,14 +91,22 @@ export default function AdminSidebar({ isCollapsed, setIsCollapsed }) {
       </div>
 
       <div className="px-4 mt-auto pt-5 border-t border-gray-100 space-y-1">
-        <button className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2 w-full font-poppins text-gray-500 hover:text-gray-900 text-sm transition-all`}>
+        <button onClick={() => navigate('/admin/a-settings')} className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2 w-full font-poppins text-gray-500 hover:text-gray-900 text-sm transition-all`}>
           <Settings size={22} /> 
           {!isCollapsed && <span>Settings</span>}
         </button>
-        <button className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2 w-full font-poppins text-gabay-teal hover:bg-teal-50 rounded-lg text-sm transition-all font-semibold`}>
+        <button 
+          onClick={openLogoutModal}
+          className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2 w-full font-poppins text-gabay-teal hover:bg-teal-50 rounded-lg text-sm transition-all font-semibold`}
+        >
           <LogOut size={22} /> 
           {!isCollapsed && <span>Log Out</span>}
         </button>
+        
+        <ConfirmationModal 
+          {...modalConfig} 
+          onClose={() => setModalConfig({ ...modalConfig, isOpen: false })} 
+        />
       </div>
     </aside>
   );

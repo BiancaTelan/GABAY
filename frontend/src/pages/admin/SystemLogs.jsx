@@ -14,10 +14,10 @@ const rawSystemData = [
 ];
 
 const priorityStyles = {
-  CRITICAL: 'bg-red-100 text-red-500 border-red-200',
-  HIGH: 'bg-orange-50 text-orange-400 border-orange-200',
-  MEDIUM: 'bg-teal-50 text-gabay-teal border-teal-100',
-  LOW: 'bg-green-50 text-green-500 border-green-100',
+  CRITICAL: 'bg-red-50 text-red-500 border border-red-400',
+  HIGH: 'bg-orange-50 text-orange-500 border border-orange-400',
+  MEDIUM: 'bg-teal-50 text-blue-500 border border-blue-400',
+  LOW: 'bg-green-50 text-green-500 border border-green-400',
 };
 
 export default function SystemLogs() {
@@ -245,11 +245,11 @@ const filteredData = useMemo(() => {
                   <tr className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 text-xs font-medium text-gabay-blue">{log.date}<br/><span className="text-gray-400 font-normal">{log.time}</span></td>
                     <td className="px-6 py-4 text-sm text-gray-700">{log.type}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500 italic">{log.module}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{log.module}</td>
                     <td className="px-6 py-4 text-center">
-                      <span className={`px-6 py-0.5 rounded-full text-[10px] font-bold border ${priorityStyles[log.priority]}`}>{log.priority}</span>
+                      <span className={`px-6 py-0.5 rounded-full text-[11px] font-bold border ${priorityStyles[log.priority]}`}>{log.priority}</span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 truncate max-w-[300px]">{log.description}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500 truncate max-w-[300px] italic">{log.description}</td>
                     <td className="px-4 py-4">
                       <button onClick={() => setExpandedId(expandedId === log.id ? null : log.id)}>
                         {expandedId === log.id ? <ChevronUp size={20} className="text-gray-400"/> : <ChevronDown size={20} className="text-gray-400"/>}
