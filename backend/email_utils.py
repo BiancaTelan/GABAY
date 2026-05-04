@@ -167,3 +167,72 @@ def send_personnel_credentials_email(recipient_email: str, name: str, role: str,
             
     except Exception as e:
         print(f"❌ CRITICAL ERROR: Could not connect to Brevo. {str(e)}")
+
+# ==========================================
+# APPOINTMENT STATUS UPDATE EMAIL FUNCTION
+# ==========================================
+def send_patient_appointment_email(recipient_email: str, name: str, status: str, doctor_name: str, date: str, additional_notes: str = ""):
+    brevo_api_key = os.getenv("BREVO_API_KEY")
+    if not brevo_api_key:
+        print("❌ ERROR: BREVO_API_KEY is missing from your .env file!")
+        return
+
+    status_upper = status.upper()
+    if "APPROVE" in status_upper:
+        color_hex = "#28a745" # Green
+        message = "has been officially <strong>approved</strong>."
+    elif "CANCEL" in status_upper or "DENY" in status_upper:
+        color_hex = "#d9534f" # Red
+        message = "has been <strong>cancelled</strong>."
+    elif "RESCHEDULE" in status_upper:
+        color_hex = "#f0ad4e" # Orange
+        message = "has been <strong>rescheduled</strong>."
+    else:
+        color_hex = "#0b3b60" # GABAY Blue
+        message = f"has been updated to: <strong>{status}</strong>."
+
+    subject = f"GABAY System: Appointment {status.title()}"
+    
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+        <h2 style="color: {color_hex}; text-align: center;">Appointment {status.title()}</h2>
+        <p>Hello <strong>{name}</strong>,</p>
+        <p>Your appointment request through the GABAY System {message}</p>
+        
+        <div style="background-color: #f4f6f8; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid {color_hex};">
+            <p style="margin: 0 0 10px 0;"><strong>Doctor:</strong> {doctor_name}</p>
+            <p style="margin: 0 0 10px 0;"><strong>Date:</strong> {date}</p>
+            {f'<p style="margin: 0; color: #555;"><strong>Notes:</strong> {additional_notes}</p>' if additional_notes else ''}
+        </div>
+        
+        <p style="font-size: 14px; color: #666;">Log in to your GABAY Patient Portal to view your full appointment history and details.</p>
+        <br>
+        <p style="font-size: 14px; color: #666;">Thank you,<br>Cainta Municipal Hospital</p>
+    </div>
+    """
+
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {
+        "accept": "application/json",
+        "api-key": brevo_api_key,
+        "content-type": "application/json"
+    }
+    
+    payload = {
+        "sender": {
+            "name": "GABAY System",
+            "email": "gabay.system@gmail.com" 
+        },
+        "to": [{"email": recipient_email, "name": name}],
+        "subject": subject,
+        "htmlContent": html_content
+    }
+
+    try:
+        response = requests.post(url, json=payload, headers=headers)
+        if response.status_code == 201:
+            print(f"✅ SUCCESS: {status} email sent to {recipient_email}")
+        else:
+            print(f"❌ BREVO ERROR: Failed to send email. Status Code: {response.status_code}")
+    except Exception as e:
+        print(f"❌ CRITICAL ERROR: Could not connect to Brevo. {str(e)}")        

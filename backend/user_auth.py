@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from datetime import timedelta
 from db_connection import get_db
-from db_model import User, Patient, roleEnum
+from db_model import Staff, User, Patient, roleEnum
 from py_schema import PatientSignUp, ForgotPasswordRequest, ResetPasswordOTPRequest, VerifyOTPRequest, ChangeEmailRequest, ChangePasswordRequest
 from security import create_verification_token, verify_password, create_access_token, get_password_hash, ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY, ALGORITHM
 from email_utils import send_notification_email, send_otp_email, send_verification_email
@@ -24,22 +24,6 @@ def login_for_access_token(
     db: Session = Depends(get_db)
 ):
     
-    print("\n" + "="*30)
-    print(f"--- INCOMING LOGIN ATTEMPT ---")
-    print(f"Email received: [{form_data.username}]")
-    print(f"Password received: [{form_data.password}]")
-    
-    user = db.query(User).filter(User.email == form_data.username).first()
-    
-    if not user:
-        print("❌ RESULT: Email NOT FOUND in database.")
-    else:
-        print("✅ RESULT: Email found! Checking password...")
-        is_valid = verify_password(form_data.password, user.passwordHash)
-        print(f"❌ Password Valid? {is_valid}")
-        print(f"✅ Is Active? {user.isActive}")
-    print("="*30 + "\n")
-    
     user = db.query(User).filter(User.email == form_data.username).first()
     
     if not user or not verify_password(form_data.password, user.passwordHash):
@@ -54,12 +38,20 @@ def login_for_access_token(
             status_code=status.HTTP_403_FORBIDDEN, 
             detail="This account has been deactivated."
         )
+    
+    user_photo = None
+    
+    if user.role.value.lower() == "staff":
+        staff_profile = db.query(Staff).filter(Staff.userID == user.userID).first()
+        if staff_profile:
+            user_photo = staff_profile.profilePhoto
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     
     token_payload = {
         "sub": user.email, 
-        "role": user.role.value 
+        "role": user.role.value,
+        "profilePhoto": user_photo
     }
     
     access_token = create_access_token(
@@ -69,7 +61,8 @@ def login_for_access_token(
     
     return {
         "access_token": access_token, 
-        "token_type": "bearer"
+        "token_type": "bearer",
+        "role": user.role.value
     }
 
 # ---------------------------------------------------------

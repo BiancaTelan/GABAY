@@ -23,6 +23,8 @@ class actionTypeEnum(enum.Enum):
     RESCHEDULE = "RESCHEDULE"
     DENY = "DENY"
     BOOK = "BOOK"
+    ERROR = "ERROR"
+    WARNING = "WARNING"
 
 class queueStatusEnum(enum.Enum):
     Waiting = "Waiting"
@@ -131,6 +133,7 @@ class Appointment(Base):
     docID: Mapped[Optional[int]] = mapped_column(ForeignKey("doctorTable.docID", ondelete="SET NULL"))
     deptID: Mapped[int] = mapped_column(ForeignKey("departmentTable.deptID", ondelete="RESTRICT"), nullable=False)
     assignedScheduleID: Mapped[Optional[int]] = mapped_column(ForeignKey("scheduleTable.scheduleID", ondelete="SET NULL"))
+    assignedDate: Mapped[Optional[date]] = mapped_column(Date)
     statusID: Mapped[int] = mapped_column(ForeignKey("appointmentStatusTable.statusID", ondelete="RESTRICT"), nullable=False)
     purposeDetailed: Mapped[Optional[str]] = mapped_column(Text)
     type: Mapped[Optional[str]] = mapped_column(String(50))
@@ -186,7 +189,6 @@ class Schedule(Base):
     startTime: Mapped[time] = mapped_column(Time, nullable=False)
     endTime: Mapped[time] = mapped_column(Time, nullable=False)
     maxPatients: Mapped[int] = mapped_column(Integer, nullable=False) 
-    current_patient: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     
     # === Relationships ===
     doctor: Mapped[Optional["Doctor"]] = relationship(back_populates="schedule")
@@ -214,9 +216,9 @@ class DailyQueue(Base):
     queueID: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     appointmentID: Mapped[int] = mapped_column(ForeignKey("appointmentTable.appointmentID", ondelete="CASCADE"), unique=True)
 
-    queueNum: Mapped[int] = mapped_column(Integer, nullable=False) # Removed unique=True, queue #1 happens every day
-    queueStatus: Mapped[queueStatusEnum] = mapped_column(SQLEnum(queueStatusEnum), nullable=False, default=queueStatusEnum.Waiting) # Fixed default
-    checkInTime: Mapped[Optional[datetime]] = mapped_column(DateTime) # Removed func.now(), check-in happens later
+    queueNum: Mapped[int] = mapped_column(Integer, nullable=False)
+    queueStatus: Mapped[queueStatusEnum] = mapped_column(SQLEnum(queueStatusEnum), nullable=False, default=queueStatusEnum.Waiting) 
+    checkInTime: Mapped[Optional[datetime]] = mapped_column(DateTime) 
     consultationStart: Mapped[Optional[datetime]] = mapped_column(DateTime)
     consultationEnd: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
@@ -230,3 +232,18 @@ class SystemHealthLog(Base):
     priority: Mapped[str] = mapped_column(String(20), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     recommendedAction: Mapped[str] = mapped_column(Text, nullable=False)
+
+class SystemSettings(Base):
+    __tablename__ = "systemSettingsTable"
+
+    settingID: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    startTime: Mapped[str] = mapped_column(String(20), default="08:00 AM")
+    endTime: Mapped[str] = mapped_column(String(20), default="05:00 PM")
+    retentionValue: Mapped[str] = mapped_column(String(10), default="3")
+    retentionUnit: Mapped[str] = mapped_column(String(20), default="years")
+    autoBackup: Mapped[bool] = mapped_column(Boolean, default=False)
+    backupFrequency: Mapped[str] = mapped_column(String(50), default="Weekly")
+    backupTime: Mapped[str] = mapped_column(String(20), default="12:00 AM")
+    maintenanceMode: Mapped[bool] = mapped_column(Boolean, default=False)
+    downtimeReason: Mapped[str] = mapped_column(String(100), default="Maintenance Mode")
+    resumeTimer: Mapped[str] = mapped_column(String(20), default="60")

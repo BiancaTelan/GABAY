@@ -104,6 +104,8 @@ app.add_middleware(
     allow_headers=["*"], 
 )
 
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
 app.include_router(user_auth.router, prefix="/api")
 app.include_router(appointments.router, prefix="/api")
 app.include_router(patients.router, prefix="/api")

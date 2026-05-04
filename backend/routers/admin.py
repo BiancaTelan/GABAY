@@ -1,14 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request, File, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request, File, UploadFile, Query
 from sqlalchemy.orm import Session, joinedload
 from db_connection import get_db
-from db_model import Appointment, User, roleEnum, Staff, SystemLogs, actionTypeEnum, Department, Doctor, Schedule, weekDayEnum, SystemHealthLog, AppointmentStatus
+from db_model import Appointment, SystemSettings, User, roleEnum, Staff, SystemLogs, actionTypeEnum, Department, Doctor, Schedule, weekDayEnum, SystemHealthLog, AppointmentStatus
 from security import get_password_hash, get_current_user
 from typing import Optional
 from pydantic import BaseModel, EmailStr
 from email_utils import send_personnel_credentials_email
-from datetime import datetime, date
-from sqlalchemy import func, text, desc
+from datetime import datetime, date, timedelta
+from sqlalchemy import func, text, desc, extract
 from passlib.context import CryptContext
+from .backup_utils import perform_database_backup
+from zoneinfo import ZoneInfo
+import calendar
 import random
 import time
 import psutil
@@ -698,52 +701,141 @@ def get_live_hardware_metrics(db: Session = Depends(get_db)):
 # 10. DASHBOARD SUMMARY
 # ---------------------------------------------------------
 @router.get("/dashboard/summary")
-def get_dashboard_summary(db: Session = Depends(get_db)):
-    # Appointments Completed (Total for the current month)
-    this_month = date.today().replace(day=1)
-    monthly_appointments = db.query(Appointment).filter(Appointment.preferredStartDate >= this_month).count()
+def get_dashboard_summary(
+    period: str = Query("month", description="Filter period: week, month, year"),
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role.value != "Admin":
+        raise HTTPException(status_code=403, detail="Unauthorized")
+    
+    ph_tz = ZoneInfo("Asia/Manila")
+    today = datetime.now(ph_tz)
+    timeline_data = []
+    
+    if period == "week":
+        start_date = today - timedelta(days=today.weekday())
+        end_date = start_date + timedelta(days=6)
+        
+        daily_counts = db.query(
+            func.dayname(Appointment.assignedDate).label('day_name'),
+            func.count(Appointment.appointmentID).label('count')
+        ).filter(
+            Appointment.assignedDate >= start_date.date(),
+            Appointment.assignedDate <= end_date.date()
+        ).group_by(func.dayname(Appointment.assignedDate)).all()
 
-    # Active Personnel (Doctors + Staff/Admin)
-    active_doctors = db.query(Doctor).filter(Doctor.isAvailable == True).count()
-    active_staff = db.query(User).filter(User.isActive == True, User.role.in_([roleEnum.Staff, roleEnum.Admin])).count()
-    total_personnel = active_doctors + active_staff
+        count_dict = {row.day_name: row.count for row in daily_counts}
+        
+        days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        for day in days_of_week:
+            timeline_data.append({
+                "name": day[:3],
+                "appointments": count_dict.get(day, 0)
+            })
 
-    # Slot Capacity Today
-    departments = db.query(Department).filter(Department.isActive == True).all()
-    total_slots = sum([d.slotCapacity for d in departments]) if departments else 0
-    used_slots = db.query(Appointment).filter(Appointment.preferredStartDate == date.today()).count()
+    elif period == "year":
+        start_date = datetime(today.year, 1, 1)
+        end_date = datetime(today.year, 12, 31)
 
-    # System Health (Inverse of RAM usage)
-    ram = psutil.virtual_memory()
-    health_score = int(100 - ram.percent)
+        monthly_counts = db.query(
+            extract('month', Appointment.assignedDate).label('month_num'),
+            func.count(Appointment.appointmentID).label('count')
+        ).filter(
+            Appointment.assignedDate >= start_date.date(),
+            Appointment.assignedDate <= end_date.date()
+        ).group_by(extract('month', Appointment.assignedDate)).all()
 
-    # Recent Audit Logs
-    recent_audits = db.query(SystemLogs).order_by(desc(SystemLogs.timestamp)).limit(5).all()
-    audit_data = [{
-        "id": a.logID, 
-        "action": a.actionType.value, 
-        "details": a.details, 
-        "time": a.timestamp.strftime("%I:%M %p"), 
-        "date": a.timestamp.strftime("%m/%d")
-    } for a in recent_audits]
+        count_dict = {int(row.month_num): row.count for row in monthly_counts}
 
-    # Recent Health Logs
-    recent_health = db.query(SystemHealthLog).order_by(desc(SystemHealthLog.timestamp)).limit(5).all()
-    health_data = [{
-        "id": h.logID, 
-        "type": h.issueType, 
-        "priority": h.priority, 
-        "time": h.timestamp.strftime("%I:%M %p")
-    } for h in recent_health]
+        for month in range(1, 13):
+            month_name = calendar.month_abbr[month] 
+            timeline_data.append({
+                "name": month_name,
+                "appointments": count_dict.get(month, 0)
+            })
+
+    else: 
+        start_date = today.replace(day=1)
+        _, last_day = calendar.monthrange(today.year, today.month)
+        end_date = today.replace(day=last_day)
+
+        daily_counts = db.query(
+            Appointment.assignedDate,
+            func.count(Appointment.appointmentID).label('count')
+        ).filter(
+            Appointment.assignedDate >= start_date.date(),
+            Appointment.assignedDate <= end_date.date()
+        ).group_by(Appointment.assignedDate).all()
+
+        week_buckets = {"Week 1": 0, "Week 2": 0, "Week 3": 0, "Week 4": 0}
+        
+        for row in daily_counts:
+            day_num = row.assignedDate.day
+            if day_num <= 7: week_buckets["Week 1"] += row.count
+            elif day_num <= 14: week_buckets["Week 2"] += row.count
+            elif day_num <= 21: week_buckets["Week 3"] += row.count
+            else: week_buckets["Week 4"] += row.count # Days 22-31
+
+        for week, count in week_buckets.items():
+            timeline_data.append({
+                "name": week,
+                "appointments": count
+            })
+
+    total_appts = sum(item["appointments"] for item in timeline_data)
+
+    used_slots_today = db.query(func.count(Appointment.appointmentID)).filter(
+        Appointment.assignedDate == today.date()
+    ).scalar() or 0
+    
+    total_slots_today = 100 
+
+    total_personnel = db.query(func.count(User.userID)).filter(
+        User.role.in_(["Staff", "Doctor", "Admin"]) 
+    ).scalar() or 0
+
+    recent_logs = db.query(SystemLogs, User).join(
+        User, SystemLogs.userID == User.userID
+    ).order_by(SystemLogs.timestamp.desc()).limit(6).all()
+
+    formatted_audits = []
+    for log, user in recent_logs:
+        action_str = log.actionType.name if hasattr(log.actionType, 'name') else str(log.actionType)
+        
+        formatted_audits.append({
+            "id": log.logID,
+            "action": action_str,
+            "details": f"[{user.role.value}] {log.details}",
+            "date": log.timestamp.strftime("%Y-%m-%d"),
+            "time": log.timestamp.strftime("%I:%M %p")
+        })
+
+    health_records = db.query(SystemLogs).filter(
+        SystemLogs.actionType.in_(["ERROR", "WARNING"]) 
+    ).order_by(SystemLogs.timestamp.desc()).limit(4).all()
+
+    formatted_health = []
+    for log in health_records:
+        action_str = log.actionType.name if hasattr(log.actionType, 'name') else str(log.actionType)
+        formatted_health.append({
+            "id": log.logID,
+            "type": "System Error" if action_str == "ERROR" else "System Warning",
+            "priority": "High" if action_str == "ERROR" else "Medium",
+            "time": log.timestamp.strftime("%Y-%m-%d %I:%M %p")
+        })
+    
+    dynamic_health_score = max(0, 100 - (len(formatted_health) * 5))
 
     return {
-        "appointments": monthly_appointments,
-        "personnel": total_personnel,
-        "used_slots": used_slots,
-        "total_slots": total_slots,
-        "health_score": health_score,
-        "recent_audits": audit_data,
-        "recent_health": health_data
+        "appointments": total_appts,
+        "used_slots": used_slots_today,
+        "total_slots": total_slots_today,
+        "health_score": dynamic_health_score, 
+        "personnel": total_personnel,    
+        "timeline_data": timeline_data,
+        "recent_audits": formatted_audits, 
+        "recent_health": formatted_health
     }
 
 # ---------------------------------------------------------
@@ -1080,7 +1172,6 @@ def change_account_email(
     db.commit()
     return {"message": "Email updated successfully!", "new_email": data.new_email}
 
-
 @router.put("/change-password")
 def change_account_password(
     data: PasswordChangeRequest, 
@@ -1099,3 +1190,68 @@ def change_account_password(
     ))
     db.commit()
     return {"message": "Password updated successfully!"}
+
+# ---------------------------------------------------------
+# 15. SYSTEM SETTINGS MANAGEMENT
+# ---------------------------------------------------------
+@router.get("/settings")
+def get_system_settings(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role.value != "Admin":
+        raise HTTPException(status_code=403, detail="Unauthorized. Admins only.")
+
+    settings = db.query(SystemSettings).first()
+    if not settings:
+        settings = SystemSettings()
+        db.add(settings)
+        db.commit()
+        db.refresh(settings)
+
+    return settings
+
+@router.put("/settings")
+def update_system_settings(updated_data: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role.value != "Admin":
+        raise HTTPException(status_code=403, detail="Unauthorized. Admins only.")
+
+    settings = db.query(SystemSettings).first()
+    if not settings:
+        raise HTTPException(status_code=404, detail="Settings not found")
+
+    for key, value in updated_data.items():
+        if hasattr(settings, key):
+            setattr(settings, key, value)
+
+    db.commit()
+    return {"message": "System settings completely updated!"}
+    
+@router.post("/backup")
+def trigger_manual_backup(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    
+    if current_user.role.value != "Admin":
+        raise HTTPException(status_code=403, detail="Unauthorized. Admins only.")
+        
+    result = perform_database_backup()
+    
+    if not result["success"]:
+        print(f"🚨 BACKUP FAILED: {result['error']}")
+        raise HTTPException(status_code=500, detail="Backup failed to generate on the server.")
+
+    try:
+
+        new_log = SystemLogs(
+            userID=current_user.userID,
+            tableAffected="Entire Database",
+            actionType=actionTypeEnum.UPDATE, 
+            details=f"Manual system backup successfully generated. File: {result['filename']}"
+        )
+        db.add(new_log)
+        db.commit()
+    except Exception as e:
+        print(f"⚠️ BACKUP SUCCEEDED, BUT LOGGING FAILED: {e}")
+
+    print(f"✅ BACKUP SUCCESS: Saved to {result['filepath']}")
+    return {
+        "message": "Backup sequence completed successfully!",
+        "filename": result["filename"]
+    }
+
