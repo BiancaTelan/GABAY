@@ -9,7 +9,6 @@ from passlib.context import CryptContext
 from datetime import datetime, date
 from typing import Optional
 from email_utils import send_patient_appointment_email
-from zoneinfo import ZoneInfo
 import calendar
 import uuid
 import shutil
@@ -172,13 +171,12 @@ def approve_appointment(
             detail=f"The assigned doctor (ID: {data.assigned_doctor_id}) does not have a schedule template for {day_of_week}s."
         )
 
-    ph_time = datetime.now(ZoneInfo("Asia/Manila"))
     appointment.assignedScheduleID = schedule_template.scheduleID
     appointment.assignedDate = parsed_date  
     appointment.statusID =  2
 
     appointment.actionBy_userID = current_staff.userID
-    appointment.actionDate = ph_time
+    appointment.actionDate = func.now()
     appointment.actionReason = "Approved schedule"
 
     db.commit()
@@ -241,13 +239,12 @@ def reschedule_appointment(
     if not schedule_template:
         raise HTTPException(status_code=400, detail="Doctor is not available on this newly selected date.")
 
-    ph_time = datetime.now(ZoneInfo("Asia/Manila"))
     appointment.assignedDate = parsed_date
     appointment.assignedScheduleID = schedule_template.scheduleID
     appointment.statusID = 6 
 
     appointment.actionBy_userID = current_staff.userID
-    appointment.actionDate = ph_time
+    appointment.actionDate = func.now()
     appointment.actionReason = f"Rescheduled: {data.reason}"
 
     db.add(SystemLogs(
@@ -291,9 +288,8 @@ def deny_appointment(
     
     appointment.statusID = 4 
 
-    ph_time = datetime.now(ZoneInfo("Asia/Manila"))
     appointment.actionBy_userID = current_staff.userID
-    appointment.actionDate = ph_time
+    appointment.actionDate = func.now()
     appointment.actionReason = f"Denied: {data.reason}"
 
     new_log = SystemLogs(
@@ -354,7 +350,6 @@ def staff_book_appointment(
     if not department_record:
         raise HTTPException(status_code=400, detail="Department not found in database.")
 
-    ph_time = datetime.now(ZoneInfo("Asia/Manila"))
     patient = db.query(Patient).filter(Patient.hospital_num == data.hospitalNo).first()
     if not patient:
         patient = Patient(
@@ -379,7 +374,7 @@ def staff_book_appointment(
         preferredStartDate=parsed_date, 
         preferredEndDate=parsed_date,
         actionBy_userID=current_staff.userID,
-        actionDate=ph_time,
+        actionDate=func.now(),
         actionReason="Booked by Staff"
     )
     db.add(new_appointment)
@@ -574,7 +569,7 @@ def upload_staff_profile_photo(
         shutil.copyfileobj(profile_photo.file, file_object)
 
     base_url = str(request.base_url).rstrip("/")
-    photo_url = f"{base_url}/uploads/{unique_filename}"
+    photo_url = f"/uploads/{unique_filename}"
     
     if hasattr(prof, 'profilePhoto'):
         prof.profilePhoto = photo_url
@@ -965,11 +960,9 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
     if not staff_profile or not staff_profile.deptID:
         raise HTTPException(status_code=403, detail="Unauthorized: No department assigned.")
 
-    ph_tz = ZoneInfo("Asia/Manila")
-    today = datetime.now(ph_tz)
-    today_date = today.date() 
-
     dept_id = staff_profile.deptID
+    
+    today = date.today()
     current_year = today.year
     current_month = today.month
     today_name = today.strftime('%A') 
@@ -1001,7 +994,9 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
         extract('month', Appointment.assignedDate) == current_month
     ).count()
 
-    # === 2. DAILY SLOT CAPACITY ===
+
+    # === 2. DAILY SLOT CAPACITY (Strictly for Today) ===
+    
     department_schedules = db.query(Schedule).join(
         Doctor, Schedule.docID == Doctor.docID
     ).filter(Doctor.deptID == dept_id).all()
@@ -1013,17 +1008,18 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
     
     approved_today = db.query(Appointment).filter(
         Appointment.deptID == dept_id, 
-        Appointment.assignedDate == today_date,
+        Appointment.assignedDate == today,
         Appointment.statusID.in_(valid_approved_ids) 
     ).count()
 
     noshows_today = db.query(Appointment).filter(
         Appointment.deptID == dept_id, 
-        Appointment.assignedDate == today_date,
+        Appointment.assignedDate == today,
         Appointment.statusID == noshow_id
     ).count()
 
     available_slots = (daily_total_slots - approved_today) + noshows_today
+
 
     # === 3. DAILY QUEUE FETCHING (Strictly for Today) ===
     

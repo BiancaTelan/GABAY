@@ -202,7 +202,7 @@ class SystemLogs(Base):
     userID: Mapped[Optional[int]] = mapped_column(ForeignKey("userTable.userID", ondelete="SET NULL")) 
     tableAffected: Mapped[str] = mapped_column(String(50), nullable=False) 
     actionType: Mapped[actionTypeEnum] = mapped_column(SQLEnum(actionTypeEnum), nullable=False)
-    timestamp: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    timestamp: Mapped[datetime] = mapped_column(DateTime, default=func.convert_tz(func.now(), '+00:00', '+08:00'))
     details: Mapped[Optional[str]] = mapped_column(Text)
     ipAddress: Mapped[Optional[str]] = mapped_column(String(45), nullable=True)
     
