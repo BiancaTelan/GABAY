@@ -27,30 +27,6 @@ import ForgotPassword from './pages/ForgotPassword';
 import Footer from './components/footer';
 import VerifyEmail from './pages/VerifyEmail';
 
-import StaffLayout from './components/StaffLayout';
-import StaffDashboard from './pages/staff/StaffDashboard';
-import StaffAppointments from './pages/staff/StaffAppointments';
-import RescheduleAppointment from './pages/staff/RescheduleAppointment';
-import BookSchedule from './pages/staff/BookScheduleForm';
-import DoctorList from './pages/staff/DoctorsList';
-import DoctorScheduleCalendar from './pages/staff/DoctorScheduleCalendar';
-import StaffNoShows from './pages/staff/AppointmentsNoShow';
-import StaffNotifs from './pages/staff/StaffNotifs';
-
-import AdminLogin from './pages/admin/AdminLogin';
-import AdminLayout from './components/AdminLayout';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import Users from './pages/admin/Users';
-import Personnel from './pages/admin/Personnel';
-import Departments from './pages/admin/Departments';
-import Appointments from './pages/admin/Appointments';
-import AuditLogs from './pages/admin/AuditLogs';
-import SystemLogs from './pages/admin/SystemLogs';
-import AdminNotifs from './pages/admin/AdminNotifs';
-import AdminCalendar from './pages/admin/AdminCalendar';
-import AdminSettings from './pages/admin/AdminSettings';
-
-import PersonnelAccount from './pages/admin/PersonnelAccount';
 
 const PatientRoute = () => {
   const { token, userRole } = useContext(AuthContext);
@@ -242,41 +218,6 @@ function App() {
             } />
           </Route>
           
-          {/* STAFF ROUTES */}
-          <Route element={<StaffRoute />}>
-              <Route path="/staff/dashboard" element={<StaffLayout />}>
-                <Route index element={<StaffDashboard />} />
-                <Route path="dashboard" element={<StaffDashboard />} />
-                <Route path="appointments" element={<StaffAppointments />} />
-                <Route path="reschedule" element={<RescheduleAppointment />} />
-                <Route path="book-schedule" element={<BookSchedule />} />
-                <Route path="doctors" element={<DoctorList />} />
-                <Route path="doctor-schedule" element={<DoctorScheduleCalendar />} />
-                <Route path="no-show-appointments" element={<StaffNoShows />} />
-
-                <Route path="s-account" element={<PersonnelAccount />} />
-                <Route path="s-notifs" element={<StaffNotifs />} /> 
-              </Route>
-            </Route>
-
-          {/* ADMIN ROUTES */}
-          <Route element={<AdminRoute />}> 
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="a-settings" element={<AdminSettings />} />
-              <Route path="users" element={<Users />} />
-              <Route path="personnel" element={<Personnel />} />
-              <Route path="departments" element={<Departments />} />
-              <Route path="appointments" element={<Appointments />} /> 
-              <Route path="audit-logs" element={<AuditLogs />} />
-              <Route path="system-logs" element={<SystemLogs />} />
-
-              <Route path="a-account" element={<PersonnelAccount />} />
-              <Route path="a-notifs" element={<AdminNotifs />} />
-              <Route path="a-calendar" element={<AdminCalendar />} />
-              
-            </Route>  
-          </Route>
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
     
