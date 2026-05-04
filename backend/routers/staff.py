@@ -9,6 +9,7 @@ from passlib.context import CryptContext
 from datetime import datetime, date
 from typing import Optional
 from email_utils import send_patient_appointment_email
+from zoneinfo import ZoneInfo
 import calendar
 import uuid
 import shutil
@@ -962,7 +963,8 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
 
     dept_id = staff_profile.deptID
     
-    today = date.today()
+    ph_tz = ZoneInfo("Asia/Manila")
+    today = datetime.now(ph_tz).date()
     current_year = today.year
     current_month = today.month
     today_name = today.strftime('%A') 
