@@ -1137,7 +1137,7 @@ def upload_profile_photo(
         shutil.copyfileobj(profile_photo.file, file_object)
 
 
-    photo_url = f"https://gabay-backend-bmom.onrender.com/uploads/{unique_filename}"
+    photo_url = f"/uploads/{unique_filename}"
     
     if hasattr(prof, 'profilePhoto'):
         prof.profilePhoto = photo_url
