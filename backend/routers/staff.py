@@ -161,9 +161,10 @@ def approve_appointment(
 
     day_of_week = parsed_date.strftime("%A")
 
+    # Look around line 150
     schedule_template = db.query(Schedule).filter(
         Schedule.docID == data.assigned_doctor_id,
-        cast(Schedule.weekDay, String).ilike(f"%{day_of_week}%") # <-- UPDATED
+        Schedule.weekDay == day_of_week 
     ).first()
 
     if not schedule_template:
@@ -234,7 +235,7 @@ def reschedule_appointment(
 
     schedule_template = db.query(Schedule).filter(
         Schedule.docID == appointment.docID,
-        cast(Schedule.weekDay, String).ilike(f"%{day_of_week}%")
+        Schedule.weekDay == day_of_week
     ).first()
 
     if not schedule_template:
@@ -340,7 +341,7 @@ def staff_book_appointment(
 
     schedule_template = db.query(Schedule).filter(
         Schedule.docID == data.doctor_id,
-        cast(Schedule.weekDay, String).ilike(f"%{day_of_week}%") # <-- UPDATED
+        Schedule.weekDay == day_of_week # <-- UPDATED
     ).first()
 
     if not schedule_template:
@@ -679,7 +680,7 @@ def check_schedule_availability(
 
     schedule_template = db.query(Schedule).filter(
         Schedule.docID == doctor_id,
-        cast(Schedule.weekDay, String).ilike(f"%{day_of_week}%") # <-- UPDATED
+        Schedule.weekDay == day_of_week # <-- UPDATED
     ).first()
 
     if not schedule_template:
