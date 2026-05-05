@@ -1323,17 +1323,28 @@ def get_admin_calendar_data(
                 daily_stats[date_str]["noShow"] += count
             elif status_id == 9: 
                 daily_stats[date_str]["completed"] += count
-
-        settings = db.query(SystemSettings).first()
         
-        capacity = getattr(settings, 'dailyCapacity', 100) if settings else 100
+        active_doctors = db.query(Doctor).filter(Doctor.isAvailable == True).all()
+        capacity_map = {
+            "Monday": 0, "Tuesday": 0, "Wednesday": 0, 
+            "Thursday": 0, "Friday": 0, "Saturday": 0, "Sunday": 0
+        }
+        
+        for doctor in active_doctors:
+            doctor_schedules = db.query(Schedule).filter(Schedule.docID == doctor.docID).all()
+            for sched in doctor_schedules:
+                sched_day = sched.weekDay.value if hasattr(sched.weekDay, 'value') else str(sched.weekDay)
+                safe_day = sched_day.strip().capitalize()
+                
+                if safe_day in capacity_map:
+                    capacity_map[safe_day] += int(getattr(sched, 'maxPatients', 20) or 20)
 
         return {
             "appointments": list(daily_stats.values()),
             "events": formatted_events,
-            "capacity": capacity
+            "capacity_map": capacity_map 
         }
-        
+    
     except Exception as e:
         print(f"Calendar Fetch Error: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch calendar data")
