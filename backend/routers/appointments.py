@@ -218,12 +218,7 @@ def get_appointment_history(email: str, db: Session = Depends(get_db)):
 
             display_date = "TBD"
         
-            if "Pending" in status_name and getattr(appt, 'preferredStartDate', None):
-                display_date = appt.preferredStartDate.strftime("%B %d, %Y")
-                if getattr(appt, 'preferredEndDate', None) and appt.preferredEndDate != appt.preferredStartDate:
-                    display_date += f" to {appt.preferredEndDate.strftime('%B %d, %Y')}"
-                    
-            elif getattr(appt, 'assignedDate', None):
+            if getattr(appt, 'assignedDate', None):
                 display_date = appt.assignedDate.strftime("%B %d, %Y")
                 if getattr(appt, 'assignedSchedule', None) and getattr(appt.assignedSchedule, 'startTime', None):
                     display_date += f" ({appt.assignedSchedule.startTime.strftime('%I:%M %p')})"
@@ -242,7 +237,8 @@ def get_appointment_history(email: str, db: Session = Depends(get_db)):
                 "type": appt.type,
                 "reason": appt.purposeDetailed or "No reason provided.",
                 "createdAt": appt.createdAt.strftime("%m/%d/%Y") if appt.createdAt else "Recently",
-                "updatedAt": action_date.strftime("%B %d, %Y at %I:%M %p") if action_date else "Recently"
+                "updatedAt": action_date.strftime("%B %d, %Y at %I:%M %p") if action_date else "Recently",
+                "rawTimestamp": action_date.isoformat() if action_date else "" # Hidden sorting key
             })
 
         return {
@@ -255,7 +251,7 @@ def get_appointment_history(email: str, db: Session = Depends(get_db)):
     except Exception as e:
         print(f"Error fetching history: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch appointment history.")
-    
+       
 # ---------------------------------------------------------
 # 5. Update Appointment Status (Patient side)
 # ---------------------------------------------------------

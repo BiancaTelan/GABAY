@@ -81,10 +81,8 @@ def get_staff_appointments(db: Session = Depends(get_db), current_staff: User = 
         return []
     
     appointments = db.query(Appointment).filter(Appointment.deptID == staff_profile.deptID).all()
-    results = []
     
     try:
-        appointments = db.query(Appointment).all()
 
         status_mapping = {
             1: 'pending',
@@ -679,7 +677,7 @@ def check_schedule_availability(
 
     schedule_template = db.query(Schedule).filter(
         Schedule.docID == doctor_id,
-        Schedule.weekDay == day_of_week # <-- UPDATED
+        Schedule.weekDay == day_of_week 
     ).first()
 
     if not schedule_template:
@@ -691,10 +689,18 @@ def check_schedule_availability(
 
     max_capacity = schedule_template.maxPatients
 
+    active_statuses = db.query(AppointmentStatus).filter(
+        AppointmentStatus.statusName.ilike("%Approved%") |
+        AppointmentStatus.statusName.ilike("%Confirmed%") |
+        AppointmentStatus.statusName.ilike("%Rescheduled%") |
+        AppointmentStatus.statusName.ilike("%Book%")
+    ).all()
+    valid_ids = [s.statusID for s in active_statuses] if active_statuses else [2, 5, 6, 7]
+
     booked_count = db.query(Appointment).filter(
         Appointment.docID == doctor_id,
         Appointment.assignedDate == target_date,
-        Appointment.statusID.in_([2, 5]) 
+        Appointment.statusID.in_(valid_ids) 
     ).count()
 
     slots_left = max_capacity - booked_count
@@ -857,13 +863,15 @@ def add_doctor_schedule(
         raise HTTPException(status_code=404, detail="Doctor not found")
 
     try:
-        raw_start, raw_end = data.timePeriod.split(" – ") 
+        normalized_time = data.timePeriod.replace("–", "-").replace("—", "-")
+        raw_start, raw_end = normalized_time.split("-")
+        
         parsed_start = datetime.strptime(raw_start.strip(), "%I:%M %p").time()
         parsed_end = datetime.strptime(raw_end.strip(), "%I:%M %p").time()
     except Exception as e:
         print(f"Time parsing error: {e}")
         raise HTTPException(status_code=400, detail="Invalid time format. Expected 'HH:MM AM/PM - HH:MM AM/PM'")
-
+    
     day_mapping = {
         "M": "Monday",
         "T": "Tuesday",
@@ -909,11 +917,14 @@ def edit_specific_schedule(
         raise HTTPException(status_code=404, detail="Schedule not found")
 
     try:
-        raw_start, raw_end = data.timePeriod.split(" – ") 
-        schedule.startTime = datetime.strptime(raw_start.strip(), "%I:%M %p").time()
-        schedule.endTime = datetime.strptime(raw_end.strip(), "%I:%M %p").time()
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid time format.")
+        normalized_time = data.timePeriod.replace("–", "-").replace("—", "-")
+        raw_start, raw_end = normalized_time.split("-")
+        
+        parsed_start = datetime.strptime(raw_start.strip(), "%I:%M %p").time()
+        parsed_end = datetime.strptime(raw_end.strip(), "%I:%M %p").time()
+    except Exception as e:
+        print(f"Time parsing error: {e}")
+        raise HTTPException(status_code=400, detail="Invalid time format. Expected 'HH:MM AM/PM - HH:MM AM/PM'")
 
     day_mapping = { "M": "Monday", "T": "Tuesday", "W": "Wednesday", "TH": "Thursday", "F": "Friday", "S": "Saturday", "SU": "Sunday" }
     
@@ -972,12 +983,24 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
     current_month = today.month
     today_name = today.strftime('%A') 
 
-    pending_id = 1
-    cancelled_id = 3
-    noshow_id = 8 
-    valid_approved_ids = [2, 5, 6]
+    active_statuses = db.query(AppointmentStatus).filter(
+        AppointmentStatus.statusName.ilike("%Approved%") |
+        AppointmentStatus.statusName.ilike("%Confirmed%") |
+        AppointmentStatus.statusName.ilike("%Rescheduled%") |
+        AppointmentStatus.statusName.ilike("%Book%")
+    ).all()
+    valid_approved_ids = [s.statusID for s in active_statuses] if active_statuses else [2, 5, 6, 7]
 
-    # === 1. MONTHLY OVERVIEW STATS ===
+    pending_obj = db.query(AppointmentStatus).filter(AppointmentStatus.statusName.ilike("%Pending%")).first()
+    pending_id = pending_obj.statusID if pending_obj else 1
+
+    cancelled_obj = db.query(AppointmentStatus).filter(AppointmentStatus.statusName.ilike("%Cancelled%")).first()
+    cancelled_id = cancelled_obj.statusID if cancelled_obj else 3
+
+    noshow_obj = db.query(AppointmentStatus).filter(AppointmentStatus.statusName.ilike("%No Show%")).first()
+    noshow_id = noshow_obj.statusID if noshow_obj else 8
+
+    # === MONTHLY OVERVIEW STATS ===
     for_approval = db.query(Appointment).filter(
         Appointment.deptID == dept_id, 
         Appointment.statusID == pending_id,
@@ -999,14 +1022,14 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
         extract('month', Appointment.assignedDate) == current_month
     ).count()
 
-    # === 2. DAILY SLOT CAPACITY ===
+    # === DAILY SLOT CAPACITY ===
     department_schedules = db.query(Schedule).join(
         Doctor, Schedule.docID == Doctor.docID
     ).filter(Doctor.deptID == dept_id).all()
 
     daily_total_slots = sum(
-        sched.maxPatients for sched in department_schedules 
-        if sched.weekDay.value == today_name
+        (sched.maxPatients or 20) for sched in department_schedules 
+        if str(sched.weekDay).split('.')[-1].strip().lower() == today_name.lower()
     )
     
     approved_today = db.query(Appointment).filter(
@@ -1015,17 +1038,10 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
         Appointment.statusID.in_(valid_approved_ids) 
     ).count()
 
-    noshows_today = db.query(Appointment).filter(
-        Appointment.deptID == dept_id, 
-        Appointment.assignedDate == today_date,
-        Appointment.statusID == noshow_id
-    ).count()
-
     available_slots = daily_total_slots - approved_today
-    
     available_slots = max(0, available_slots)
 
-    # === 3. DAILY QUEUE FETCHING (Strictly for Today) ===
+    # === DAILY QUEUE FETCHING (Strictly for Today) ===
     
     todays_appointments = db.query(Appointment).outerjoin(
         DailyQueue, Appointment.appointmentID == DailyQueue.appointmentID
@@ -1049,7 +1065,7 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
         doctor = db.query(Doctor).filter(Doctor.docID == appt.docID).first()
         
         if queue_record:
-            display_status = queue_record.queueStatus.value 
+            display_status = queue_record.queueStatus.value if hasattr(queue_record.queueStatus, 'value') else str(queue_record.queueStatus)
         else:
             status_obj = db.query(AppointmentStatus).filter(AppointmentStatus.statusID == appt.statusID).first()
             display_status = status_obj.statusName if status_obj else "Unknown"
@@ -1182,7 +1198,7 @@ def get_no_shows(db: Session = Depends(get_db), current_staff: User = Depends(ge
             "patientName": f"{patient.firstname} {patient.surname}" if patient else "Unknown",
             "status": "No Show",
             "docID": appt.docID,
-            "assignedDoctor": f"Dr. {doctor.surname}" if doctor else "Unassigned",
+            "assignedDoctor": f"{doctor.firstname} {doctor.surname}" if doctor else "NONE",
             "hospitalNo": patient.hospital_num if patient else "N/A",
             "email": patient.user_account.email if (patient and patient.user_account) else "N/A"
         })
