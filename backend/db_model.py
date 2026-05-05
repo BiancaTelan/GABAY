@@ -7,6 +7,9 @@ from sqlalchemy.sql import func
 from db_connection import Base
 
 # === ENUMS OPTIONS ===
+class EventTypeEnum(enum.Enum):
+    EVENT = "EVENT"
+    HOLIDAY = "HOLIDAY"
 
 class roleEnum(enum.Enum):
     Admin = "Admin"
@@ -247,3 +250,14 @@ class SystemSettings(Base):
     maintenanceMode: Mapped[bool] = mapped_column(Boolean, default=False)
     downtimeReason: Mapped[str] = mapped_column(String(100), default="Maintenance Mode")
     resumeTimer: Mapped[str] = mapped_column(String(20), default="60")
+    dailyCapacity = Mapped[int] = mapped_column(Integer, default=25, nullable=False)
+
+class CalendarEvent(Base):
+    __tablename__ = "calendarEvents"
+
+    eventID: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
+    title: Mapped[str] = mapped_column(String(100), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    startDate: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    endDate: Mapped[date] = mapped_column(Date, nullable=False)
+    eventType: Mapped[EventTypeEnum] = mapped_column(SQLEnum(EventTypeEnum), nullable=False)  

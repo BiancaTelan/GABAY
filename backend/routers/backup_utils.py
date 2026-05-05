@@ -5,6 +5,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# ---------------------------------------------------------
+#  BACKUP UTILS
+# ---------------------------------------------------------
 def perform_database_backup():
     DB_HOST = os.getenv("DB_HOST", "localhost")
     DB_USER = os.getenv("DB_USER", "root")

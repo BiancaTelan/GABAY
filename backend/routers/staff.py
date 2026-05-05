@@ -174,7 +174,7 @@ def approve_appointment(
 
     appointment.assignedScheduleID = schedule_template.scheduleID
     appointment.assignedDate = parsed_date  
-    appointment.statusID =  2
+    appointment.statusID =  5
 
     appointment.actionBy_userID = current_staff.userID
     appointment.actionDate = func.now()
@@ -1076,7 +1076,13 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
     }
 
 @router.put("/queue/{appointment_id}")
-def update_queue_status(appointment_id: int, action: str, db: Session = Depends(get_db), current_staff: User = Depends(get_current_user)):
+def update_queue_status(
+    appointment_id: int, 
+    action: str, 
+    request: Request, 
+    db: Session = Depends(get_db), 
+    current_staff: User = Depends(get_current_user)
+):
     staff_profile = db.query(Staff).filter(Staff.userID == current_staff.userID).first()
     
     appointment = db.query(Appointment).filter(
@@ -1124,6 +1130,15 @@ def update_queue_status(appointment_id: int, action: str, db: Session = Depends(
 
     else:
         raise HTTPException(status_code=400, detail="Invalid action")
+
+    
+    db.add(SystemLogs(
+        userID=current_staff.userID,
+        actionType=actionTypeEnum.UPDATE, 
+        tableAffected="dailyQueueTable",
+        details=f"Updated queue status for Appointment #{appointment_id} to '{action.upper()}'",
+        ipAddress=request.client.host
+    ))
 
     db.commit()
     return {"message": "Queue updated successfully"}

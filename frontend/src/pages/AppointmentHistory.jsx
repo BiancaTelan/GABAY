@@ -16,8 +16,9 @@ export default function AppointmentHistory() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5; 
   
-  const totalPages = Math.max(1, Math.ceil(appointments.length / itemsPerPage));
-  const currentAppointments = appointments.slice(
+  const safeAppointments = Array.isArray(appointments) ? appointments : [];
+  const totalPages = Math.max(1, Math.ceil(safeAppointments.length / itemsPerPage));
+  const currentAppointments = safeAppointments.slice(
     (currentPage - 1) * itemsPerPage, 
     currentPage * itemsPerPage
   );
@@ -33,7 +34,7 @@ export default function AppointmentHistory() {
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/history/${userEmail}`);
         if (response.ok) {
           const data = await response.json();
-          setAppointments(data.appointments);
+          setAppointments(data.appointments || []);
         }
       } catch (error) {
         console.error("Failed to fetch history:", error);
@@ -57,6 +58,20 @@ export default function AppointmentHistory() {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
+  };
+
+  const getStatusStyle = (status) => {
+    if (!status) return 'bg-gray-100 text-gray-700 border-gray-200';
+    
+    const s = status.toLowerCase();
+    if (s.includes('pending')) return 'bg-gray-100 text-gray-600 font-medium border-gray-200';
+    if (s.includes('approved')) return 'bg-orange-500 text-white font-bold border-orange-600 shadow-sm';
+    if (s.includes('rescheduled')) return 'bg-yellow-100 text-yellow-800 font-bold border-yellow-300';
+    if (s.includes('confirmed')) return 'bg-green-100 text-green-800 font-bold border-green-300';
+    if (s.includes('booked')) return 'bg-blue-100 text-blue-800 font-bold border-blue-300';
+    if (s.includes('denied') || s.includes('cancel')) return 'bg-red-100 text-red-800 font-bold border-red-200';
+    
+    return 'bg-gray-100 text-gray-700 font-medium border-gray-200';
   };
 
   return (
@@ -90,7 +105,10 @@ export default function AppointmentHistory() {
                 </div>
                 <div className="text-right">
                   <span className="font-medium block">{selectedAppointment.department}</span>
-                  <span className="text-xs text-gray-400 font-bold uppercase">{selectedAppointment.type} OPD</span>
+                  
+                  {selectedAppointment.type && (
+                    <span className="text-xs text-gray-400 font-bold uppercase">{selectedAppointment.type} OPD</span>
+                  )}
                 </div>
               </div>
 
@@ -107,11 +125,7 @@ export default function AppointmentHistory() {
                   <Activity className="text-gabay-teal" size={20} />
                   <span className="font-semibold text-gabay-navy">Status</span>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                  selectedAppointment.status.includes('Pending') ? 'bg-yellow-100 text-yellow-700' : 
-                  selectedAppointment.status.includes('Approved') ? 'bg-green-100 text-green-700' : 
-                  'bg-gray-100 text-gray-700'
-                }`}>
+                <span className={`px-3 py-1 rounded-full text-xs uppercase tracking-wider border ${getStatusStyle(selectedAppointment.status)}`}>
                   {selectedAppointment.status}
                 </span>
               </div>
@@ -119,11 +133,12 @@ export default function AppointmentHistory() {
               <div>
                 <span className="font-semibold text-gabay-navy mb-2 block">Reason for Booking</span>
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-gray-700 text-sm leading-relaxed">
-                  {selectedAppointment.reason}
+                  {selectedAppointment.reason || "No reason provided."}
                 </div>
               </div>
 
-              {selectedAppointment.referral && (
+              {/* Checked for both referral variations */}
+              {(selectedAppointment.referral || selectedAppointment.referral_doc) && (
                 <div className="bg-teal-50 p-4 rounded-lg flex items-center justify-between border border-teal-100">
                   <div className="flex items-center gap-2 text-gabay-teal">
                     <FileText size={20} />
@@ -146,7 +161,6 @@ export default function AppointmentHistory() {
         </div>
       )}
 
-
       <div className="w-full max-w-5xl">
         <h1 className="font-montserrat font-bold text-[40px] text-gabay-teal text-left mb-2">
           Appointment History
@@ -161,7 +175,7 @@ export default function AppointmentHistory() {
               <div className="flex justify-center items-center h-64">
                 <div className="w-8 h-8 border-4 border-gabay-teal border-t-transparent rounded-full animate-spin"></div>
               </div>
-            ) : appointments.length === 0 ? (
+            ) : safeAppointments.length === 0 ? (
               <div className="flex justify-center items-center h-64 font-poppins text-gray-500">
                 You have no appointment records yet.
               </div>
@@ -183,14 +197,14 @@ export default function AppointmentHistory() {
                       <td className="px-6 py-5 font-poppins text-gray-600">{appt.doctor}</td>
                       <td className="px-6 py-5 font-poppins text-gray-600">
                         {appt.department}
-                        <span className="block text-[10px] text-gabay-teal mt-1 uppercase font-bold tracking-wider">{appt.type} OPD</span>
+                        {appt.type && (
+                          <span className="block text-[10px] text-gabay-teal mt-1 uppercase font-bold tracking-wider">
+                            {appt.type} OPD
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-5 font-poppins">
-                        <span className={`px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider ${
-                          appt.status.includes('Pending') ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' : 
-                          appt.status.includes('Approved') ? 'bg-green-100 text-green-700 border border-green-200' : 
-                          'bg-gray-100 text-gray-700 border border-gray-200'
-                        }`}>
+                        <span className={`px-4 py-1.5 rounded-full text-[11px] uppercase tracking-wider border ${getStatusStyle(appt.status)}`}>
                           {appt.status}
                         </span>
                       </td>
@@ -209,7 +223,7 @@ export default function AppointmentHistory() {
             )}
           </div>
 
-          {!isLoading && appointments.length > 0 && (
+          {!isLoading && safeAppointments.length > 0 && (
             <div className="flex items-center justify-center py-5 bg-gray-50 border-t border-gray-200">
               <button
                 onClick={() => goToPage(currentPage - 1)}

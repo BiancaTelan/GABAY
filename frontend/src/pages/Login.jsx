@@ -3,7 +3,7 @@ import gabayLogo from '../assets/gabayLogo.png';
 import Button from '../components/button';
 import Input from '../components/input';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { useState, useContext} from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { emailPattern } from '../utils/constants';
 import { AuthContext } from '../authContext';
 
@@ -11,8 +11,12 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [rememberMe, setRememberMe] = useState(() => {
+    return localStorage.getItem('rememberMe') === 'true';
+  });
+
   const [formData, setFormData] = useState({
-    email: '',
+    email: localStorage.getItem('rememberedEmail') || '',
     password: ''
   });
 
@@ -56,7 +60,7 @@ export default function Login() {
         body: urlEncodedData.toString(),
       });
       
-    const textResponse = await response.text();
+      const textResponse = await response.text();
       let data;
       
       try {
@@ -76,19 +80,25 @@ export default function Login() {
       }
 
       const accessToken = data.access_token;
-
       const payload = JSON.parse(atob(accessToken.split('.')[1]));
-      const userRole = payload.role;
+      const userRole = payload.role?.toLowerCase() || '';
 
-      if (userRole === 'staff') {
-        setErrors({ email: " ", password: "Staff members cannot log in here. Please use the staff login page." });
+      if (['staff', 'admin'].includes(userRole)) {
+        setErrors({ email: " ", password: "Staff/Admin members cannot log in here. Please use the employee login page." });
         return;
+      }
+
+      if (rememberMe) {
+        localStorage.setItem('rememberedEmail', formData.email);
+        localStorage.setItem('rememberMe', 'true');
+      } else {
+        localStorage.removeItem('rememberedEmail');
+        localStorage.setItem('rememberMe', 'false');
       }
 
       login(accessToken, userRole);
 
       const from = location.state?.from?.pathname || '/';
-      
       navigate(from, { replace: true });
 
     } catch (error) {
@@ -104,7 +114,6 @@ export default function Login() {
         style={{ backgroundImage: `url(${caintaBg})` }}
       />
       
-      {/* GABAY Logo Link */}
       <div 
         className="absolute top-6 left-6 z-30 cursor-pointer hover:opacity-80 transition"
         onClick={() => navigate('/')}>
@@ -159,6 +168,8 @@ export default function Login() {
             <div className="flex items-center justify-between mt-1 mb-6">
               <label className="flex items-center cursor-pointer group">
                 <input type="checkbox" 
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
                   className="w-4 h-4 border-gray-300 rounded text-gabay-teal focus:ring-gabay-teal cursor-pointer"
                 />
                 <span className="ml-2 text-xs font-poppins text-gray-600 group-hover:text-gabay-blue transition-colors">

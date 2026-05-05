@@ -1,7 +1,8 @@
 import os
 import shutil
+from sqlalchemy import func
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks
 from sqlalchemy.orm import Session
@@ -9,9 +10,17 @@ from typing import List
 from dependencies import get_current_user, RoleChecker
 from py_schema import PatientResponse 
 from db_connection import get_db
-from db_model import User, Patient, Appointment, Department, Doctor, AppointmentStatus, roleEnum
+from db_model import User, Patient, Appointment, Department, Doctor, AppointmentStatus, roleEnum, Schedule
 from email_utils import send_notification_email
 
+router = APIRouter(prefix="/api/appointments", tags=["Appointments"])
+
+allow_admin_and_staff = RoleChecker([roleEnum.Admin, roleEnum.Staff])
+allow_medical_team = RoleChecker([roleEnum.Admin, roleEnum.Staff])
+
+# ---------------------------------------------------------
+# Pydantic Models
+# ---------------------------------------------------------
 class StatusUpdate(BaseModel):
     status: str
 
@@ -20,13 +29,8 @@ class RescheduleRequest(BaseModel):
     preferredEndDate: Optional[str] = None
     reason: str
 
-router = APIRouter(prefix="/api/appointments", tags=["Appointments"])
-
-allow_admin_and_staff = RoleChecker([roleEnum.Admin, roleEnum.Staff])
-allow_medical_team = RoleChecker([roleEnum.Admin, roleEnum.Staff])
-
 # ---------------------------------------------------------
-# ROUTE 1: Strict Access (Only Admins, Staff, and Doctors)
+# 1. Strict Access (Only Admins, Staff, and Doctors)
 # ---------------------------------------------------------
 @router.get("/all-schedules", dependencies=[Depends(allow_medical_team)])
 def get_all_hospital_schedules():
@@ -34,7 +38,7 @@ def get_all_hospital_schedules():
     return {"message": "Secure hospital schedule data returned."}
 
 # ---------------------------------------------------------
-# ROUTE 2: General Authenticated Access (All logged-in users)
+# 2. General Authenticated Access (All logged-in users)
 # ---------------------------------------------------------
 @router.get("/my-profile")
 def get_my_profile(current_user: User = Depends(get_current_user)):
@@ -46,7 +50,7 @@ def get_my_profile(current_user: User = Depends(get_current_user)):
     }
 
 # ---------------------------------------------------------
-# ROUTE 3: Main Rappointment Endpoint 
+# 3. Main Appointment Endpoint 
 # ---------------------------------------------------------
 
 router = APIRouter(prefix="/appointments", tags=["Appointments"])
@@ -96,12 +100,18 @@ async def book_appointment(
         user = db.query(User).filter(User.email == email).first()
         if not user:
             raise HTTPException(status_code=404, detail="User not found.")
-        patient = db.query(Patient).filter(Patient.userID == user.userID).first()
+        
+        if user.is_verified == False:
+            raise HTTPException(
+                status_code=403, 
+                detail="Action Denied: You must verify your email address before booking an appointment."
+            )
 
+        patient = db.query(Patient).filter(Patient.userID == user.userID).first()
         department = db.query(Department).filter(Department.department == department).first()
         if not department:
             raise HTTPException(status_code=400, detail=f"Department '{department}' not found in database.")
-
+        
         doc_id = None
         if doctor_name != "NONE":
             doctor = db.query(Doctor).filter(Doctor.firstname + ' ' + Doctor.surname == doctor_name).first()
@@ -174,7 +184,7 @@ async def book_appointment(
         raise HTTPException(status_code=500, detail=str(e))
 
 # ---------------------------------------------------------
-# ROUTE 4: Appointment History Endpoint
+# 4. Appointment History Endpoint
 # ---------------------------------------------------------
 
 @router.get("/history/{email}")
@@ -231,7 +241,7 @@ def get_appointment_history(email: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Failed to fetch appointment history.")
 
 # ---------------------------------------------------------
-#ROUTE 5: Update Appointment Status Patient side
+# 5. Update Appointment Status (Patient side)
 # ---------------------------------------------------------
 
 @router.put("/{appointment_id}/status")
@@ -258,11 +268,9 @@ def update_appointment_status(appointment_id: int, request: StatusUpdate, db: Se
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
     
-
 # ---------------------------------------------------------
-# ROUTE 3: Main Reservation Endpoint 
+# 6. Main Reservation Endpoint 
 # ---------------------------------------------------------
-
 @router.put("/{appointment_id}/reschedule")
 def reschedule_appointment(appointment_id: int, request: RescheduleRequest, db: Session = Depends(get_db)):
     try:
@@ -288,3 +296,52 @@ def reschedule_appointment(appointment_id: int, request: RescheduleRequest, db: 
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+# ---------------------------------------------------------
+# 7. Doctor Availability Endpoint
+# ---------------------------------------------------------
+@router.get("/doctor-availability")
+def get_doctor_availability(doctor_name: str, db: Session = Depends(get_db)):
+    try:
+        doc = db.query(Doctor).filter(Doctor.firstname + ' ' + Doctor.surname == doctor_name).first()
+        if not doc:
+            return {"working_days": [], "fully_booked_dates": []}
+
+        schedules = db.query(Schedule).filter(Schedule.docID == doc.docID).all()
+        
+        day_map = { "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3, "Thursday": 4, "Friday": 5, "Saturday": 6 }
+        working_days = []
+        capacity_per_day = {} 
+
+        for s in schedules:
+            day_name = s.weekDay.value if hasattr(s.weekDay, 'value') else str(s.weekDay)
+            day_idx = day_map.get(day_name)
+            if day_idx is not None:
+                working_days.append(day_idx)
+                capacity_per_day[day_idx] = s.maxPatients
+
+        today = date.today()
+        booked_counts = db.query(
+            Appointment.assignedDate, func.count(Appointment.appointmentID)
+        ).filter(
+            Appointment.docID == doc.docID,
+            Appointment.assignedDate >= today,
+            Appointment.statusID.in_([2, 5, 6]) # Only count Approved, Booked, or Rescheduled
+        ).group_by(Appointment.assignedDate).all()
+
+        fully_booked_dates = []
+        for b_date, count in booked_counts:
+            if b_date:
+                w_day = b_date.isoweekday() % 7 
+                max_cap = capacity_per_day.get(w_day, 0)
+                if count >= max_cap:
+                    fully_booked_dates.append(b_date.strftime("%Y-%m-%d"))
+
+        return {
+            "working_days": working_days,
+            "fully_booked_dates": fully_booked_dates
+        }
+    except Exception as e:
+        print(f"Error fetching availability: {e}")
+        return {"working_days": [], "fully_booked_dates": []}
+    

@@ -1,44 +1,28 @@
 import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, CalendarDays } from 'lucide-react';
+import { ChevronDown, CalendarDays, AlertCircle } from 'lucide-react';
 import DatePicker from "react-datepicker";
+import toast from 'react-hot-toast';
 import "react-datepicker/dist/react-datepicker.css";
 
-const GabayInput = React.forwardRef(({ value, onClick, onChange, ...props }, ref) => {
-  const handleChange = (e) => {
-    const rawValue = e.target.value;
-    const digits = rawValue.replace(/\D/g, "");
-    let formatted = digits;
-    
-    if (digits.length > 2 && digits.length <= 4) {
-      formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`;
-    } else if (digits.length > 4) {
-      formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 8)}`;
-    }
-    
-    e.target.value = formatted;
-    onChange(e);
-  };
-
-  return (
-    <div className="relative w-full">
-      <input
-        {...props}
-        ref={ref}
-        value={value}
-        onClick={onClick}
-        onChange={handleChange}
-        autoComplete="off"
-      />
-      <CalendarDays className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
-    </div>
-  );
-});
+const DateDisplayInput = React.forwardRef(({ value, onClick, className }, ref) => (
+  <div className="relative w-full">
+    <input
+      ref={ref}
+      value={value}
+      onClick={onClick}
+      readOnly
+      placeholder="Select up to 5 preferred dates"
+      className={`cursor-pointer ${className}`}
+    />
+    <CalendarDays className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
+  </div>
+));
 
 export default function GeneralForm({ userInfo, onConfirm }) {
   const navigate = useNavigate();
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
+  const [selectedDates, setSelectedDates] = useState([]);
+  const [doctorAvailability, setDoctorAvailability] = useState({ working_days: [], fully_booked_dates: [] });
   const [mode, setMode] = useState("fill");
   const isReadOnly = mode === "confirm";
   
@@ -54,6 +38,7 @@ export default function GeneralForm({ userInfo, onConfirm }) {
 
   const [hospitalData, setHospitalData] = useState({ departments: [] });
   const [isLoading, setIsLoading] = useState(true);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     const fetchHospitalData = async () => {
@@ -69,50 +54,81 @@ export default function GeneralForm({ userInfo, onConfirm }) {
         setIsLoading(false);
       }
     };
-
     fetchHospitalData();
   }, []);
 
-  const [errors, setErrors] = useState({});
+  useEffect(() => {
+    if (formData.doctor && formData.doctor !== "NONE") {
+      fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/doctor-availability?doctor_name=${encodeURIComponent(formData.doctor)}`)
+        .then(res => res.json())
+        .then(data => setDoctorAvailability(data))
+        .catch(() => setDoctorAvailability({ working_days: [], fully_booked_dates: [] }));
+    }
+  }, [formData.doctor]);
 
   const today = new Date();
   const maxDate = new Date();
   maxDate.setMonth(maxDate.getMonth() + 6);
 
-  const isWeekday = (date) => {
+  const filterAllowedDates = (date) => {
     const day = date.getDay();
-    return day !== 0 && day !== 6;
+    const dateStr = date.toLocaleDateString('en-CA'); 
+    
+    if (formData.doctor === "NONE") {
+      return day !== 0 && day !== 6; 
+    }
+    
+    const isWorkingDay = doctorAvailability.working_days.includes(day);
+    const isNotFullyBooked = !doctorAvailability.fully_booked_dates.includes(dateStr);
+    
+    return isWorkingDay && isNotFullyBooked;
   };
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }));
 
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-      ...(name === 'department' || (name === 'hasPreviousRecord' && !checked) ? { doctor: "NONE" } : {})
-    }));
+    setFormData(prev => {
+      const updates = { [name]: type === 'checkbox' ? checked : value };
+      
+      if (name === 'department' || (name === 'hasPreviousRecord' && !checked)) {
+        updates.doctor = "NONE";
+        setSelectedDates([]); 
+      }
+      return { ...prev, ...updates };
+    });
   };
 
   const validateForm = () => {
     let newErrors = {};
     if (!formData.department) newErrors.department = "Department is required.";
     if (!formData.reason) newErrors.reason = "Please provide a reason for booking.";
-    
-    if (!startDate) {
-      newErrors.appointmentDate = "Please select a date range.";
-    }
+    if (selectedDates.length === 0) newErrors.appointmentDate = "Please select at least 1 date.";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const generalDepts = hospitalData.departments.filter(d => d.type === 'general');
+  const handleConfirmSubmit = () => {
+    if (!validateForm()) return;
 
-  const availableDoctors = hospitalData.departments.find(
-    d => d.name === formData.department
-  )?.doctors || [];
+    const sortedDates = [...selectedDates].sort((a, b) => a - b);
+    const start = sortedDates[0];
+    const end = sortedDates[sortedDates.length - 1];
+    
+    const datesString = sortedDates.map(d => d.toLocaleDateString()).join(", ");
+    const detailedReason = `${formData.reason} | Patient's Specific Target Dates: [${datesString}]`;
+
+    onConfirm({ 
+      ...formData, 
+      startDate: start, 
+      endDate: end, 
+      reason: detailedReason 
+    }, "General");
+  };
+
+  const generalDepts = hospitalData.departments.filter(d => d.type === 'general');
+  const availableDoctors = hospitalData.departments.find(d => d.name === formData.department)?.doctors || [];
 
   if (isLoading) {
     return (
@@ -130,6 +146,15 @@ export default function GeneralForm({ userInfo, onConfirm }) {
       <p className="text-gray-500 mb-10">
         {isReadOnly ? "Please double-check your details before confirming." : "Complete the form to reserve your appointment."}
       </p>
+
+      {userInfo?.is_verified === false && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-8 flex items-center gap-3 rounded-r-lg">
+          <AlertCircle className="text-red-500 shrink-0" size={20} />
+          <p className="text-sm text-red-700">
+            <strong>Account Unverified:</strong> You must verify your email address before you can submit a reservation. Please check your inbox for the verification link.
+          </p>
+        </div>
+      )}
 
       <div className="flex flex-col border-2 border-gabay-teal rounded-2xl p-5 md:flex-row gap-16">
         <div className="flex-1 space-y-6">
@@ -182,33 +207,33 @@ export default function GeneralForm({ userInfo, onConfirm }) {
           </div>
 
           <div className="flex flex-col">
-            <label className="text-gabay-blue font-semibold mb-1 text-lg uppercase tracking-wide">Preferred Appointment Date</label>
+            <label className="text-gabay-blue font-semibold mb-1 text-lg uppercase tracking-wide">Preferred Dates</label>
             <div className="relative custom-datepicker-container">
               {isReadOnly ? (
-                <div className="p-2 bg-gray-100 border border-gray-300 rounded-md text-gray-500">
-                  {startDate?.toLocaleDateString()} {endDate ? `- ${endDate?.toLocaleDateString()}` : ""}
+                <div className="p-2 bg-gray-100 border border-gray-300 rounded-md text-gray-500 font-medium">
+                  {selectedDates.map(d => d.toLocaleDateString()).join(", ")}
                 </div>
               ) : (
                 <DatePicker
-                  selected={startDate}
+                  selected={selectedDates[0]} // Keeps the calendar open to the right month
                   onChange={(dates) => {
-                    const [start, end] = dates;
-                    setStartDate(start);
-                    setEndDate(end);
+                    if (dates.length > 5) {
+                      toast.error("You can select a maximum of 5 dates.");
+                      setSelectedDates(dates.slice(0, 5));
+                    } else {
+                      setSelectedDates(dates);
+                      if (errors.appointmentDate) setErrors(prev => ({ ...prev, appointmentDate: "" }));
+                    }
                   }}
-                  startDate={startDate}
-                  endDate={endDate}
-                  selectsRange
-                  filterDate={isWeekday}
+                  selectsMultiple
+                  shouldCloseOnSelect={false}
+                  filterDate={filterAllowedDates}
                   minDate={today}
-                  maxDate={startDate 
-                    ? new Date(startDate.getTime() + 6 * 24 * 60 * 60 * 1000) 
-                    : maxDate
-                  }
-                  placeholderText="MM/DD/YYYY - MM/DD/YYYY"
+                  maxDate={maxDate}
                   dateFormat="MM/dd/yyyy"
+                  value={selectedDates.map(d => d.toLocaleDateString()).join(", ")} // Displays the multiple dates securely
                   customInput={
-                    <GabayInput 
+                    <DateDisplayInput 
                       className={`w-full p-2 text-base rounded-md border outline-none transition-all pr-10 ${
                         errors.appointmentDate ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 focus:ring-2 focus:ring-gabay-teal'
                       }`} 
@@ -217,12 +242,8 @@ export default function GeneralForm({ userInfo, onConfirm }) {
                 />
               )}
             </div>
-            {errors.appointmentDate && (
-              <p className="text-red-500 text-[11px] mt-1 font-medium uppercase">
-                {errors.appointmentDate}
-              </p>
-            )}
-            {!isReadOnly && <p className="text-[12px] text-gray-400 mt-1 font-medium">* Max 5-day duration per reservation.</p>}
+            {errors.appointmentDate && <p className="text-red-500 text-[11px] mt-1 font-medium uppercase">{errors.appointmentDate}</p>}
+            {!isReadOnly && <p className="text-[12px] text-gray-400 mt-1 font-medium">* Select up to 5 individual dates to give the hospital scheduling flexibility.</p>}
           </div>
 
           <div className="flex flex-col">
@@ -239,7 +260,6 @@ export default function GeneralForm({ userInfo, onConfirm }) {
               }`}
               placeholder="Describe your symptoms..."
             />
-            {errors.reason && <p className="text-red-500 text-[11px] mt-1 font-medium uppercase">{errors.reason}</p>}
           </div>
         </div>
 
@@ -266,37 +286,23 @@ export default function GeneralForm({ userInfo, onConfirm }) {
       <div className="mt-12 flex gap-4">
         {isReadOnly ? (
           <>
+            <button onClick={() => setMode("fill")} className="flex-1 md:flex-none border-2 border-gabay-teal text-gabay-teal px-8 py-2 rounded-full font-bold transition-all hover:bg-teal-50">EDIT DETAILS</button>
             <button 
-              type="button"
-              onClick={() => setMode("fill")} 
-              className="flex-1 md:flex-none border-2 border-gabay-teal text-gabay-teal px-8 py-2 rounded-full font-bold transition-all hover:bg-teal-50 active:scale-95 text-base"
-            >
-              EDIT DETAILS
-            </button>
-            <button 
-              type="button"
-              onClick={() => onConfirm({ ...formData, startDate, endDate }, "General")} 
-              className="flex-1 md:flex-none bg-gabay-teal hover:bg-teal-700 text-white px-8 py-2 rounded-full font-bold transition-all shadow-lg active:scale-95 text-base"
+              onClick={handleConfirmSubmit} 
+              disabled={userInfo?.is_verified === false}
+              className={`flex-1 md:flex-none px-8 py-2 rounded-full font-bold transition-all shadow-lg text-base ${
+                userInfo?.is_verified === false 
+                  ? 'bg-gray-400 text-white cursor-not-allowed' 
+                  : 'bg-gabay-teal hover:bg-teal-700 text-white active:scale-95'
+              }`}
             >
               SUBMIT RESERVATION
             </button>
           </>
         ) : (
           <div className="flex gap-4 w-full md:w-auto">
-            <button 
-              type="button"
-              onClick={() => navigate('/departments')}
-              className="flex-1 md:flex-none px-8 py-2 rounded-full border-2 border-gabay-teal font-poppins text-base text-gabay-teal font-bold hover:bg-gray-50 transition-all active:scale-95"
-            >
-              CANCEL
-            </button>
-            <button 
-              type="button"
-              onClick={() => { if (validateForm()) setMode("confirm") }} 
-              className="flex-1 md:flex-none px-8 py-2 rounded-full bg-gabay-teal font-poppins text-base text-white font-bold hover:bg-teal-600 shadow-md transition-all active:scale-95"
-            >
-              CONFIRM
-            </button>
+            <button onClick={() => navigate('/departments')} className="flex-1 md:flex-none px-8 py-2 rounded-full border-2 border-gabay-teal font-poppins text-gabay-teal font-bold hover:bg-gray-50 transition-all">CANCEL</button>
+            <button onClick={() => { if (validateForm()) setMode("confirm") }} className="flex-1 md:flex-none px-8 py-2 rounded-full bg-gabay-teal font-poppins text-white font-bold hover:bg-teal-600 shadow-md transition-all">CONFIRM</button>
           </div>
         )}
       </div>

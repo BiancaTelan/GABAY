@@ -20,6 +20,21 @@ const weekDays = [
   { name: 'Sat', color: 'text-gabay-teal' }
 ];
 
+// --- UNIFIED STATUS COLOR HELPER ---
+const getStatusStyle = (status) => {
+  if (!status) return 'bg-gray-100 text-gray-700 border-gray-200';
+  const s = status.toLowerCase();
+  
+  if (s.includes('pending')) return 'bg-gray-100 text-gray-600 font-medium border-gray-200';
+  if (s.includes('approved')) return 'bg-orange-500 text-white font-bold border-orange-600 shadow-sm';
+  if (s.includes('rescheduled')) return 'bg-yellow-100 text-yellow-800 font-bold border-yellow-300';
+  if (s.includes('confirmed')) return 'bg-green-100 text-green-800 font-bold border-green-300';
+  if (s.includes('booked')) return 'bg-blue-100 text-blue-800 font-bold border-blue-300';
+  if (s.includes('denied') || s.includes('cancel')) return 'bg-red-100 text-red-800 font-bold border-red-200';
+  
+  return 'bg-gray-100 text-gray-700 font-medium border-gray-200';
+};
+
 export default function CalendarPage() {
   const { token } = useContext(AuthContext); 
   
@@ -49,22 +64,43 @@ export default function CalendarPage() {
           const data = await response.json();
           
           const transformedEvents = data.appointments.map(appt => {
-            const [month, day, year] = appt.date.split('/');
-            const formattedDate = `${year}-${month}-${day}`;
+            const sLower = appt.status.toLowerCase();
             
-            const apptDate = new Date(year, month - 1, day);
-            const isPast = apptDate < new Date(today.setHours(0,0,0,0));
+            const isAssigned = sLower.includes('approved') || sLower.includes('confirmed') || sLower.includes('rescheduled') || sLower.includes('booked');
+            
+            let rawDate = isAssigned 
+              ? (appt.appointmentDate || appt.assignedDate || appt.date) 
+              : (appt.requestedStartDate || appt.date);
+              
+            if (!rawDate) return null;
+
+            let year, month, day;
+            if (rawDate.includes('/')) {
+              [month, day, year] = rawDate.split('/');
+            } else if (rawDate.includes('-')) {
+              [year, month, day] = rawDate.split('T')[0].split('-');
+            } else {
+              return null; 
+            }
+
+            const formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const apptDateObj = new Date(year, month - 1, day);
+            
+            const currentDate = new Date();
+            currentDate.setHours(0, 0, 0, 0);
+            
+            const isPast = apptDateObj < currentDate;
 
             return {
               id: appt.id,
               title: isPast ? 'Previous Appointment' : 'Scheduled Appointment',
-              doctor: appt.doctor,
+              doctor: appt.doctor || 'Unassigned',
               department: appt.department,
               date: formattedDate,
               type: isPast ? 'Previous' : 'Scheduled',
-              status: appt.status
+              status: appt.status.toUpperCase()
             };
-          });
+          }).filter(Boolean);
 
           setEvents(transformedEvents);
         }
@@ -165,36 +201,44 @@ export default function CalendarPage() {
             ) : (
               <div className="grid grid-cols-7 gap-1">
                 {Array.from({ length: firstDay }).map((_, i) => (
-                  <div key={`empty-${i}`} className="h-20 md:h-24" />
+                  <div key={`empty-${i}`} className="h-24 md:h-28" />
                 ))}
                 {Array.from({ length: daysInMonth }).map((_, i) => {
                   const day = i + 1;
                   const dayEvents = eventsByDate[day] || [];
-                  const hasScheduled = dayEvents.some(e => e.type === 'Scheduled');
-                  const hasPrevious = dayEvents.some(e => e.type === 'Previous');
-
-                  let bgColor = '';
-                  if (hasScheduled) bgColor = 'font-poppins bg-green-50 border-green-200';
-                  else if (hasPrevious) bgColor = 'font-poppins bg-gray-50 border-gray-200';
+                  
+                  // Sort events so Confirmed/Approved show at the top of the day box
+                  const sortedEvents = [...dayEvents].sort((a, b) => {
+                    if (a.status.includes('CONFIRM') || a.status.includes('APPROVE')) return -1;
+                    return 1;
+                  });
 
                   return (
                     <div
                       key={day}
-                      className={`h-20 md:h-24 flex flex-col items-start p-1.5 border border-gray-100 rounded-lg overflow-hidden transition-colors ${bgColor}`}
+                      className={`h-24 md:h-28 flex flex-col items-start p-1.5 border rounded-lg overflow-hidden transition-colors ${
+                        dayEvents.length > 0 ? 'bg-blue-50/30 border-blue-100 shadow-sm' : 'bg-white border-gray-100'
+                      }`}
                     >
-                      <span className={`font-poppins text-sm mb-1 ${hasScheduled ? 'text-green-800 font-bold' : 'text-gray-700'}`}>{day}</span>
-                      {dayEvents.slice(0, 2).map((event, idx) => (
+                      <span className={`font-poppins text-sm mb-1 ${dayEvents.length > 0 ? 'text-gabay-blue font-bold' : 'text-gray-500'}`}>
+                        {day}
+                      </span>
+                      
+                      {/* Event Bubbles */}
+                      {sortedEvents.slice(0, 2).map((event, idx) => (
                         <span
                           key={idx}
-                          className={`text-[10px] leading-tight truncate w-full mb-0.5 px-1 rounded ${
-                            event.type === 'Scheduled' ? 'bg-green-100 text-green-700 font-semibold' : 'bg-gray-200 text-gray-600'
-                          }`}
+                          className={`text-[9px] leading-tight truncate w-full mb-0.5 px-1 py-0.5 rounded border ${getStatusStyle(event.status)}`}
+                          title={event.status}
                         >
-                          {event.type === 'Scheduled' ? 'Scheduled' : 'Previous'}
+                          {event.status}
                         </span>
                       ))}
-                      {dayEvents.length > 2 && (
-                        <span className="text-[10px] text-gray-500 font-medium">+{dayEvents.length - 2} more</span>
+                      
+                      {sortedEvents.length > 2 && (
+                        <span className="text-[10px] text-gray-500 font-medium mt-auto text-center w-full">
+                          +{sortedEvents.length - 2} more
+                        </span>
                       )}
                     </div>
                   );
@@ -219,29 +263,21 @@ export default function CalendarPage() {
                     events.slice((eventPage-1) * itemsPerPage, eventPage * itemsPerPage).map((event) => (
                       <div
                         key={event.id}
-                        className={`border rounded-xl p-4 transition-all hover:shadow-md ${
-                          event.type === 'Scheduled'
-                            ? 'bg-green-50 border-green-200'
-                            : 'bg-gray-50 border-gray-200'
+                        className={`border rounded-xl p-4 transition-all hover:shadow-md bg-white ${
+                          event.status.includes('CANCEL') || event.status.includes('DENIED') ? 'opacity-70' : ''
                         }`}
                         >
-                        <div className="flex justify-between items-start mb-1">
-                          <p className={`font-poppins font-bold ${event.type === 'Scheduled' ? 'text-green-800' : 'text-gray-700'}`}>
+                        <div className="flex justify-between items-start mb-2">
+                          <p className="font-poppins font-bold text-gabay-navy truncate pr-2">
                             {event.title}
                           </p>
-                          <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${
-                            event.status.includes('Pending') ? 'bg-yellow-200 text-yellow-800' : 
-                            event.status.includes('Approved') ? 'bg-green-200 text-green-800' : 
-                            'bg-gray-200 text-gray-700'
-                          }`}>
+                          <span className={`text-[9px] font-bold px-2 py-1 rounded-full uppercase tracking-wider border shrink-0 ${getStatusStyle(event.status)}`}>
                             {event.status}
                           </span>
                         </div>
-                        <p className="font-poppins text-sm font-semibold text-gabay-navy">{event.doctor}</p>
-                        <p className="font-poppins text-xs text-gray-600 mb-2">{event.department}</p>
-                        <p className={`font-poppins text-xs font-bold inline-block px-2 py-1 rounded ${
-                          event.type === 'Scheduled' ? 'bg-white text-gabay-teal' : 'bg-white text-gray-500'
-                        }`}>
+                        <p className="font-poppins text-sm font-semibold text-gray-700">{event.doctor}</p>
+                        <p className="font-poppins text-xs text-gray-500 mb-3">{event.department}</p>
+                        <p className="font-poppins text-xs font-bold inline-block px-2 py-1 rounded bg-gray-100 text-gabay-teal">
                           {new Date(event.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                         </p>
                       </div>

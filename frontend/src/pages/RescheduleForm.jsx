@@ -11,6 +11,29 @@ export default function RescheduleForm({ userInfo }) {
   const navigate = useNavigate();
   const { updateUnreadCount } = useContext(AuthContext);
 
+  const [selectedDates, setSelectedDates] = useState([]);
+  const [doctorAvailability, setDoctorAvailability] = useState({ working_days: [], fully_booked_dates: [] });
+
+  useEffect(() => {
+  if (doctor && doctor !== "Unknown") {
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/doctor-availability?doctor_name=${encodeURIComponent(doctor.replace('Dr. ', ''))}`)
+      .then(res => res.json())
+      .then(data => setDoctorAvailability(data))
+      .catch(() => setDoctorAvailability({ working_days: [], fully_booked_dates: [] }));
+  }
+  }, [doctor]);
+
+  const filterAllowedDates = (date) => {
+  const day = date.getDay();
+  const dateStr = date.toLocaleDateString('en-CA'); 
+  
+  if (!doctor || doctor === "Unknown") return day !== 0 && day !== 6; 
+  
+  const isWorkingDay = doctorAvailability.working_days.includes(day);
+  const isNotFullyBooked = !doctorAvailability.fully_booked_dates.includes(dateStr);
+  return isWorkingDay && isNotFullyBooked;
+  };
+
   const { department, doctor, date } = location.state || {
     department: "Unknown",
     doctor: "Unknown",
@@ -43,10 +66,14 @@ export default function RescheduleForm({ userInfo }) {
     setError("");
 
     try {
+      const sortedDates = [...selectedDates].sort((a, b) => a - b);
+      const datesString = sortedDates.map(d => d.toLocaleDateString()).join(", ");
+      const appendedReason = `${newReason} | Requested Dates: [${datesString}]`;
+
       const payload = {
-        preferredStartDate: formatSafeDate(startDate),
-        preferredEndDate: endDate ? formatSafeDate(endDate) : null,
-        reason: newReason
+        preferredStartDate: sortedDates[0].toLocaleDateString('en-CA'),
+        preferredEndDate: sortedDates[sortedDates.length - 1].toLocaleDateString('en-CA'),
+        reason: appendedReason
       };
 
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/${appointmentId}/reschedule`, {
@@ -111,17 +138,19 @@ export default function RescheduleForm({ userInfo }) {
           <div className="flex flex-col relative custom-datepicker-container">
             <label className="text-gabay-blue font-bold mb-2 uppercase text-sm tracking-wide">New Preferred Date</label>
             <DatePicker
-              selectsRange
-              startDate={startDate}
-              endDate={endDate}
-              onChange={(update) => {
-                setNewDateRange(update);
-                setError("");
+              selected={selectedDates[0]}
+              onChange={(dates) => {
+                if (dates.length > 5) toast.error("Maximum 5 dates allowed.");
+                else setSelectedDates(dates);
               }}
+              selectsMultiple
+              shouldCloseOnSelect={false}
+              filterDate={filterAllowedDates}
               minDate={new Date()}
-              placeholderText="Select new dates..."
+              value={selectedDates.map(d => d.toLocaleDateString()).join(", ")}
+              placeholderText="Select up to 5 preferred dates..."
               className={`w-full p-3 border rounded-xl outline-none transition-all ${
-                error && !startDate ? 'border-red-500 ring-1 ring-red-500' : 'border-gabay-teal focus:ring-2 focus:ring-teal-200'
+                error && selectedDates.length === 0 ? 'border-red-500 ring-1 ring-red-500' : 'border-gabay-teal focus:ring-2 focus:ring-teal-200'
               }`}
             />
           </div>

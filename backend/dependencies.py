@@ -10,6 +10,9 @@ from security import SECRET_KEY, ALGORITHM
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
+# ---------------------------------------------------------
+#  DEPENDENCIES
+# ---------------------------------------------------------
 def get_current_user(
     token: str = Depends(oauth2_scheme), 
     db: Session = Depends(get_db)
@@ -44,7 +47,9 @@ def get_current_user(
         
     return user
 
-
+# ---------------------------------------------------------
+#  ROLE-BASED ACCESS CONTROL (RBAC)
+# ---------------------------------------------------------
 class RoleChecker:
     
     def __init__(self, allowed_roles: List[roleEnum]):

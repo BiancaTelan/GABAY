@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request, File, UploadFile, Query
 from sqlalchemy.orm import Session, joinedload
 from db_connection import get_db
-from db_model import Appointment, SystemSettings, User, roleEnum, Staff, SystemLogs, actionTypeEnum, Department, Doctor, Schedule, weekDayEnum, SystemHealthLog, AppointmentStatus
+from db_model import Appointment, SystemSettings, User, roleEnum, Staff, SystemLogs, actionTypeEnum, Department, Doctor, Schedule, weekDayEnum, SystemHealthLog, AppointmentStatus, CalendarEvent
 from security import get_password_hash, get_current_user
 from typing import Optional
 from pydantic import BaseModel, EmailStr
@@ -99,6 +99,15 @@ class EmailChangeRequest(BaseModel):
 class PasswordChangeRequest(BaseModel):
     current_password: str
     new_password: str
+
+class CalendarEventCreate(BaseModel):
+    title: str
+    description: Optional[str] = ""
+    date: str  
+    type: str  
+
+class CapacityUpdate(BaseModel):
+    daily_capacity: int
 
 # ---------------------------------------------------------
 # 1. ADMIN & USER MANAGEMENT
@@ -1073,7 +1082,6 @@ def get_my_profile(current_user: User = Depends(get_current_user)):
         print(f"CRITICAL ERROR in /profile/me: {e}")
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
-
 @router.put("/update-profile")
 def update_my_profile(
     data: ProfileUpdate, 
@@ -1111,7 +1119,6 @@ def update_my_profile(
 
     db.commit()
     return {"message": "Profile updated successfully"}
-
 
 @router.post("/upload-photo")
 def upload_profile_photo(
@@ -1254,4 +1261,120 @@ def trigger_manual_backup(db: Session = Depends(get_db), current_user: User = De
         "message": "Backup sequence completed successfully!",
         "filename": result["filename"]
     }
+
+@router.put("/capacity")
+def update_daily_capacity(
+    data: CapacityUpdate, 
+    db: Session = Depends(get_db), 
+    current_admin: User = Depends(get_current_user)
+):
+    try:
+        settings = db.query(SystemSettings).first()
+        
+        if not settings:
+            settings = SystemSettings(dailyCapacity=data.daily_capacity)
+            db.add(settings)
+        else:
+            settings.dailyCapacity = data.daily_capacity
+            
+        db.commit()
+        return {"message": "Capacity updated successfully"}
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to update capacity")
+    
+# ---------------------------------------------------------
+# 16. ADMIN CALENDAR
+# ---------------------------------------------------------
+@router.get("/calendar")
+def get_admin_calendar_data(
+    month: str, 
+    db: Session = Depends(get_db), 
+    current_admin: User = Depends(get_current_user)
+):
+    try:
+        target_year, target_month = map(int, month.split('-'))
+
+        events_in_month = db.query(CalendarEvent).filter(
+            extract('year', CalendarEvent.date) == target_year,
+            extract('month', CalendarEvent.date) == target_month
+        ).all()
+
+        formatted_events = [
+            {
+                "id": e.eventID, 
+                "title": e.title, 
+                "description": e.description, 
+                "date": e.date.strftime("%Y-%m-%d"), 
+                "type": e.type.value if hasattr(e.type, 'value') else str(e.type)
+            } for e in events_in_month
+        ]
+
+        appointments = db.query(
+            Appointment.assignedDate,
+            Appointment.statusID,
+            func.count(Appointment.appointmentID).label('count')
+        ).filter(
+            extract('year', Appointment.assignedDate) == target_year,
+            extract('month', Appointment.assignedDate) == target_month,
+            Appointment.assignedDate != None
+        ).group_by(Appointment.assignedDate, Appointment.statusID).all()
+
+        daily_stats = {}
+        for appt_date, status_id, count in appointments:
+            date_str = appt_date.strftime("%Y-%m-%d")
+            
+            if date_str not in daily_stats:
+                daily_stats[date_str] = {"date": date_str, "confirmed": 0, "canceled": 0, "noShow": 0, "completed": 0}
+            
+            if status_id in [2, 5, 6]: 
+                daily_stats[date_str]["confirmed"] += count
+            elif status_id in [3, 4]: 
+                daily_stats[date_str]["canceled"] += count
+            elif status_id == 8: 
+                daily_stats[date_str]["noShow"] += count
+            elif status_id == 9: 
+                daily_stats[date_str]["completed"] += count
+
+        settings = db.query(SystemSettings).first()
+        capacity = settings.dailyCapacity if settings else 25
+
+        return {
+            "appointments": list(daily_stats.values()),
+            "events": formatted_events,
+            "capacity": capacity
+        }
+        
+    except Exception as e:
+        print(f"Calendar Fetch Error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch calendar data")
+
+@router.post("/calendar/events")
+def create_calendar_event(
+    data: CalendarEventCreate, 
+    db: Session = Depends(get_db), 
+    current_admin: User = Depends(get_current_user)
+):
+    """Creates a new Event or Holiday on the calendar."""
+    try:
+        parsed_date = datetime.strptime(data.date, "%Y-%m-%d").date()
+        
+        new_event = CalendarEvent(
+            title=data.title,
+            description=data.description,
+            date=parsed_date,
+            type=data.type
+        )
+        db.add(new_event)
+        db.commit()
+        
+        return {"message": f"{data.type.capitalize()} created successfully"}
+        
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Expected YYYY-MM-DD.")
+    except Exception as e:
+        db.rollback()
+        print(f"Event Creation Error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create event")
 

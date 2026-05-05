@@ -1,6 +1,9 @@
 from datetime import datetime
 from db_model import User, db
 
+# ---------------------------------------------------------
+#  HOSPITAL ID GENERATION
+# ---------------------------------------------------------
 def hopital_id_generation ():
     """
     Hospital ID Format: YY-XXXXXX

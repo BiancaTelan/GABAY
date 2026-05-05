@@ -40,7 +40,8 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/patients/profile/${userEmail}`);
         if (response.ok) {
           const data = await response.json();
-          setLocalUserInfo(data);
+          // BUG FIX: Merge database response with the default state to prevent uncontrolled input crashes
+          setLocalUserInfo(prev => ({ ...prev, ...data }));
         }
       } catch (error) {
         console.error("Failed to fetch profile data:", error);
@@ -180,7 +181,7 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
     setIsEditing(false);
   };
 
-const handleSave = async () => {
+  const handleSave = async () => {
     if (validate()) {
       try {
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/patients/update-profile`, {
@@ -268,12 +269,20 @@ const handleSave = async () => {
               <div className="relative">
                 <Input 
                   label={
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 relative">
                       Email Address
                       {localUserInfo.is_verified === false && (
-                        <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wider uppercase">
-                          Unverified
-                        </span>
+                        <div className="relative group flex items-center">
+                          <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wider uppercase cursor-help">
+                            Unverified
+                          </span>
+                          
+                          {/* NEW: Hover Tooltip for Email Verification */}
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-52 p-3 bg-gray-800 text-white text-xs text-center rounded-lg shadow-xl z-50 normal-case tracking-normal font-normal pointer-events-none animate-in fade-in zoom-in duration-200">
+                            Please check your registered email for the verification link to verify your account.
+                            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                          </div>
+                        </div>
                       )}
                     </div>
                   } 

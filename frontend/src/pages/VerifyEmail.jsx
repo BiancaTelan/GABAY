@@ -7,17 +7,17 @@ export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
   const navigate = useNavigate();
-  
   const [status, setStatus] = useState('loading');
   const [message, setMessage] = useState('Verifying your email address...');
 
+  // --- VERIFY EMAIL ON COMPONENT ---
   useEffect(() => {
     if (!token) {
       setStatus('error');
       setMessage('No verification token found in the URL.');
       return;
     }
-
+    
     const verifyUserEmail = async () => {
       try {
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/verify-email?token=${token}`, {
@@ -42,10 +42,10 @@ export default function VerifyEmail() {
         setMessage('An error occurred while communicating with the server. Please try again later.');
       }
     };
-
     verifyUserEmail();
   }, [token]);
 
+  // --- MAIN RENDER ---
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
