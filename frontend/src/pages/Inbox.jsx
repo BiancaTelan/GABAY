@@ -24,12 +24,13 @@ export default function Inbox() {
   useEffect(() => {
     const fetchInboxData = async () => {
       if (!token) return;
-      
+
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const userEmail = payload.sub;
 
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/history/${userEmail}`);
+        // FIX: Added ?t=${new Date().getTime()} to bust the browser cache!
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/history/${userEmail}?t=${new Date().getTime()}`);
         if (response.ok) {
           const data = await response.json();
 
@@ -137,7 +138,6 @@ export default function Inbox() {
     fetchInboxData();
   }, [token]);
 
-  const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/history/${userEmail}?t=${new Date().getTime()}`);
   
   const filteredNotifications = allNotifications.filter(note => {
     if (activeFilter === 'all') return true;
