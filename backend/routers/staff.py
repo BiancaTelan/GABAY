@@ -1029,14 +1029,10 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
     ).count()
 
     # === DAILY SLOT CAPACITY ===
-    all_dept_doctors = db.query(Doctor).filter(Doctor.deptID == dept_id).all()
-    
-    active_doctors = [
-        doc for doc in all_dept_doctors 
-        if str(getattr(doc, 'isAvailable', True)).strip().lower() in ['true', '1', 'yes', 'y']
-    ]
-
-    total_available_slots = 0
+    active_doctors = db.query(Doctor).filter(
+        Doctor.deptID == dept_id,
+        Doctor.isAvailable == True 
+    ).all()
 
     total_available_slots = 0
 
@@ -1045,14 +1041,13 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
         
         works_today = False
         daily_max = 0
+
         for sched in doctor_schedules:
-            sched_day = str(getattr(sched, 'weekDay', '')).lower()
-            if today_name.lower() in sched_day:
+            sched_day = sched.weekDay.value if hasattr(sched.weekDay, 'value') else str(sched.weekDay)
+            
+            if sched_day.strip().lower() == today_name.lower():
                 works_today = True
-                try:
-                    daily_max += int(getattr(sched, 'maxPatients', 20) or 20)
-                except ValueError:
-                    daily_max += 20
+                daily_max += int(getattr(sched, 'maxPatients', 20) or 20)
                 
         if works_today:
             doctor_booked = db.query(Appointment).filter(
@@ -1087,7 +1082,7 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
     for q in raw_queue_records:
         status_str = str(getattr(q, 'queueStatus', '')).lower()
         
-        if not ("wait" in status_str or "progress" in status_str or "complet" in status_str):
+        if not ("wait" in status_str or "progress" in status_str or "complete" in status_str):
             continue
             
         if getattr(q, 'checkInTime', None) and q.checkInTime.date() < today_date:
