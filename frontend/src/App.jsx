@@ -149,7 +149,7 @@ function App() {
 
     } catch (error) {
       console.error("Booking Error:", error);
-      alert(error.message); 
+      toast.error(error.message);
     }
   };
 
