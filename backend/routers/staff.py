@@ -1090,7 +1090,10 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
             "slot": available_slots 
         },
         "scheduledList": [format_appt(a) for a in todays_appointments],
-        "queueList": [format_appt(q.appointment, q) for q in active_queue_records]
+        "queueList": [
+            format_appt(db.query(Appointment).filter(Appointment.appointmentID == q.appointmentID).first(), q) 
+            for q in active_queue_records
+        ]
     }
 
 @router.put("/queue/{appointment_id}")
