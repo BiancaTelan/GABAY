@@ -1143,10 +1143,13 @@ def update_queue_status(
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found in your department.")
 
-    now = datetime.now()
+    ph_tz = ZoneInfo("Asia/Manila")
+    manila_now = datetime.now(ph_tz)
+    
+    now = manila_now.replace(tzinfo=None)
+    today = now.date()
 
     if action == "add_to_queue":
-        today = date.today()
         
         current_queue_count = db.query(DailyQueue).join(
             Appointment, DailyQueue.appointmentID == Appointment.appointmentID
