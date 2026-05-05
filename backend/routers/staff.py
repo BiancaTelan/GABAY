@@ -1061,7 +1061,6 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
     available_slots = total_available_slots
 
     # === DAILY QUEUE FETCHING (Strictly for Today) ===
-    
     todays_appointments = db.query(Appointment).outerjoin(
         DailyQueue, Appointment.appointmentID == DailyQueue.appointmentID
     ).filter(
@@ -1075,16 +1074,16 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
         Appointment, DailyQueue.appointmentID == Appointment.appointmentID
     ).filter(
         Appointment.deptID == dept_id,
-        Appointment.assignedDate == today_date
+        Appointment.assignedDate == today_date,
+        DailyQueue.queueStatus.in_([
+            queueStatusEnum.Waiting, 
+            queueStatusEnum.inProgress, 
+            queueStatusEnum.Completed
+        ])
     ).all()
 
     active_queue_records = []
     for q in raw_queue_records:
-        status_str = str(getattr(q, 'queueStatus', '')).lower()
-        
-        if not ("wait" in status_str or "progress" in status_str or "complete" in status_str):
-            continue
-            
         if getattr(q, 'checkInTime', None) and q.checkInTime.date() < today_date:
             continue
             
@@ -1111,7 +1110,7 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
             "status": display_status,
             "time": appt_time
         }
-
+    
     return {
         "stats": { 
             "forApproval": for_approval, 
