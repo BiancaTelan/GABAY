@@ -61,7 +61,13 @@ export default function GeneralForm({ userInfo, onConfirm }) {
     if (formData.doctor && formData.doctor !== "NONE") {
       fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/doctor-availability?doctor_name=${encodeURIComponent(formData.doctor)}`)
         .then(res => res.json())
-        .then(data => setDoctorAvailability(data))
+        .then(data => {
+          // BUG FIX: Secure the payload structure to guarantee arrays always exist
+          setDoctorAvailability({
+            working_days: data.working_days || [],
+            fully_booked_dates: data.fully_booked_dates || []
+          });
+        })
         .catch(() => setDoctorAvailability({ working_days: [], fully_booked_dates: [] }));
     }
   }, [formData.doctor]);
@@ -78,8 +84,9 @@ export default function GeneralForm({ userInfo, onConfirm }) {
       return day !== 0 && day !== 6; 
     }
     
-    const isWorkingDay = doctorAvailability.working_days.includes(day);
-    const isNotFullyBooked = !doctorAvailability.fully_booked_dates.includes(dateStr);
+    // BUG FIX: Added fallback arrays [] to prevent .includes() from crashing on undefined
+    const isWorkingDay = (doctorAvailability?.working_days || []).includes(day);
+    const isNotFullyBooked = !(doctorAvailability?.fully_booked_dates || []).includes(dateStr);
     
     return isWorkingDay && isNotFullyBooked;
   };
@@ -215,7 +222,7 @@ export default function GeneralForm({ userInfo, onConfirm }) {
                 </div>
               ) : (
                 <DatePicker
-                  selected={selectedDates[0]} // Keeps the calendar open to the right month
+                  selected={selectedDates[0]} 
                   onChange={(dates) => {
                     if (dates.length > 5) {
                       toast.error("You can select a maximum of 5 dates.");
@@ -231,7 +238,7 @@ export default function GeneralForm({ userInfo, onConfirm }) {
                   minDate={today}
                   maxDate={maxDate}
                   dateFormat="MM/dd/yyyy"
-                  value={selectedDates.map(d => d.toLocaleDateString()).join(", ")} // Displays the multiple dates securely
+                  value={selectedDates.map(d => d.toLocaleDateString()).join(", ")} 
                   customInput={
                     <DateDisplayInput 
                       className={`w-full p-2 text-base rounded-md border outline-none transition-all pr-10 ${

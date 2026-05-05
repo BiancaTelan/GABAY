@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, CalendarDays, AlertCircle } from 'lucide-react';
+import { ChevronDown, CalendarDays, AlertCircle, Upload, X, FileText} from 'lucide-react';
 import DatePicker from "react-datepicker";
 import toast from 'react-hot-toast';
 import "react-datepicker/dist/react-datepicker.css";
@@ -63,7 +63,13 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
     if (formData.doctor && formData.doctor !== "NONE") {
       fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/doctor-availability?doctor_name=${encodeURIComponent(formData.doctor)}`)
         .then(res => res.json())
-        .then(data => setDoctorAvailability(data))
+        .then(data => {
+          // BUG FIX: Secure the payload structure here as well
+          setDoctorAvailability({
+            working_days: data.working_days || [],
+            fully_booked_dates: data.fully_booked_dates || []
+          });
+        })
         .catch(() => setDoctorAvailability({ working_days: [], fully_booked_dates: [] }));
     }
   }, [formData.doctor]);
@@ -80,8 +86,9 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
       return day !== 0 && day !== 6; 
     }
     
-    const isWorkingDay = doctorAvailability.working_days.includes(day);
-    const isNotFullyBooked = !doctorAvailability.fully_booked_dates.includes(dateStr);
+    // BUG FIX: Add safety fallbacks during array checking
+    const isWorkingDay = (doctorAvailability?.working_days || []).includes(day);
+    const isNotFullyBooked = !(doctorAvailability?.fully_booked_dates || []).includes(dateStr);
     
     return isWorkingDay && isNotFullyBooked;
   };
@@ -123,7 +130,7 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
     let newErrors = {};
     if (!formData.department) newErrors.department = "Department is required.";
     if (!formData.reason) newErrors.reason = "Please provide a reason for booking.";
-    if (!startDate) newErrors.appointmentDate = "Please select a date range.";
+    if (selectedDates.length === 0) newErrors.appointmentDate = "Please select at least 1 date.";
     if (!referralImage && !isReadOnly) newErrors.referral = "Medical referral is required.";
 
     setErrors(newErrors);
@@ -167,10 +174,10 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
   return (
     <div className="max-w-6xl mx-auto p-10 font-poppins text-left animate-in fade-in duration-500">
       <h1 className="text-3xl font-montserrat font-bold text-gabay-teal mb-1">
-        {isReadOnly ? "Review Reservation" : "General Appointment Form"}
+        {isReadOnly ? "Review Reservation" : "Specialty Appointment Form"}
       </h1>
       <p className="text-gray-500 mb-10">
-        {isReadOnly ? "Please double-check your details before confirming." : "Complete the form to reserve your appointment."}
+        {isReadOnly ? "Please double-check your details before confirming." : "Specialty departments require a valid medical referral."}
       </p>
 
       {userInfo?.is_verified === false && (
