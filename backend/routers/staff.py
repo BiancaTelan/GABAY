@@ -96,7 +96,8 @@ def get_staff_appointments(db: Session = Depends(get_db), current_staff: User = 
             5: 'approved',   
             6: 'rescheduled',
             7: 'book',
-            8: 'no show'
+            8: 'no show',
+            9: 'completed'
         }
 
         results = []
@@ -1075,6 +1076,7 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
     ).filter(
         Appointment.deptID == dept_id,
         Appointment.assignedDate == today_date,
+        Appointment.statusID.in_(valid_approved_ids),
         DailyQueue.queueStatus.in_([
             queueStatusEnum.Waiting, 
             queueStatusEnum.inProgress, 
@@ -1183,6 +1185,10 @@ def update_queue_status(
         if queue:
             queue.queueStatus = queueStatusEnum.Completed
             queue.consultationEnd = now
+        
+        completed_id = get_status_id(db, "Completed")
+        if completed_id:
+            appointment.statusID = completed_id
 
     elif action == "no_show":
         noshow_id = get_status_id(db, "No Show")

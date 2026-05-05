@@ -1313,16 +1313,16 @@ def get_admin_calendar_data(
             date_str = appt_date.strftime("%Y-%m-%d")
             
             if date_str not in daily_stats:
-                daily_stats[date_str] = {"date": date_str, "confirmed": 0, "canceled": 0, "noShow": 0, "completed": 0}
+                daily_stats[date_str] = {"date": date_str, "confirmed": 0, "canceled": 0, "noShow": 0, "complete": 0}
             
-            if status_id in [2, 5, 6]: 
+            if status_id in [2, 5, 6, 7]: 
                 daily_stats[date_str]["confirmed"] += count
             elif status_id in [3, 4]: 
                 daily_stats[date_str]["canceled"] += count
             elif status_id == 8: 
                 daily_stats[date_str]["noShow"] += count
             elif status_id == 9: 
-                daily_stats[date_str]["completed"] += count
+                daily_stats[date_str]["complete"] += count
 
         settings = db.query(SystemSettings).first()
         
