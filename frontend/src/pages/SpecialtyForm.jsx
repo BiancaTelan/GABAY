@@ -5,6 +5,7 @@ import DatePicker from "react-datepicker";
 import toast from 'react-hot-toast';
 import "react-datepicker/dist/react-datepicker.css";
 
+
 const DateDisplayInput = React.forwardRef(({ value, onClick, className }, ref) => (
   <div className="relative w-full">
     <input
