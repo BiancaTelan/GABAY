@@ -1359,7 +1359,7 @@ def create_calendar_event(
     try:
         parsed_date = datetime.strptime(data.date, "%Y-%m-%d").date()
         
-        safe_type = data.type.capitalize() 
+        safe_type = data.type.upper() 
 
         new_event = CalendarEvent(
             title=data.title,
