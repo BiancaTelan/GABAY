@@ -1033,7 +1033,7 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
     
     active_doctors = [
         doc for doc in all_dept_doctors 
-        if getattr(doc, 'isAvailable', True) in [True, 1, "True", "true", "1"]
+        if str(getattr(doc, 'isAvailable', True)).strip().lower() in ['true', '1', 'yes', 'y']
     ]
 
     total_available_slots = 0
@@ -1046,9 +1046,13 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
         works_today = False
         daily_max = 0
         for sched in doctor_schedules:
-            if str(sched.weekDay).split('.')[-1].strip().lower() == today_name.lower():
+            sched_day = str(getattr(sched, 'weekDay', '')).lower()
+            if today_name.lower() in sched_day:
                 works_today = True
-                daily_max += (sched.maxPatients or 20)
+                try:
+                    daily_max += int(getattr(sched, 'maxPatients', 20) or 20)
+                except ValueError:
+                    daily_max += 20
                 
         if works_today:
             doctor_booked = db.query(Appointment).filter(
@@ -1072,13 +1076,24 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
         DailyQueue.queueID == None  
     ).all()
 
-    active_queue_records = db.query(DailyQueue).join(
+    raw_queue_records = db.query(DailyQueue).join(
         Appointment, DailyQueue.appointmentID == Appointment.appointmentID
     ).filter(
         Appointment.deptID == dept_id,
-        Appointment.assignedDate == today_date,
-        DailyQueue.queueStatus.in_([queueStatusEnum.Waiting, queueStatusEnum.inProgress, queueStatusEnum.Completed])
+        Appointment.assignedDate == today_date
     ).all()
+
+    active_queue_records = []
+    for q in raw_queue_records:
+        status_str = str(getattr(q, 'queueStatus', '')).lower()
+        
+        if not ("wait" in status_str or "progress" in status_str or "complet" in status_str):
+            continue
+            
+        if getattr(q, 'checkInTime', None) and q.checkInTime.date() < today_date:
+            continue
+            
+        active_queue_records.append(q)
 
     def format_appt(appt, queue_record=None):
         patient = db.query(Patient).filter(Patient.patientID == appt.patientID).first()
