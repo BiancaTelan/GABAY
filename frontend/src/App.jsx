@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react'; 
-import { Toaster } from 'react-hot-toast';
+import toast, { Toaster } from 'react-hot-toast';
 import { Routes, Route, useNavigate, useLocation, Navigate, Outlet } from 'react-router-dom';
 import { AuthContext } from './authContext';
 import Header from './components/header';
@@ -134,9 +134,11 @@ function App() {
       }
 
       if (!response.ok) {
-        const errorData = await response.json(); 
-        
-        throw new Error(errorData.detail || "Failed to submit reservation."); 
+        const errorMessage = Array.isArray(result.detail) 
+          ? JSON.stringify(result.detail, null, 2) 
+          : result.detail || "Failed to submit reservation.";
+          
+        throw new Error(errorMessage);
       }
       if (updateUnreadCount) {
         updateUnreadCount(prevCount => prevCount + 1);
@@ -146,6 +148,7 @@ function App() {
       navigate('/reservation-confirmation'); 
 
     } catch (error) {
+      console.error("Booking Error:", error);
       toast.error(error.message);
     }
   };
