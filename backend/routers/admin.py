@@ -551,7 +551,6 @@ def get_department_stats(db: Session = Depends(get_db)):
         doc_count = db.query(Doctor).filter(Doctor.deptID == d.deptID).count()
         staff_count = db.query(Staff).filter(Staff.deptID == d.deptID).count()
         
-        # Count appointments scheduled for today in this department (Used Slots)
         used_slots = db.query(Appointment).filter(
             Appointment.deptID == d.deptID,
             Appointment.preferredStartDate == date.today()
@@ -567,7 +566,7 @@ def get_department_stats(db: Session = Depends(get_db)):
             "doctors": doc_count,
             "staff": staff_count,
             "usedSlots": used_slots,
-            "totalSlots": d.slotCapacity
+            "totalSlots": Schedule.maxPatients 
         })
         
     return formatted_depts
@@ -798,7 +797,19 @@ def get_dashboard_summary(
         Appointment.assignedDate == today.date()
     ).scalar() or 0
     
-    total_slots_today = 100 
+    today_name = today.strftime('%A')
+    active_doctors = db.query(Doctor).filter(Doctor.isAvailable == True).all()
+
+    total_slots_today = 0
+
+    for doctor in active_doctors:
+        doctor_schedules = db.query(Schedule).filter(Schedule.docID == doctor.docID).all()
+        
+        for sched in doctor_schedules:
+            sched_day = sched.weekDay.value if hasattr(sched.weekDay, 'value') else str(sched.weekDay)
+            
+            if sched_day.strip().lower() == today_name.lower():
+                total_slots_today += int(getattr(sched, 'maxPatients', 20) or 20) 
 
     total_staff = db.query(func.count(User.userID)).filter(
         User.role.in_([roleEnum.Staff, roleEnum.Admin]) 
@@ -1284,7 +1295,7 @@ def get_admin_calendar_data(
                 "title": e.title, 
                 "description": e.description, 
                 "date": e.date.strftime("%Y-%m-%d"), 
-                "type": e.type.value if hasattr(e.type, 'value') else str(e.type)
+                "type": (e.type.value if hasattr(e.type, 'value') else str(e.type)).upper()
             } for e in events_in_month
         ]
 
@@ -1330,6 +1341,7 @@ def get_admin_calendar_data(
 @router.post("/calendar/events")
 def create_calendar_event(
     data: CalendarEventCreate, 
+    request: Request, 
     db: Session = Depends(get_db), 
     current_admin: User = Depends(get_current_user)
 ):
@@ -1337,16 +1349,28 @@ def create_calendar_event(
     try:
         parsed_date = datetime.strptime(data.date, "%Y-%m-%d").date()
         
+        safe_type = data.type.capitalize() 
+
         new_event = CalendarEvent(
             title=data.title,
-            description=data.description,
+            description=data.description if data.description else None,
             date=parsed_date,
-            type=data.type
+            type=safe_type
         )
         db.add(new_event)
+
+        new_log = SystemLogs(
+            userID=current_admin.userID,
+            actionType=actionTypeEnum.INSERT,
+            tableAffected="calendarEventTable",
+            details=f"Added new calendar {data.type.lower()}: {data.title}",
+            ipAddress=request.client.host
+        )
+        db.add(new_log)
+
         db.commit()
         
-        return {"message": f"{data.type.capitalize()} created successfully"}
+        return {"message": f"{safe_type} created successfully"}
         
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format. Expected YYYY-MM-DD.")
@@ -1354,4 +1378,4 @@ def create_calendar_event(
         db.rollback()
         print(f"Event Creation Error: {e}")
         raise HTTPException(status_code=500, detail="Failed to create event")
-
+    
