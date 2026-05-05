@@ -134,11 +134,9 @@ function App() {
       }
 
       if (!response.ok) {
-        const errorMessage = Array.isArray(result.detail) 
-          ? JSON.stringify(result.detail, null, 2) 
-          : result.detail || "Failed to submit reservation.";
-          
-        throw new Error(errorMessage);
+        const errorData = await response.json(); 
+        
+        throw new Error(errorData.detail || "Failed to submit reservation."); 
       }
       if (updateUnreadCount) {
         updateUnreadCount(prevCount => prevCount + 1);
