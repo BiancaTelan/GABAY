@@ -1284,8 +1284,8 @@ def get_admin_calendar_data(
         target_year, target_month = map(int, month.split('-'))
 
         events_in_month = db.query(CalendarEvent).filter(
-            extract('year', CalendarEvent.date) == target_year,
-            extract('month', CalendarEvent.date) == target_month
+            extract('year', CalendarEvent.startDate) == target_year,
+            extract('month', CalendarEvent.startDate) == target_month
         ).all()
 
         formatted_events = [
@@ -1293,7 +1293,7 @@ def get_admin_calendar_data(
                 "id": e.eventID, 
                 "title": e.title, 
                 "description": e.description, 
-                "date": e.date.strftime("%Y-%m-%d"), 
+                "date": e.startDate.strftime("%Y-%m-%d"),
                 "type": (e.type.value if hasattr(e.type, 'value') else str(e.type)).upper()
             } for e in events_in_month
         ]
@@ -1353,7 +1353,8 @@ def create_calendar_event(
         new_event = CalendarEvent(
             title=data.title,
             description=data.description if data.description else None,
-            date=parsed_date,
+            startDate=parsed_date, 
+            endDate=parsed_date,   
             type=safe_type
         )
         db.add(new_event)
