@@ -98,8 +98,10 @@ export default function Login() {
 
       login(accessToken, userRole);
 
-      const from = location.state?.from?.pathname || '/';
-      navigate(from, { replace: true });
+      setTimeout(() => {
+        const from = location.state?.from?.pathname || '/';
+        navigate(from, { replace: true });
+      }, 150);
 
     } catch (error) {
       console.error('Login failed:', error);
