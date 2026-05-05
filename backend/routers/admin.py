@@ -1262,28 +1262,6 @@ def trigger_manual_backup(db: Session = Depends(get_db), current_user: User = De
         "filename": result["filename"]
     }
 
-@router.put("/capacity")
-def update_daily_capacity(
-    data: CapacityUpdate, 
-    db: Session = Depends(get_db), 
-    current_admin: User = Depends(get_current_user)
-):
-    try:
-        settings = db.query(SystemSettings).first()
-        
-        if not settings:
-            settings = SystemSettings(dailyCapacity=data.daily_capacity)
-            db.add(settings)
-        else:
-            settings.dailyCapacity = data.daily_capacity
-            
-        db.commit()
-        return {"message": "Capacity updated successfully"}
-        
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail="Failed to update capacity")
-    
 # ---------------------------------------------------------
 # 16. ADMIN CALENDAR
 # ---------------------------------------------------------
