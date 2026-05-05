@@ -568,7 +568,7 @@ def get_department_stats(db: Session = Depends(get_db)):
             "doctors": doc_count,
             "staff": staff_count,
             "usedSlots": used_slots,
-            "totalSlots": len(slots)
+            "totalSlots": slots
         })
         
     return formatted_depts
