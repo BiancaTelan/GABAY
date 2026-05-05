@@ -340,7 +340,7 @@ def staff_book_appointment(
 
     schedule_template = db.query(Schedule).filter(
         Schedule.docID == data.doctor_id,
-        Schedule.weekDay == day_of_week # <-- UPDATED
+        Schedule.weekDay == day_of_week 
     ).first()
 
     if not schedule_template:
@@ -369,7 +369,7 @@ def staff_book_appointment(
         docID=data.doctor_id,
         deptID=data.department_id,
         purposeDetailed=data.reason,
-        statusID=5, 
+        statusID=2, 
         assignedDate=parsed_date,
         assignedScheduleID=schedule_template.scheduleID,
         preferredStartDate=parsed_date, 
@@ -1021,7 +1021,9 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
         Appointment.statusID == noshow_id
     ).count()
 
-    available_slots = (daily_total_slots - approved_today) + noshows_today
+    available_slots = daily_total_slots - approved_today
+    
+    available_slots = max(0, available_slots)
 
     # === 3. DAILY QUEUE FETCHING (Strictly for Today) ===
     
@@ -1097,15 +1099,27 @@ def update_queue_status(
 
     if action == "add_to_queue":
         today = date.today()
-        current_queue_count = db.query(DailyQueue).join(Appointment).filter(Appointment.assignedDate == today, Appointment.deptID == staff_profile.deptID).count()
         
-        new_queue = DailyQueue(
-            appointmentID=appointment_id,
-            queueNum=current_queue_count + 1,
-            queueStatus=queueStatusEnum.Waiting,
-            checkInTime=now
-        )
-        db.add(new_queue)
+        current_queue_count = db.query(DailyQueue).join(
+            Appointment, DailyQueue.appointmentID == Appointment.appointmentID
+        ).filter(
+            Appointment.assignedDate == today, 
+            Appointment.deptID == staff_profile.deptID
+        ).count()
+        
+        existing_queue = db.query(DailyQueue).filter(DailyQueue.appointmentID == appointment_id).first()
+        
+        if existing_queue:
+            existing_queue.queueStatus = queueStatusEnum.Waiting
+            existing_queue.checkInTime = now
+        else:
+            new_queue = DailyQueue(
+                appointmentID=appointment_id,
+                queueNum=current_queue_count + 1,
+                queueStatus=queueStatusEnum.Waiting,
+                checkInTime=now
+            )
+            db.add(new_queue)
 
     elif action == "serving":
         queue = db.query(DailyQueue).filter(DailyQueue.appointmentID == appointment_id).first()
@@ -1156,6 +1170,7 @@ def get_no_shows(db: Session = Depends(get_db), current_staff: User = Depends(ge
     results = []
     for appt in no_shows:
         patient = db.query(Patient).filter(Patient.patientID == appt.patientID).first()
+        doctor = db.query(Doctor).filter(Doctor.docID == appt.docID).first() if appt.docID else None
         
         time_str = "TBD"
         if appt.assignedSchedule:
@@ -1165,7 +1180,11 @@ def get_no_shows(db: Session = Depends(get_db), current_staff: User = Depends(ge
             "id": appt.appointmentID,
             "dateTime": f"{appt.assignedDate.strftime('%m/%d/%Y')} {time_str}" if appt.assignedDate else "Unknown",
             "patientName": f"{patient.firstname} {patient.surname}" if patient else "Unknown",
-            "status": "No Show"
+            "status": "No Show",
+            "docID": appt.docID,
+            "assignedDoctor": f"Dr. {doctor.surname}" if doctor else "Unassigned",
+            "hospitalNo": patient.hospital_num if patient else "N/A",
+            "email": patient.user_account.email if (patient and patient.user_account) else "N/A"
         })
     return results
 

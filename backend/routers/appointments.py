@@ -218,23 +218,24 @@ def get_appointment_history(email: str, db: Session = Depends(get_db)):
                 unread_count += 1
 
             display_date = "TBD"
-            if getattr(appt, 'assignedDate', None):
-                display_date = appt.assignedDate.strftime("%m/%d/%Y")
-            elif getattr(appt, 'preferredStartDate', None):
-                display_date = appt.preferredStartDate.strftime("%m/%d/%Y")
+        
+            if appt.assignedDate:
+                display_date = appt.assignedDate.strftime("%B %d, %Y")
+                
+            elif appt.preferredStartDate:
+                display_date = appt.preferredStartDate.strftime("%B %d, %Y")
 
             history.append({
                 "id": appt.appointmentID,
-                "date": display_date,
-                "doctor": doc.firstname + ' ' + doc.surname if doc else "None Assigned",
+                "date": display_date, 
+                "doctor": f"Dr. {doc.surname}" if doc else "None Assigned",
                 "department": dept.department if dept else "Unknown",
-                "status": status.statusName if status else "Pending Approval",
+                "status": status.statusName if status else "Pending",
                 "type": appt.type,
                 "reason": appt.purposeDetailed or "No reason provided.",
-                "referral": appt.referral_doc or None,
                 "createdAt": appt.createdAt.strftime("%m/%d/%Y") if appt.createdAt else "Recently"
             })
-            
+
         return {
             "appointments": history,
             "is_verified": user.is_verified,
@@ -309,45 +310,44 @@ def reschedule_appointment(appointment_id: int, request: RescheduleRequest, db: 
 @router.get("/doctor-availability")
 def get_doctor_availability(doctor_name: str, db: Session = Depends(get_db)):
     try:
-        doc = db.query(Doctor).filter(
-            func.concat(Doctor.firstname, ' ', Doctor.surname) == doctor_name
-        ).first()
-
-        schedules = db.query(Schedule).filter(Schedule.docID == doc.docID).all()
+        clean_name = doctor_name.replace("Dr. ", "").strip()
         
-        day_map = { "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3, "Thursday": 4, "Friday": 5, "Saturday": 6 }
+        name_parts = clean_name.split(" ")
+        last_name_guess = name_parts[-1] 
+        
+        doctor = db.query(Doctor).filter(Doctor.surname.ilike(f"%{last_name_guess}%")).first()
+
+        if not doctor:
+            return {"working_days": [], "fully_booked_dates": []}
+
+        templates = db.query(Schedule).filter(Schedule.docID == doctor.docID).all()
+        day_map = { "monday": 1, "tuesday": 2, "wednesday": 3, "thursday": 4, "friday": 5, "saturday": 6, "sunday": 0 }
+        
         working_days = []
-        capacity_per_day = {} 
+        for t in templates:
+            day_str = str(t.weekDay).lower().split(".")[-1].strip()
+            if day_str in day_map:
+                working_days.append(day_map[day_str])
 
-        for s in schedules:
-            day_name = s.weekDay.value if hasattr(s.weekDay, 'value') else str(s.weekDay)
-            day_idx = day_map.get(day_name)
-            if day_idx is not None:
-                working_days.append(day_idx)
-                capacity_per_day[day_idx] = s.maxPatients
-
-        today = date.today()
-        booked_counts = db.query(
-            Appointment.assignedDate, func.count(Appointment.appointmentID)
+        booked_appointments = db.query(
+            Appointment.assignedDate,
+            func.count(Appointment.appointmentID).label('count')
         ).filter(
-            Appointment.docID == doc.docID,
-            Appointment.assignedDate >= today,
-            Appointment.statusID.in_([2, 5, 6]) # Only count Approved, Booked, or Rescheduled
+            Appointment.docID == doctor.docID,
+            Appointment.statusID.in_([2, 5, 6]), 
+            Appointment.assignedDate != None
         ).group_by(Appointment.assignedDate).all()
 
         fully_booked_dates = []
-        for b_date, count in booked_counts:
-            if b_date:
-                w_day = b_date.isoweekday() % 7 
-                max_cap = capacity_per_day.get(w_day, 0)
-                if count >= max_cap:
-                    fully_booked_dates.append(b_date.strftime("%Y-%m-%d"))
+        for appt_date, count in booked_appointments:
+            if count >= 20: 
+                fully_booked_dates.append(appt_date.strftime("%Y-%m-%d"))
 
         return {
-            "working_days": working_days,
+            "working_days": list(set(working_days)),
             "fully_booked_dates": fully_booked_dates
         }
+
     except Exception as e:
-        print(f"Error fetching availability: {e}")
-        return {"working_days": [], "fully_booked_dates": []}
-    
+        print(f"Availability fetch error: {e}")
+        return {"working_days": [], "fully_booked_dates": []}   

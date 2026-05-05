@@ -78,7 +78,6 @@ export default function GeneralForm({ userInfo, onConfirm }) {
 
   const filterAllowedDates = (date) => {
     const day = date.getDay();
-    
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
@@ -225,23 +224,29 @@ export default function GeneralForm({ userInfo, onConfirm }) {
                 </div>
               ) : (
                 <DatePicker
-                  selected={selectedDates[0]} 
-                  onChange={(dates) => {
-                    if (dates.length > 5) {
-                      toast.error("You can select a maximum of 5 dates.");
-                      setSelectedDates(dates.slice(0, 5));
-                    } else {
-                      setSelectedDates(dates);
-                      if (errors.appointmentDate) setErrors(prev => ({ ...prev, appointmentDate: "" }));
-                    }
-                  }}
-                  selectsMultiple
+                  highlightDates={selectedDates} 
                   shouldCloseOnSelect={false}
                   filterDate={filterAllowedDates}
                   minDate={today}
                   maxDate={maxDate}
                   dateFormat="MM/dd/yyyy"
                   value={selectedDates.map(d => d.toLocaleDateString()).join(", ")} 
+                  onChange={(clickedDate) => {
+                    if (!clickedDate) return;
+                    
+                    const exists = selectedDates.find(d => d.getTime() === clickedDate.getTime());
+                    
+                    if (exists) {
+                      setSelectedDates(selectedDates.filter(d => d.getTime() !== clickedDate.getTime()));
+                    } else {
+                      if (selectedDates.length >= 5) {
+                        toast.error("You can select a maximum of 5 dates.");
+                      } else {
+                        setSelectedDates([...selectedDates, clickedDate]);
+                        if (errors.appointmentDate) setErrors(prev => ({ ...prev, appointmentDate: "" }));
+                      }
+                    }
+                  }}
                   customInput={
                     <DateDisplayInput 
                       className={`w-full p-2 text-base rounded-md border outline-none transition-all pr-10 ${
