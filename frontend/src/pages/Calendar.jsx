@@ -74,14 +74,17 @@ export default function CalendarPage() {
               
             if (!rawDate) return null;
 
-            let year, month, day;
-            if (rawDate.includes('/')) {
-              [month, day, year] = rawDate.split('/');
-            } else if (rawDate.includes('-')) {
-              [year, month, day] = rawDate.split('T')[0].split('-');
-            } else {
-              return null; 
-            }
+            // --- THE FIX: ROBUST DATE PARSING ---
+            // Strip out any trailing time/batch parentheses to ensure clean parsing (e.g. "May 05, 2026 (08:00 AM)" -> "May 05, 2026")
+            const cleanDateStr = String(rawDate).split('(')[0].trim();
+            const parsedDate = new Date(cleanDateStr);
+            
+            // If the browser can't figure out the date, skip it instead of crashing
+            if (isNaN(parsedDate.getTime())) return null;
+
+            const year = parsedDate.getFullYear();
+            const month = parsedDate.getMonth() + 1; // 0-indexed to 1-indexed
+            const day = parsedDate.getDate();
 
             const formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const apptDateObj = new Date(year, month - 1, day);
