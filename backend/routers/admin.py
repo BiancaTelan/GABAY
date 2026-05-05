@@ -1325,7 +1325,8 @@ def get_admin_calendar_data(
                 daily_stats[date_str]["completed"] += count
 
         settings = db.query(SystemSettings).first()
-        capacity = settings.dailyCapacity if settings else 25
+        
+        capacity = getattr(settings, 'dailyCapacity', 100) if settings else 100
 
         return {
             "appointments": list(daily_stats.values()),
@@ -1340,11 +1341,10 @@ def get_admin_calendar_data(
 @router.post("/calendar/events")
 def create_calendar_event(
     data: CalendarEventCreate, 
-    request: Request, 
+    request: Request,
     db: Session = Depends(get_db), 
     current_admin: User = Depends(get_current_user)
 ):
-    """Creates a new Event or Holiday on the calendar."""
     try:
         parsed_date = datetime.strptime(data.date, "%Y-%m-%d").date()
         
@@ -1366,7 +1366,7 @@ def create_calendar_event(
             ipAddress=request.client.host
         )
         db.add(new_log)
-
+        
         db.commit()
         
         return {"message": f"{safe_type} created successfully"}
