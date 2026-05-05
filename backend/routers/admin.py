@@ -1294,7 +1294,7 @@ def get_admin_calendar_data(
                 "title": e.title, 
                 "description": e.description, 
                 "date": e.startDate.strftime("%Y-%m-%d"),
-                "type": (e.eventType.value if hasattr(e.eventType, 'value') else str(e.eventType)).upper()
+                "type": (e.type.value if hasattr(e.type, 'value') else str(e.type)).upper()
             } for e in events_in_month
         ]
 
@@ -1353,9 +1353,8 @@ def create_calendar_event(
         new_event = CalendarEvent(
             title=data.title,
             description=data.description if data.description else None,
-            startDate=parsed_date, 
-            endDate=parsed_date,   
-            eventType=safe_type
+            date=parsed_date,
+            type=safe_type
         )
         db.add(new_event)
 

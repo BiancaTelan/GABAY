@@ -257,6 +257,5 @@ class CalendarEvent(Base):
     eventID: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    startDate: Mapped[date] = mapped_column(Date, nullable=False, index=True)
-    endDate: Mapped[date] = mapped_column(Date, nullable=False)
-    eventType: Mapped[EventTypeEnum] = mapped_column(SQLEnum(EventTypeEnum), nullable=False)  
+    date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    type: Mapped[EventTypeEnum] = mapped_column(SQLEnum(EventTypeEnum), nullable=False)  
