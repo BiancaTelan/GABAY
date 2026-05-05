@@ -1363,7 +1363,7 @@ def create_calendar_event(
 
         new_event = CalendarEvent(
             title=data.title,
-            description=data.description if data.description else None,
+            description=data.description,
             date=parsed_date,
             type=safe_type
         )
@@ -1388,4 +1388,8 @@ def create_calendar_event(
         db.rollback()
         print(f"Event Creation Error: {e}")
         raise HTTPException(status_code=500, detail="Failed to create event")
-    
+    except Exception as e:
+        db.rollback()
+        # THE FIX 3: Added a bright siren to your terminal logs so it's impossible to miss if it fails!
+        print(f"🚨 CRITICAL Event Creation Error: {str(e)}") 
+        raise HTTPException(status_code=500, detail="Failed to create event")
