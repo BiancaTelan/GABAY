@@ -142,6 +142,11 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
   };
 
   const handleConfirmSubmit = () => {
+    if (userInfo && userInfo.is_verified === false) {
+      toast.error("Action Denied: You must verify your email address to submit a reservation.");
+      return;
+    }
+    
     if (!validateForm()) return;
 
     const sortedDates = [...selectedDates].sort((a, b) => a - b);
