@@ -1031,7 +1031,7 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
     # === DAILY SLOT CAPACITY ===
     active_doctors = db.query(Doctor).filter(
         Doctor.deptID == dept_id,
-        Doctor.isAvailable == 1 
+        Doctor.isAvailable == True 
     ).all()
 
     total_available_slots = 0
