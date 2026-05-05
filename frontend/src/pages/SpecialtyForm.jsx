@@ -61,10 +61,10 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
 
   useEffect(() => {
     if (formData.doctor && formData.doctor !== "NONE") {
-      fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/doctor-availability?doctor_name=${encodeURIComponent(formData.doctor)}`)
+      const cleanDoctorName = formData.doctor.replace(/^Dr\.\s*/i, '');
+      fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/doctor-availability?doctor_name=${encodeURIComponent(cleanDoctorName)}`)
         .then(res => res.json())
         .then(data => {
-          // BUG FIX: Secure the payload structure here as well
           setDoctorAvailability({
             working_days: data.working_days || [],
             fully_booked_dates: data.fully_booked_dates || []
@@ -80,13 +80,16 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
 
   const filterAllowedDates = (date) => {
     const day = date.getDay();
-    const dateStr = date.toLocaleDateString('en-CA'); 
+    
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${y}-${m}-${d}`;
     
     if (formData.doctor === "NONE") {
       return day !== 0 && day !== 6; 
     }
     
-    // BUG FIX: Add safety fallbacks during array checking
     const isWorkingDay = (doctorAvailability?.working_days || []).includes(day);
     const isNotFullyBooked = !(doctorAvailability?.fully_booked_dates || []).includes(dateStr);
     
@@ -151,7 +154,8 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
       ...formData, 
       startDate: start, 
       endDate: end, 
-      reason: detailedReason 
+      reason: detailedReason,
+      referralImage // FIX: Added the image back to the final payload!
     }, "Specialty");
   };
 
@@ -300,7 +304,7 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
           </div>
         </div>
 
-        <div className="w-full md:w-1/3 space-y-8 pt-5">
+        <div className="w-full md:w-1/3 space-y-6 pt-5">
           <div className={`flex items-center justify-between py-3 px-4 rounded-md transition-all ${isReadOnly ? 'bg-gray-100' : 'bg-gray-50 border border-gray-200'}`}>
             <span className="text-gabay-blue text-lg uppercase font-semibold">Has previous OPD record?</span>
             <label className={`relative inline-flex items-center ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}>
@@ -314,18 +318,36 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
               <FileText size={16} /> Medical Referral (Required)
             </label>
             
+            {/* FIX: Redesigned Error Banner */}
+            {errors.referral && (
+              <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3 animate-in fade-in">
+                <AlertCircle className="text-red-500 shrink-0" size={18} />
+                <p className="text-red-700 text-xs font-bold uppercase tracking-wider">{errors.referral}</p>
+              </div>
+            )}
+            
             {imagePreview ? (
-              <div className="relative rounded-xl overflow-hidden border-2 border-gabay-teal group">
-                <img src={imagePreview} alt="Referral Preview" className="w-full h-48 object-cover" />
+              <div className="relative rounded-xl overflow-hidden border-2 border-gabay-teal group flex flex-col items-center justify-center bg-gray-50 h-48">
+                {/* FIX: PDF Visual Handler */}
+                {referralImage?.type === 'application/pdf' ? (
+                  <div className="text-center p-4">
+                    <FileText size={48} className="mx-auto text-gabay-teal mb-2" />
+                    <p className="text-sm font-bold text-gabay-navy">PDF Document Attached</p>
+                    <p className="text-xs text-gray-500 truncate max-w-[200px] mt-1">{referralImage.name}</p>
+                  </div>
+                ) : (
+                  <img src={imagePreview} alt="Referral Preview" className="w-full h-full object-cover" />
+                )}
+
                 {!isReadOnly && (
                   <button 
                     onClick={removeImage}
-                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all shadow-lg"
+                    className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all shadow-lg"
                   >
                     <X size={20} />
                   </button>
                 )}
-                <div className="absolute bottom-0 inset-x-0 bg-black/60 p-2 text-white text-xs text-center">
+                <div className="absolute bottom-0 inset-x-0 bg-black/60 p-2 text-white text-xs text-center truncate">
                   {referralImage?.name}
                 </div>
               </div>
@@ -339,7 +361,6 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
                 <input type="file" className="hidden" accept="image/*,.pdf" onChange={handleImageChange} disabled={isReadOnly} />
               </label>
             )}
-            {errors.referral && <p className="text-red-500 text-[11px] mt-2 font-medium uppercase text-center">{errors.referral}</p>}
           </div>
         </div>
       </div>

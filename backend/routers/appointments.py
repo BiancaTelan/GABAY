@@ -114,9 +114,10 @@ async def book_appointment(
         
         doc_id = None
         if doctor_name != "NONE":
-            doctor = db.query(Doctor).filter(Doctor.firstname + ' ' + Doctor.surname == doctor_name).first()
-            if doctor:
-                doc_id = doctor.docID
+            doc_clean = doctor_name.replace("Dr. ", "") 
+            doctor = db.query(Doctor).filter(
+                func.concat(Doctor.firstname, ' ', Doctor.surname) == doc_clean
+            ).first()
 
         has_prev_record = True if hasPreviousRecord.lower() == 'true' else False
 
@@ -216,9 +217,15 @@ def get_appointment_history(email: str, db: Session = Depends(get_db)):
             if "Pending" in status_name:
                 unread_count += 1
 
+            display_date = "TBD"
+            if getattr(appt, 'assignedDate', None):
+                display_date = appt.assignedDate.strftime("%m/%d/%Y")
+            elif getattr(appt, 'preferredStartDate', None):
+                display_date = appt.preferredStartDate.strftime("%m/%d/%Y")
+
             history.append({
                 "id": appt.appointmentID,
-                "date": appt.preferredStartDate.strftime("%m/%d/%Y"), 
+                "date": display_date,
                 "doctor": doc.firstname + ' ' + doc.surname if doc else "None Assigned",
                 "department": dept.department if dept else "Unknown",
                 "status": status.statusName if status else "Pending Approval",
@@ -227,8 +234,7 @@ def get_appointment_history(email: str, db: Session = Depends(get_db)):
                 "referral": appt.referral_doc or None,
                 "createdAt": appt.createdAt.strftime("%m/%d/%Y") if appt.createdAt else "Recently"
             })
-
-
+            
         return {
             "appointments": history,
             "is_verified": user.is_verified,
@@ -303,9 +309,9 @@ def reschedule_appointment(appointment_id: int, request: RescheduleRequest, db: 
 @router.get("/doctor-availability")
 def get_doctor_availability(doctor_name: str, db: Session = Depends(get_db)):
     try:
-        doc = db.query(Doctor).filter(Doctor.firstname + ' ' + Doctor.surname == doctor_name).first()
-        if not doc:
-            return {"working_days": [], "fully_booked_dates": []}
+        doc = db.query(Doctor).filter(
+            func.concat(Doctor.firstname, ' ', Doctor.surname) == doctor_name
+        ).first()
 
         schedules = db.query(Schedule).filter(Schedule.docID == doc.docID).all()
         

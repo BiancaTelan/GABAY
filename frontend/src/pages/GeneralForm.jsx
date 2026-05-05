@@ -59,10 +59,10 @@ export default function GeneralForm({ userInfo, onConfirm }) {
 
   useEffect(() => {
     if (formData.doctor && formData.doctor !== "NONE") {
-      fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/doctor-availability?doctor_name=${encodeURIComponent(formData.doctor)}`)
+      const cleanDoctorName = formData.doctor.replace(/^Dr\.\s*/i, '');
+      fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/doctor-availability?doctor_name=${encodeURIComponent(cleanDoctorName)}`)
         .then(res => res.json())
         .then(data => {
-          // BUG FIX: Secure the payload structure to guarantee arrays always exist
           setDoctorAvailability({
             working_days: data.working_days || [],
             fully_booked_dates: data.fully_booked_dates || []
@@ -78,13 +78,16 @@ export default function GeneralForm({ userInfo, onConfirm }) {
 
   const filterAllowedDates = (date) => {
     const day = date.getDay();
-    const dateStr = date.toLocaleDateString('en-CA'); 
+    
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${y}-${m}-${d}`;
     
     if (formData.doctor === "NONE") {
       return day !== 0 && day !== 6; 
     }
     
-    // BUG FIX: Added fallback arrays [] to prevent .includes() from crashing on undefined
     const isWorkingDay = (doctorAvailability?.working_days || []).includes(day);
     const isNotFullyBooked = !(doctorAvailability?.fully_booked_dates || []).includes(dateStr);
     
