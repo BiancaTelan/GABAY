@@ -556,6 +556,8 @@ def get_department_stats(db: Session = Depends(get_db)):
             Appointment.preferredStartDate == date.today()
         ).count()
 
+        slots = db.query(Schedule).join(Doctor).filter(Doctor.deptID == d.deptID).all()
+
         prefix = "SPEC" if d.type.upper() == "SPECIALTY" else "GEN"
 
         formatted_depts.append({
@@ -566,7 +568,7 @@ def get_department_stats(db: Session = Depends(get_db)):
             "doctors": doc_count,
             "staff": staff_count,
             "usedSlots": used_slots,
-            "totalSlots": Schedule.maxPatients 
+            "totalSlots": len(slots)
         })
         
     return formatted_depts
