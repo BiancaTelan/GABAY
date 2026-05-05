@@ -800,9 +800,11 @@ def get_dashboard_summary(
     
     total_slots_today = 100 
 
-    total_personnel = db.query(func.count(User.userID)).filter(
-        User.role.in_(["Staff", "Doctor", "Admin"]) 
+    total_staff = db.query(func.count(User.userID)).filter(
+        User.role.in_([roleEnum.Staff, roleEnum.Admin]) 
     ).scalar() or 0
+    total_doctors = db.query(func.count(Doctor.docID)).scalar() or 0
+    total_personnel = total_staff + total_doctors
 
     recent_logs = db.query(SystemLogs, User).join(
         User, SystemLogs.userID == User.userID
@@ -820,17 +822,14 @@ def get_dashboard_summary(
             "time": log.timestamp.strftime("%I:%M %p")
         })
 
-    health_records = db.query(SystemLogs).filter(
-        SystemLogs.actionType.in_(["ERROR", "WARNING"]) 
-    ).order_by(SystemLogs.timestamp.desc()).limit(4).all()
+    health_records = db.query(SystemHealthLog).order_by(SystemHealthLog.timestamp.desc()).limit(4).all()
 
     formatted_health = []
     for log in health_records:
-        action_str = log.actionType.name if hasattr(log.actionType, 'name') else str(log.actionType)
         formatted_health.append({
             "id": log.logID,
-            "type": "System Error" if action_str == "ERROR" else "System Warning",
-            "priority": "High" if action_str == "ERROR" else "Medium",
+            "type": log.issueType,
+            "priority": log.priority,
             "time": log.timestamp.strftime("%Y-%m-%d %I:%M %p")
         })
     
