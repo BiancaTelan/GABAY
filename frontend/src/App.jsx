@@ -148,7 +148,6 @@ function App() {
       navigate('/reservation-confirmation'); 
 
     } catch (error) {
-      console.error("Booking Error:", error);
       toast.error(error.message);
     }
   };
