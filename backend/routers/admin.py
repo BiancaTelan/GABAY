@@ -1322,7 +1322,7 @@ def get_admin_calendar_data(
             elif status_id == 8: 
                 daily_stats[date_str]["noShow"] += count
             elif status_id == 9: 
-                daily_stats[date_str]["complete"] += count
+                daily_stats[date_str]["completed"] += count
 
         settings = db.query(SystemSettings).first()
         
