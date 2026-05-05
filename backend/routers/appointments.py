@@ -42,10 +42,12 @@ def get_all_hospital_schedules():
 # ---------------------------------------------------------
 @router.get("/my-profile")
 def get_my_profile(current_user: User = Depends(get_current_user)):
-  
+
+    
     return {
         "email": current_user.email,
         "role": current_user.role,
+        "is_verified": getattr(current_user, 'is_verified', False),
         "message": f"Welcome to the GABAY portal, your ID is {current_user.user_ID}"
     }
 
