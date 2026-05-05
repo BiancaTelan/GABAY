@@ -29,7 +29,6 @@ export default function Inbox() {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const userEmail = payload.sub;
 
-        // FIX: Added ?t=${new Date().getTime()} to bust the browser cache!
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/history/${userEmail}?t=${new Date().getTime()}`);
         if (response.ok) {
           const data = await response.json();
@@ -91,7 +90,7 @@ export default function Inbox() {
               type: type,
               title: title,
               date: appt.date,
-              submissionDate: appt.createdAt,
+              submissionDate: appt.updatedAt || appt.createdAt, 
               department: appt.department,
               doctor: appt.doctor,
               status: displayStatus,

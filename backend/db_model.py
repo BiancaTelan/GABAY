@@ -250,7 +250,7 @@ class SystemSettings(Base):
     maintenanceMode: Mapped[bool] = mapped_column(Boolean, default=False)
     downtimeReason: Mapped[str] = mapped_column(String(100), default="Maintenance Mode")
     resumeTimer: Mapped[str] = mapped_column(String(20), default="60")
-    dailyCapacity = Mapped[int] = mapped_column(Integer, default=25, nullable=False)
+    dailyCapacity: Mapped[int] = mapped_column(Integer, default=25, nullable=False)
 
 class CalendarEvent(Base):
     __tablename__ = "calendarEvents"

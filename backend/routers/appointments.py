@@ -187,7 +187,6 @@ async def book_appointment(
 # ---------------------------------------------------------
 # 4. Appointment History Endpoint
 # ---------------------------------------------------------
-
 @router.get("/history/{email}")
 def get_appointment_history(email: str, db: Session = Depends(get_db)):
     try:
@@ -202,7 +201,7 @@ def get_appointment_history(email: str, db: Session = Depends(get_db)):
         appointments = (
             db.query(Appointment)
             .filter(Appointment.patientID == patient.patientID)
-            .order_by(Appointment.createdAt.desc())
+            .order_by(func.coalesce(Appointment.actionDate, Appointment.createdAt).desc())
             .all()
         )
 
@@ -219,7 +218,12 @@ def get_appointment_history(email: str, db: Session = Depends(get_db)):
 
             display_date = "TBD"
         
-            if getattr(appt, 'assignedDate', None):
+            if "Pending" in status_name and getattr(appt, 'preferredStartDate', None):
+                display_date = appt.preferredStartDate.strftime("%B %d, %Y")
+                if getattr(appt, 'preferredEndDate', None) and appt.preferredEndDate != appt.preferredStartDate:
+                    display_date += f" to {appt.preferredEndDate.strftime('%B %d, %Y')}"
+                    
+            elif getattr(appt, 'assignedDate', None):
                 display_date = appt.assignedDate.strftime("%B %d, %Y")
                 if getattr(appt, 'assignedSchedule', None) and getattr(appt.assignedSchedule, 'startTime', None):
                     display_date += f" ({appt.assignedSchedule.startTime.strftime('%I:%M %p')})"
@@ -227,15 +231,18 @@ def get_appointment_history(email: str, db: Session = Depends(get_db)):
             elif getattr(appt, 'preferredStartDate', None):
                 display_date = appt.preferredStartDate.strftime("%B %d, %Y")
 
+            action_date = getattr(appt, 'actionDate', None) or appt.createdAt
+
             history.append({
                 "id": appt.appointmentID,
                 "date": display_date, 
                 "doctor": f"Dr. {doc.surname}" if doc else "None Assigned",
                 "department": dept.department if dept else "Unknown",
-                "status": status.statusName if status else "Pending",
+                "status": status_name,
                 "type": appt.type,
                 "reason": appt.purposeDetailed or "No reason provided.",
-                "createdAt": appt.createdAt.strftime("%m/%d/%Y") if appt.createdAt else "Recently"
+                "createdAt": appt.createdAt.strftime("%m/%d/%Y") if appt.createdAt else "Recently",
+                "updatedAt": action_date.strftime("%B %d, %Y at %I:%M %p") if action_date else "Recently"
             })
 
         return {
@@ -248,7 +255,7 @@ def get_appointment_history(email: str, db: Session = Depends(get_db)):
     except Exception as e:
         print(f"Error fetching history: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch appointment history.")
-
+    
 # ---------------------------------------------------------
 # 5. Update Appointment Status (Patient side)
 # ---------------------------------------------------------
@@ -278,7 +285,7 @@ def update_appointment_status(appointment_id: int, request: StatusUpdate, db: Se
         raise HTTPException(status_code=500, detail=str(e))
     
 # ---------------------------------------------------------
-# 6. Main Reservation Endpoint 
+# 6. Main Reservation Endpoint (Patient Reschedule)
 # ---------------------------------------------------------
 @router.put("/{appointment_id}/reschedule")
 def reschedule_appointment(appointment_id: int, request: RescheduleRequest, db: Session = Depends(get_db)):
@@ -294,6 +301,14 @@ def reschedule_appointment(appointment_id: int, request: RescheduleRequest, db: 
         appointment.preferredEndDate = end_date
         appointment.purposeDetailed = f"[RESCHEDULED] New Reason: {request.reason} | Original Reason: {appointment.purposeDetailed}"
         
+        if hasattr(appointment, 'assignedDate'):
+            appointment.assignedDate = None
+        if hasattr(appointment, 'assignedScheduleID'):
+            appointment.assignedScheduleID = None
+            
+        if hasattr(appointment, 'actionDate'):
+            appointment.actionDate = func.now()
+        
         pending_status = db.query(AppointmentStatus).filter(AppointmentStatus.statusName.like("%Pending%")).first()
         if pending_status:
             appointment.statusID = pending_status.statusID
@@ -305,7 +320,7 @@ def reschedule_appointment(appointment_id: int, request: RescheduleRequest, db: 
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
-
+    
 # ---------------------------------------------------------
 # 7. Doctor Availability Endpoint
 # ---------------------------------------------------------
