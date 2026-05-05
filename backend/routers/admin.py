@@ -608,14 +608,13 @@ def update_department(
     dept = db.query(Department).filter(Department.deptID == dept_id).first()
     if not dept:
         raise HTTPException(status_code=404, detail="Department not found")
-
-    # If capacity changes, we MUST update all schedules for doctors in this department!
+    
     if dept.slotCapacity != data.slotCapacity:
         doctors_in_dept = db.query(Doctor).filter(Doctor.deptID == dept.deptID).all()
         for doc in doctors_in_dept:
             schedules = db.query(Schedule).filter(Schedule.docID == doc.docID).all()
             for sched in schedules:
-                Schedule.maxPatients = data.slotCapacity
+                sched.maxPatients = data.slotCapacity
 
     dept.department = data.department
     dept.type = data.type.capitalize()
