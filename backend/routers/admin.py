@@ -556,8 +556,6 @@ def get_department_stats(db: Session = Depends(get_db)):
             Appointment.preferredStartDate == date.today()
         ).count()
 
-        slots = db.query(Schedule).join(Doctor).filter(Doctor.deptID == d.deptID).all()
-
         prefix = "SPEC" if d.type.upper() == "SPECIALTY" else "GEN"
 
         formatted_depts.append({
@@ -568,7 +566,7 @@ def get_department_stats(db: Session = Depends(get_db)):
             "doctors": doc_count,
             "staff": staff_count,
             "usedSlots": used_slots,
-            "totalSlots": slots[0].maxPatients if slots else d.slotCapacity
+            "totalSlots": d.slotCapacity
         })
         
     return formatted_depts
@@ -608,7 +606,7 @@ def update_department(
     dept = db.query(Department).filter(Department.deptID == dept_id).first()
     if not dept:
         raise HTTPException(status_code=404, detail="Department not found")
-    
+
     if dept.slotCapacity != data.slotCapacity:
         doctors_in_dept = db.query(Doctor).filter(Doctor.deptID == dept.deptID).all()
         for doc in doctors_in_dept:
