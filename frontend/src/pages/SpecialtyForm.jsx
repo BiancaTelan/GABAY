@@ -259,23 +259,31 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
                 </div>
               ) : (
                 <DatePicker
-                  selected={selectedDates[0]} 
-                  onChange={(dates) => {
-                    if (dates.length > 5) {
-                      toast.error("You can select a maximum of 5 dates.");
-                      setSelectedDates(dates.slice(0, 5));
-                    } else {
-                      setSelectedDates(dates);
-                      if (errors.appointmentDate) setErrors(prev => ({ ...prev, appointmentDate: "" }));
-                    }
-                  }}
-                  selectsMultiple
+                  selected={selectedDates.length > 0 ? selectedDates[selectedDates.length - 1] : null}
+                  highlightDates={selectedDates} 
                   shouldCloseOnSelect={false}
                   filterDate={filterAllowedDates}
                   minDate={today}
                   maxDate={maxDate}
                   dateFormat="MM/dd/yyyy"
                   value={selectedDates.map(d => d.toLocaleDateString()).join(", ")} 
+                  onChange={(clickedDate) => {
+                    if (!clickedDate) return;
+                    
+                    const clickedStr = clickedDate.toDateString();
+                    const exists = selectedDates.find(d => d.toDateString() === clickedStr);
+                    
+                    if (exists) {
+                      setSelectedDates(selectedDates.filter(d => d.toDateString() !== clickedStr));
+                    } else {
+                      if (selectedDates.length >= 5) {
+                        toast.error("You can select a maximum of 5 dates.");
+                      } else {
+                        setSelectedDates([...selectedDates, clickedDate]);
+                        if (errors.appointmentDate) setErrors(prev => ({ ...prev, appointmentDate: "" }));
+                      }
+                    }
+                  }}
                   customInput={
                     <DateDisplayInput 
                       className={`w-full p-2 text-base rounded-md border outline-none transition-all pr-10 ${

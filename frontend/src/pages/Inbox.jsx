@@ -38,16 +38,14 @@ export default function Inbox() {
           const dynamicNotifications = data.appointments.map(appt => {
             const statusLower = appt.status.toLowerCase();
             
-            // Default Fallbacks
             let type = 'appointment';
             let title = 'Schedule Update';
             let displayStatus = appt.status.toUpperCase();
             let message = '';
             let icon = Calendar;
             let showActionButtons = false;
-            let colorTheme = 'gray'; // NEW: Track the exact color theme
+            let colorTheme = 'gray'; 
 
-            // 1. SMART STATUS ROUTER: Set UI based on exact database status
             if (statusLower.includes('pending')) {
               type = 'reservation';
               title = 'Reservation Submitted';
@@ -139,6 +137,7 @@ export default function Inbox() {
     fetchInboxData();
   }, [token]);
 
+  const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/history/${userEmail}?t=${new Date().getTime()}`);
   
   const filteredNotifications = allNotifications.filter(note => {
     if (activeFilter === 'all') return true;

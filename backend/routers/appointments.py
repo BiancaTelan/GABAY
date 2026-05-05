@@ -219,10 +219,12 @@ def get_appointment_history(email: str, db: Session = Depends(get_db)):
 
             display_date = "TBD"
         
-            if appt.assignedDate:
+            if getattr(appt, 'assignedDate', None):
                 display_date = appt.assignedDate.strftime("%B %d, %Y")
-                
-            elif appt.preferredStartDate:
+                if getattr(appt, 'assignedSchedule', None) and getattr(appt.assignedSchedule, 'startTime', None):
+                    display_date += f" ({appt.assignedSchedule.startTime.strftime('%I:%M %p')})"
+                    
+            elif getattr(appt, 'preferredStartDate', None):
                 display_date = appt.preferredStartDate.strftime("%B %d, %Y")
 
             history.append({
@@ -312,10 +314,9 @@ def get_doctor_availability(doctor_name: str, db: Session = Depends(get_db)):
     try:
         clean_name = doctor_name.replace("Dr. ", "").strip()
         
-        name_parts = clean_name.split(" ")
-        last_name_guess = name_parts[-1] 
-        
-        doctor = db.query(Doctor).filter(Doctor.surname.ilike(f"%{last_name_guess}%")).first()
+        doctor = db.query(Doctor).filter(
+            func.concat(Doctor.firstname, ' ', Doctor.surname) == clean_name
+        ).first()
 
         if not doctor:
             return {"working_days": [], "fully_booked_dates": []}
@@ -350,4 +351,5 @@ def get_doctor_availability(doctor_name: str, db: Session = Depends(get_db)):
 
     except Exception as e:
         print(f"Availability fetch error: {e}")
-        return {"working_days": [], "fully_booked_dates": []}   
+        return {"working_days": [], "fully_booked_dates": []}
+    

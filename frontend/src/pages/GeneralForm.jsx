@@ -224,6 +224,7 @@ export default function GeneralForm({ userInfo, onConfirm }) {
                 </div>
               ) : (
                 <DatePicker
+                  selected={selectedDates.length > 0 ? selectedDates[selectedDates.length - 1] : null}
                   highlightDates={selectedDates} 
                   shouldCloseOnSelect={false}
                   filterDate={filterAllowedDates}
@@ -234,10 +235,11 @@ export default function GeneralForm({ userInfo, onConfirm }) {
                   onChange={(clickedDate) => {
                     if (!clickedDate) return;
                     
-                    const exists = selectedDates.find(d => d.getTime() === clickedDate.getTime());
+                    const clickedStr = clickedDate.toDateString();
+                    const exists = selectedDates.find(d => d.toDateString() === clickedStr);
                     
                     if (exists) {
-                      setSelectedDates(selectedDates.filter(d => d.getTime() !== clickedDate.getTime()));
+                      setSelectedDates(selectedDates.filter(d => d.toDateString() !== clickedStr));
                     } else {
                       if (selectedDates.length >= 5) {
                         toast.error("You can select a maximum of 5 dates.");
