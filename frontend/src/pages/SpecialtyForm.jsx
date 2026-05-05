@@ -148,15 +148,12 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
     const start = sortedDates[0];
     const end = sortedDates[sortedDates.length - 1];
     
-    const datesString = sortedDates.map(d => d.toLocaleDateString()).join(", ");
-    const detailedReason = `${formData.reason} | Patient's Specific Target Dates: [${datesString}]`;
-
     onConfirm({ 
       ...formData, 
       startDate: start, 
       endDate: end, 
-      reason: detailedReason,
-      referralImage // FIX: Added the image back to the final payload!
+      reason: formData.reason, 
+      referralImage 
     }, "Specialty");
   };
 

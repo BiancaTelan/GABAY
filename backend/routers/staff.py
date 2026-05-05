@@ -80,9 +80,13 @@ def get_staff_appointments(db: Session = Depends(get_db), current_staff: User = 
     if not staff_profile or not staff_profile.deptID:
         return []
     
-    appointments = db.query(Appointment).filter(Appointment.deptID == staff_profile.deptID).all()
-    
     try:
+        appointments = (
+            db.query(Appointment)
+            .filter(Appointment.deptID == staff_profile.deptID)
+            .order_by(Appointment.createdAt.desc())
+            .all()
+        )
 
         status_mapping = {
             1: 'pending',
@@ -90,7 +94,9 @@ def get_staff_appointments(db: Session = Depends(get_db), current_staff: User = 
             3: 'canceled',
             4: 'denied',   
             5: 'approved',   
-            6: 'rescheduled'
+            6: 'rescheduled',
+            7: 'book',
+            8: 'no show'
         }
 
         results = []
@@ -1023,23 +1029,33 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
     ).count()
 
     # === DAILY SLOT CAPACITY ===
-    department_schedules = db.query(Schedule).join(
-        Doctor, Schedule.docID == Doctor.docID
-    ).filter(Doctor.deptID == dept_id).all()
+    active_doctors = db.query(Doctor).filter(
+        Doctor.deptID == dept_id,
+        Doctor.isAvailable == True 
+    ).all()
 
-    daily_total_slots = sum(
-        (sched.maxPatients or 20) for sched in department_schedules 
-        if str(sched.weekDay).split('.')[-1].strip().lower() == today_name.lower()
-    )
-    
-    approved_today = db.query(Appointment).filter(
-        Appointment.deptID == dept_id, 
-        Appointment.assignedDate == today_date,
-        Appointment.statusID.in_(valid_approved_ids) 
-    ).count()
+    total_available_slots = 0
 
-    available_slots = daily_total_slots - approved_today
-    available_slots = max(0, available_slots)
+    for doctor in active_doctors:
+        doctor_schedules = db.query(Schedule).filter(Schedule.docID == doctor.docID).all()
+        
+        works_today = False
+        daily_max = 0
+        for sched in doctor_schedules:
+            if str(sched.weekDay).split('.')[-1].strip().lower() == today_name.lower():
+                works_today = True
+                daily_max += (sched.maxPatients or 20)
+                
+        if works_today:
+            doctor_booked = db.query(Appointment).filter(
+                Appointment.docID == doctor.docID,
+                Appointment.assignedDate == today_date,
+                Appointment.statusID.in_(valid_approved_ids)
+            ).count()
+            
+            total_available_slots += max(0, daily_max - doctor_booked)
+            
+    available_slots = total_available_slots
 
     # === DAILY QUEUE FETCHING (Strictly for Today) ===
     

@@ -125,14 +125,11 @@ export default function GeneralForm({ userInfo, onConfirm }) {
     const start = sortedDates[0];
     const end = sortedDates[sortedDates.length - 1];
     
-    const datesString = sortedDates.map(d => d.toLocaleDateString()).join(", ");
-    const detailedReason = `${formData.reason} | Patient's Specific Target Dates: [${datesString}]`;
-
     onConfirm({ 
       ...formData, 
       startDate: start, 
       endDate: end, 
-      reason: detailedReason 
+      reason: formData.reason 
     }, "General");
   };
 

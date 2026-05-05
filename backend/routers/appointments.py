@@ -118,6 +118,9 @@ async def book_appointment(
             doctor = db.query(Doctor).filter(
                 func.concat(Doctor.firstname, ' ', Doctor.surname) == doc_clean
             ).first()
+            
+            if doctor:
+                doc_id = doctor.docID
 
         has_prev_record = True if hasPreviousRecord.lower() == 'true' else False
 
