@@ -1284,8 +1284,8 @@ def get_admin_calendar_data(
         target_year, target_month = map(int, month.split('-'))
 
         events_in_month = db.query(CalendarEvent).filter(
-            extract('year', CalendarEvent.startDate) == target_year,
-            extract('month', CalendarEvent.startDate) == target_month
+            extract('year', CalendarEvent.date) == target_year,
+            extract('month', CalendarEvent.date) == target_month
         ).all()
 
         formatted_events = [
@@ -1293,7 +1293,7 @@ def get_admin_calendar_data(
                 "id": e.eventID, 
                 "title": e.title, 
                 "description": e.description, 
-                "date": e.startDate.strftime("%Y-%m-%d"),
+                "date": e.date.strftime("%Y-%m-%d"), 
                 "type": (e.type.value if hasattr(e.type, 'value') else str(e.type)).upper()
             } for e in events_in_month
         ]
@@ -1313,7 +1313,7 @@ def get_admin_calendar_data(
             date_str = appt_date.strftime("%Y-%m-%d")
             
             if date_str not in daily_stats:
-                daily_stats[date_str] = {"date": date_str, "confirmed": 0, "canceled": 0, "noShow": 0, "complete": 0}
+                daily_stats[date_str] = {"date": date_str, "confirmed": 0, "canceled": 0, "noShow": 0, "completed": 0}
             
             if status_id in [2, 5, 6, 7]: 
                 daily_stats[date_str]["confirmed"] += count
