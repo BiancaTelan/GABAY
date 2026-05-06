@@ -11,7 +11,7 @@ from dependencies import get_current_user, RoleChecker
 from py_schema import PatientResponse 
 from db_connection import get_db
 from db_model import User, Patient, Appointment, Department, Doctor, AppointmentStatus, roleEnum, Schedule
-from email_utils import send_notification_email
+from email_utils import send_notification_email, send_appointment_received_email
 
 router = APIRouter(prefix="/api/appointments", tags=["Appointments"])
 
@@ -157,29 +157,16 @@ async def book_appointment(
         db.add(new_appointment)
         db.commit()
 
-        subject = "GABAY: Appointment Request Received - Cainta Municipal Hospital"
-
-        body = f"""Dear {patient.firstname} {patient.surname},
-
-        We have successfully received your appointment request for the {department.department} department.
-        It is currently PENDING APPROVAL by our hospital staff.
-
-        📝 RESERVATION DETAILS:
-        - Type: {appointment_type} OPD
-        - Preferred Date(s): {start_date} to {end_date or start_date}
-        - Assigned Doctor: {doctor_name}
-        - Reason: {reason}
-
-        We will send another email once your schedule is officially confirmed.
-
-        Thank you for using the GABAY System!
-        """
-
         background_tasks.add_task(
-            send_notification_email, 
-            recipient_email=user.email, 
-            subject=subject, 
-            body=body
+            send_appointment_received_email, 
+            recipient_email=user.email,
+            name=f"{patient.firstname} {patient.surname}",
+            department_name=department.department,
+            appointment_type=appointment_type,
+            start_date=start_date.strftime("%B %d, %Y"),
+            end_date=end_date.strftime("%B %d, %Y") if end_date else "",
+            doctor_name=doctor_name,
+            reason=reason
         )
 
         return {"message": "Reservation submitted successfully!"}
@@ -260,7 +247,6 @@ def get_appointment_history(email: str, db: Session = Depends(get_db)):
 # ---------------------------------------------------------
 # 5. Update Appointment Status (Patient side)
 # ---------------------------------------------------------
-
 @router.put("/{appointment_id}/status")
 def update_appointment_status(appointment_id: int, request: StatusUpdate, db: Session = Depends(get_db)):
     try:
