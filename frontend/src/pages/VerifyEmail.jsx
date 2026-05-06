@@ -10,7 +10,7 @@ export default function VerifyEmail() {
   const [status, setStatus] = useState('loading');
   const [message, setMessage] = useState('Verifying your email address...');
 
-  // --- VERIFY EMAIL ON COMPONENT ---
+  // --- VERIFY EMAIL COMPONENT ---
   useEffect(() => {
     if (!token) {
       setStatus('error');
