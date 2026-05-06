@@ -32,8 +32,7 @@ def generate_email_html(body_content: str) -> str:
               <!-- Colored Header -->
               <tr>
                 <td align="center" style="background-color: #0b3b60; padding: 35px 20px; border-radius: 8px 8px 0 0;">
-                  <h1 style="color: #ffffff; margin: 0; font-size: 32px; letter-spacing: 3px;">GABAY</h1>
-                  <p style="color: #85a2b6; margin: 5px 0 0 0; font-size: 12px; letter-spacing: 1px; text-transform: uppercase;">System</p>
+                  <h1 style="color: #ffffff; margin: 0; font-size: 32px; letter-spacing: 3px;">GABAY SYSTEM</h1>
                 </td>
               </tr>
 
@@ -159,7 +158,7 @@ def send_otp_email(recipient_email: str, otp: str):
     send_brevo_email(recipient_email, "GABAY System: Password Reset OTP", generate_email_html(content))
 
 # ==========================================
-# EMAIL NOTIFICATION EMAIL (Generic)
+# EMAIL NOTIFICATION 
 # ==========================================
 def send_notification_email(recipient_email: str, subject: str, body: str):
     formatted_body = body.replace('\n', '<br>')
@@ -217,16 +216,16 @@ def send_personnel_credentials_email(recipient_email: str, name: str, role: str,
 def send_patient_appointment_email(recipient_email: str, name: str, status: str, doctor_name: str, date: str, additional_notes: str = ""):
     status_upper = status.upper()
     if "APPROVE" in status_upper:
-        color_hex = "#0f766e" # GABAY Teal
+        color_hex = "#0f766e" 
         message = "has been officially <strong>approved</strong>."
     elif "CANCEL" in status_upper or "DENY" in status_upper:
-        color_hex = "#dc2626" # Red
+        color_hex = "#dc2626" 
         message = "has been <strong>cancelled</strong>."
     elif "RESCHEDULE" in status_upper:
-        color_hex = "#d97706" # Orange
+        color_hex = "#d97706" 
         message = "has been <strong>rescheduled</strong>."
     else:
-        color_hex = "#0b3b60" # GABAY Blue
+        color_hex = "#0b3b60"
         message = f"has been updated to: <strong>{status}</strong>."
 
     content = f"""
@@ -245,4 +244,36 @@ def send_patient_appointment_email(recipient_email: str, name: str, status: str,
     
     send_brevo_email(recipient_email, f"GABAY System: Appointment {status.title()}", generate_email_html(content))
 
+# ==========================================
+# APPOINTMENT REQUEST RECEIVED EMAIL
+# ==========================================
+def send_appointment_received_email(
+    recipient_email: str, 
+    name: str, 
+    department_name: str, 
+    appointment_type: str, 
+    start_date: str, 
+    end_date: str, 
+    doctor_name: str, 
+    reason: str
+):
+    color_hex = "#0b3b60" 
     
+    date_display = f"{start_date} to {end_date}" if end_date and start_date != end_date else str(start_date)
+
+    content = f"""
+    <h2 style="color: {color_hex}; text-align: center; margin-top: 0; font-size: 24px;">Appointment Request Received</h2>
+    <p style="color: #555555; font-size: 16px; line-height: 1.6; text-align: center;">Hello <strong>{name}</strong>,</p>
+    <p style="color: #555555; font-size: 16px; line-height: 1.6; text-align: center;">We have successfully received your appointment request for the <strong>{department_name}</strong> department. It is currently <strong style="color: #d97706;">PENDING APPROVAL</strong> by our hospital staff.</p>
+    
+    <div style="background-color: #f4f6f8; padding: 20px; border-radius: 5px; margin: 30px 0; border-left: 4px solid {color_hex}; text-align: left;">
+        <p style="margin: 0 0 10px 0; font-size: 15px; color: #333333;"><strong>Type:</strong> {appointment_type} OPD</p>
+        <p style="margin: 0 0 10px 0; font-size: 15px; color: #333333;"><strong>Preferred Date(s):</strong> {date_display}</p>
+        <p style="margin: 0 0 10px 0; font-size: 15px; color: #333333;"><strong>Assigned Doctor:</strong> {doctor_name}</p>
+        <p style="margin: 0; font-size: 15px; color: #555555;"><strong>Reason:</strong> {reason}</p>
+    </div>
+    
+    <p style="color: #777777; font-size: 14px; text-align: center;">We will send another email once your schedule is officially confirmed. Thank you for using the GABAY System!</p>
+    """
+    
+    send_brevo_email(recipient_email, "GABAY: Appointment Request Received", generate_email_html(content))
