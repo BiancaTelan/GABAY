@@ -253,12 +253,6 @@ export default function Departments() {
             <thead className="bg-gabay-blue font-poppins text-white select-none">
               <tr>
                 <th className="px-4 py-4 text-center">
-                  <input 
-                    type="checkbox" 
-                    onChange={handleSelectAll}
-                    checked={selectedIds.length === pagedData.filter(i => i.status !== 'Deactivated').length && pagedData.length > 0}
-                    className="w-4 h-4 bg-gabay-blue"
-                  />
                 </th>
                 <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider">Department ID</th>
                 <th className="px-4 py-4 text-xs font-bold uppercase tracking-wider">Department Name</th>
@@ -277,13 +271,6 @@ export default function Departments() {
                   onClick={() => toggleSelection(dept.id, dept.status)}
                 >
                   <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}>
-                    <input 
-                      type="checkbox" 
-                      disabled={dept.status === 'Deactivated'}
-                      checked={selectedIds.includes(dept.id)} 
-                      onChange={() => toggleSelection(dept.id, dept.status)} 
-                      className="w-4 h-4 bg-gabay-blue disabled:opacity-30" 
-                    />
                   </td>
                   
                   <td className={`px-4 py-4 text-sm text-gray-700 font-medium font-poppins ${getDeactivatedStyle(dept.status)}`}>{dept.id}</td>

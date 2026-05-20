@@ -255,7 +255,6 @@ export default function Users() {
             <thead className="bg-gabay-blue font-poppins text-white select-none">
               <tr>
                 <th className="px-4 py-4 text-center">
-                  <input type="checkbox" onChange={handleSelectAll} checked={selectedIds.length === pagedData.length && pagedData.length > 0} className="w-4 h-4" />
                 </th>
                 <th className="px-4 py-4 text-[12px] md:text-xs font-bold uppercase tracking-wider">Hospital Number</th>
                 <th className="px-4 py-4 text-[12px] md:text-xs font-bold uppercase tracking-wider">Name</th>
@@ -269,9 +268,8 @@ export default function Users() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {pagedData.map((user) => (
-                <tr key={user.id} className={`hover:bg-gray-50 transition-colors ${selectedIds.includes(user.id) ? 'bg-blue-50/50' : ''}`} onClick={() => toggleSelection(user.id)}>
+                <tr className={`hover:bg-gray-50 transition-colors ${selectedIds.includes(user.id) ? 'bg-blue-50/50' : ''}`}>
                   <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}>
-                    <input type="checkbox" className="w-4 h-4 rounded accent-gabay-blue" checked={selectedIds.includes(user.id)} onChange={() => toggleSelection(user.id)} />
                   </td>
                   <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gray-700 font-medium">{user.id}</td>
                   <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gabay-blue font-medium">{user.name}</td>

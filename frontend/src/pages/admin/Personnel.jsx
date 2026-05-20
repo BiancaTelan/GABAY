@@ -325,12 +325,6 @@ export default function Personnel() {
             <thead className="bg-gabay-blue font-poppins text-white select-none">
               <tr>
                 <th className="px-4 py-4 text-center">
-                  <input 
-                    type="checkbox" 
-                    onChange={handleSelectAll}
-                    checked={selectedIds.length === pagedData.length && pagedData.length > 0}
-                    className="w-4 h-4 bg-gabay-blue"
-                  />
                 </th>
                 <th className="px-4 py-4 text-[12px] md:text-xs font-poppins font-bold uppercase tracking-wider">Employee ID</th>
                 <th className="px-4 py-4 text-[12px] md:text-xs font-poppins font-bold uppercase tracking-wider">Role</th>
@@ -345,17 +339,9 @@ export default function Personnel() {
             <tbody className="divide-y divide-gray-100">
               {pagedData.map((person) => (
                 <tr 
-                  key={person.id} 
                   className={`hover:bg-gray-50 transition-colors ${selectedIds.includes(person.id) ? 'bg-blue-50/50' : ''}`}
-                  onClick={() => toggleSelection(person.id)}
                 >
                   <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}>
-                    <input 
-                      type="checkbox" 
-                      checked={selectedIds.includes(person.id)}
-                      onChange={() => toggleSelection(person.id)}
-                      className="w-4 h-4 bg-gabay-blue"
-                    />
                   </td>
                   <td className="px-4 py-4 text-xs md:text-sm font-poppins text-gray-700 font-medium">{person.id}</td>
                   <td className="px-4 py-4">
