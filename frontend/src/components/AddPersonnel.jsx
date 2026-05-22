@@ -232,7 +232,7 @@ export default function AddPersonnel({ isOpen, onClose, onSave, editData = null 
                       className="hover:text-red-500 font-bold ml-1 focus:outline-none"
                       aria-label={`Remove ${dept}`}
                     >
-                      ×
+                      X
                     </button>
                   </span>
                 ))}
