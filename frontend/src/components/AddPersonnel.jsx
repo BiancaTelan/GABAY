@@ -35,7 +35,7 @@ export default function AddPersonnel({ isOpen, onClose, onSave, editData = null 
     firstName: '',
     lastName: '',
     role: 'STAFF',
-    department: '',
+    departments: [],
     email: '',
     contactNumber: '',
     password: '',
@@ -48,6 +48,8 @@ export default function AddPersonnel({ isOpen, onClose, onSave, editData = null 
 
   useEffect(() => {
     if (editData) {
+      // CRITICAL FIX: If editData contains an old database structure where department is a single string or 
+      // named differently, ensure you fallback cleanly to 'departments: editData.departments || []'
       setFormData({ ...initialState, ...editData, password: '', confirmPassword: '' });
     } else {
       setFormData(initialState);
@@ -57,6 +59,29 @@ export default function AddPersonnel({ isOpen, onClose, onSave, editData = null 
 
   const handleOverlayClick = (e) => {
     if (modalRef.current && !modalRef.current.contains(e.target)) onClose();
+  };
+
+  const handleDepartmentSelect = (e) => {
+  const selectedValue = e.target.value;
+  if (!selectedValue) return;
+
+  if (!formData.departments.includes(selectedValue)) {
+    setFormData({
+      ...formData,
+      departments: [...formData.departments, selectedValue]
+    });
+  }
+  
+  if (errors.department) {
+    setErrors({ ...errors, department: '' });
+    }
+  };
+
+  const handleRemoveDepartment = (deptToRemove) => {
+    setFormData({
+      ...formData,
+      departments: formData.departments.filter(dept => dept !== deptToRemove)
+    });
   };
 
   const handleChange = (e) => {
@@ -93,8 +118,9 @@ export default function AddPersonnel({ isOpen, onClose, onSave, editData = null 
       newErrors.contactNumber = "Must be exactly 11 digits";
     }
 
-    if (!formData.department) newErrors.department = "Please select a department";
-
+    if (!formData.departments || formData.departments.length === 0) {
+      newErrors.department = "Please select at least one department";
+    }
 
     if (!editData) {
       const hasNumber = /\d/.test(formData.password);
@@ -125,18 +151,15 @@ export default function AddPersonnel({ isOpen, onClose, onSave, editData = null 
     if (!validate()) return;
 
     try {
-      // //EDIT: Integrated onSave function to reflect changes dynamically (Requirement 5 & 6)
-      // //INSTRUCTION FOR BACKEND: Once the API responds with success, 
-      // the parent state is updated using this call.
       if (onSave) {
         onSave(formData);
       }
 
       if (editData) {
-        /* BACKEND DEV: PUT /api/admin/personnel/${editData.id} */
+        /* BACKEND: PUT /api/admin/personnel/${editData.id} */
         toast.success("Account updated successfully!");
       } else {
-        /* BACKEND DEV: POST /api/admin/personnel/create */
+        /* BACKEND: POST /api/admin/personnel/create */
         toast.success("Account created! Activation link sent via email.");
       }
       onClose();
@@ -179,15 +202,43 @@ export default function AddPersonnel({ isOpen, onClose, onSave, editData = null 
               </select>
             </FormField>
             
-            <FormField label="Department" name="department" error={errors.department}>
-              <select name="department" value={formData.department} onChange={handleChange} className={`w-full border-2 rounded-lg px-4 py-2 text-sm outline-none bg-white transition-all ${errors.department ? 'border-red-500' : 'border-gray-100 focus:border-gabay-teal'}`}>
-                <option value="">Select Department</option>
-                <option value="Cardiology">Cardiology</option>
-                <option value="Dentistry">Dentistry</option>
-                <option value="Internal Medicine">Internal Medicine</option>
-                <option value="Pediatrics">Pediatrics</option>
-              </select>
-            </FormField>
+            <FormField label="Departments" name="department" error={errors.department}>
+            <select 
+              name="department" 
+              value="" 
+              onChange={handleDepartmentSelect} 
+              className={`w-full border-2 rounded-lg px-4 py-2 text-sm outline-none bg-white transition-all ${
+                errors.department ? 'border-red-500' : 'border-gray-100 focus:border-gabay-teal'
+              }`}
+            >
+              <option value="">+ Add Department</option>
+              <option value="Cardiology">Cardiology</option>
+              <option value="Dentistry">Dentistry</option>
+              <option value="Internal Medicine">Internal Medicine</option>
+              <option value="Pediatrics">Pediatrics</option>
+            </select>
+
+            {formData.departments && formData.departments.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {formData.departments.map((dept) => (
+                  <span 
+                    key={dept} 
+                    className="flex items-center gap-1 bg-gabay-teal/10 text-gabay-teal text-xs font-medium px-2.5 py-1 rounded-md border border-gabay-teal/20"
+                  >
+                    {dept}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveDepartment(dept)}
+                      className="hover:text-red-500 font-bold ml-1 focus:outline-none"
+                      aria-label={`Remove ${dept}`}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </FormField>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

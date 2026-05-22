@@ -7,7 +7,6 @@ export const AuthProvider = ({ children }) => {
   const [userRole, setUserRole] = useState(localStorage.getItem('role') || null);
   const [userInfo, setUserInfo] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
-  
 
   useEffect(() => {
     let intervalId; 
