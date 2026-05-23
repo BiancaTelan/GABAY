@@ -1,6 +1,9 @@
 from jose import JWTError
 import jwt
 import random
+import os              
+import requests        
+from pydantic import BaseModel 
 from fastapi import BackgroundTasks
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -15,17 +18,37 @@ from email_utils import send_notification_email, send_otp_email, send_verificati
 
 router = APIRouter(prefix="/auth", tags=["Authentication & Registration"])
 
+class UserLoginRequest(BaseModel):
+    email: str
+    password: str
+    recaptcha_token: str
+
 # ---------------------------------------------------------
-# 1. LOGIN ROUTE
+# 1. LOGIN ROUTE 
 # ---------------------------------------------------------
 @router.post("/login", summary="Create access token for user")
 def login_for_access_token(
-    data: UserLogin, 
+    request_data: UserLoginRequest, 
     db: Session = Depends(get_db)
 ):
-    user = db.query(User).filter(User.email == data.email).first()
     
-    if not user or not verify_password(data.password, user.passwordHash):
+    recaptcha_secret = os.getenv("RECAPTCHA_SECRET_KEY")
+    verify_url = "https://www.google.com/recaptcha/api/siteverify"
+    
+    recaptcha_response = requests.post(verify_url, data={
+        "secret": recaptcha_secret,
+        "response": request_data.recaptcha_token
+    }).json()
+
+    if not recaptcha_response.get("success"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Security verification failed. Please check the reCAPTCHA box again."
+        )
+
+    user = db.query(User).filter(User.email == request_data.email).first()
+    
+    if not user or not verify_password(request_data.password, user.passwordHash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -39,7 +62,8 @@ def login_for_access_token(
         )
     
     user_photo = None
-    if user.role.value.lower() == "staff" or user.role.value.lower() == "admin":
+    
+    if user.role.value.lower() == "staff":
         staff_profile = db.query(Staff).filter(Staff.userID == user.userID).first()
         if staff_profile:
             user_photo = staff_profile.profilePhoto

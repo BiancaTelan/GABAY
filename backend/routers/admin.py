@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session, joinedload
 from db_connection import get_db
 from db_model import Appointment, SystemSettings, User, roleEnum, Staff, SystemLogs, actionTypeEnum, Department, Doctor, Schedule, weekDayEnum, SystemHealthLog, AppointmentStatus, CalendarEvent
 from security import get_password_hash, get_current_user
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, EmailStr
 from email_utils import send_personnel_credentials_email
 from datetime import datetime, date, timedelta
@@ -68,7 +68,7 @@ class PersonnelUpdate(BaseModel):
 
 class PersonnelPageUpdate(BaseModel):
     role: str
-    deptID: Optional[int] = None
+    deptIDs: Optional[List[int]] = []
     workingDays: Optional[str] = None
     workingHours: Optional[str] = None
     firstname: Optional[str] = None 
@@ -77,7 +77,7 @@ class PersonnelPageUpdate(BaseModel):
 class DoctorCreate(BaseModel):
     firstname: str
     surname: str
-    deptID: int
+    deptIDs: List[int] = []
     workingDays: str  
     workingHours: str 
 
@@ -339,8 +339,8 @@ def get_personnel_list(db: Session = Depends(get_db)):
     for u in users:
         name = "System Admin"
         display_id = f"ADM-{u.userID:04d}"
-        dept_name = "N/A"
-        dept_id = None
+        dept_names = []
+        dept_ids = []
         is_specialty = False
         schedule = "Unassigned"
         time_slot = "Unassigned"
@@ -350,13 +350,9 @@ def get_personnel_list(db: Session = Depends(get_db)):
             display_id = f"STF-{u.staff_profile.staffID:04d}"
             schedule = u.staff_profile.workingDays or "Unassigned"
             time_slot = u.staff_profile.workingHours or "Unassigned"
-            
-            if u.staff_profile.department:
-                dept_name = u.staff_profile.department.department
-                dept_id = u.staff_profile.deptID
-                is_specialty = (u.staff_profile.department.type == "Specialty")
-
-        current_status = "Active" if u.isActive else "Deactivated"
+            if getattr(u.staff_profile, 'departments', None):
+                dept_names = [d.department for d in u.staff_profile.departments]
+                dept_ids = [d.deptID for d in u.staff_profile.departments]
 
         formatted_personnel.append({
             "raw_id": u.userID,
@@ -365,12 +361,11 @@ def get_personnel_list(db: Session = Depends(get_db)):
             "name": name,
             "firstname": u.staff_profile.firstname if u.staff_profile else "System",
             "surname": u.staff_profile.surname if u.staff_profile else "Admin",      
-            "dept": dept_name,
-            "deptID": dept_id,
-            "isSpecialty": is_specialty,
+            "dept": ", ".join(dept_names) if dept_names else "N/A", 
+            "deptIDs": dept_ids, 
             "schedule": schedule,
             "time": time_slot,
-            "status": current_status
+            "status": "Active" if u.isActive else "Deactivated"
         })
 
     # --- FETCH DOCTORS ---
@@ -431,7 +426,7 @@ def update_personnel_page(
         
         doc.firstname = data.firstname
         doc.surname = data.surname
-        doc.deptID = data.deptID
+        doc.deptID = data.deptIDs[0] if data.deptIDs else None
         target_name = f"Dr. {data.firstname} {data.surname}"
 
         db.query(Schedule).filter(Schedule.docID == doc.docID).delete()
@@ -460,12 +455,16 @@ def update_personnel_page(
 
         user.role = roleEnum.Admin if data.role.lower() == "admin" else roleEnum.Staff
         if user.staff_profile:
-            user.staff_profile.deptID = data.deptID
+            
+            # --- CLEAR AND RE-ASSIGN MULTIPLE DEPARTMENTS ---
+            user.staff_profile.departments.clear()
+            if data.deptIDs:
+                selected_depts = db.query(Department).filter(Department.deptID.in_(data.deptIDs)).all()
+                user.staff_profile.departments.extend(selected_depts)
+            
             user.staff_profile.workingDays = data.workingDays
             user.staff_profile.workingHours = data.workingHours
             target_name = f"{user.staff_profile.firstname} {user.staff_profile.surname}"
-        else:
-            target_name = "System Admin"
 
     new_log = SystemLogs(
         userID=current_admin.userID,
