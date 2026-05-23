@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from datetime import timedelta
 from db_connection import get_db
 from db_model import Staff, User, Patient, roleEnum
-from py_schema import PatientSignUp, ForgotPasswordRequest, ResetPasswordOTPRequest, VerifyOTPRequest, ChangeEmailRequest, ChangePasswordRequest, PatientLogin
+from py_schema import PatientSignUp, ForgotPasswordRequest, ResetPasswordOTPRequest, VerifyOTPRequest, ChangeEmailRequest, ChangePasswordRequest, UserLogin
 from security import create_verification_token, verify_password, create_access_token, get_password_hash, ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY, ALGORITHM
 from email_utils import send_notification_email, send_otp_email, send_verification_email
 
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication & Registration"])
 # ---------------------------------------------------------
 @router.post("/login", summary="Create access token for user")
 def login_for_access_token(
-    data: PatientLogin, 
+    data: UserLogin, 
     db: Session = Depends(get_db)
 ):
     user = db.query(User).filter(User.email == data.email).first()
@@ -39,7 +39,7 @@ def login_for_access_token(
         )
     
     user_photo = None
-    if user.role.value.lower() == "staff":
+    if user.role.value.lower() == "staff" or user.role.value.lower() == "admin":
         staff_profile = db.query(Staff).filter(Staff.userID == user.userID).first()
         if staff_profile:
             user_photo = staff_profile.profilePhoto

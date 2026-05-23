@@ -7,7 +7,7 @@ from db_model import roleEnum
 # ==========================================
 # REGISTRATION / SIGN-UP SCHEMAS
 # ==========================================
-class PatientLogin(BaseModel):
+class UserLogin(BaseModel):
     email: str
     password: str
 
