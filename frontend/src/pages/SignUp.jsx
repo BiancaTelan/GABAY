@@ -86,7 +86,7 @@ export default function SignUp() {
         const data = await response.json();
 
         if (!response.ok) {
-          setSuccessMsg(data.message);
+          throw new Error(data.detail || data.message || "Failed to create account.");
         }
 
         setSuccessMsg("Account created successfully! Redirecting...");
@@ -116,10 +116,14 @@ export default function SignUp() {
         };
 
         login(accessToken, decodedPayload.role, userData);
-        navigate('/hospital-number');
+        setTimeout(() => {
+            navigate('/hospital-number');
+        }, 100);
+        
 
       } catch (error) {
         console.error("Signup Error:", error);
+        setSuccessMsg('');
         setServerError(error.message);
       }
     };

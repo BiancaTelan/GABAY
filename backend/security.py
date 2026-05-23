@@ -57,7 +57,7 @@ def create_verification_token(email: str):
     return encoded_jwt
 
 # ---------------------------------------------------------
-# 4. FastAPI Dependency: Get Current Logged-in User
+# 4. Get Current Logged-in User
 # ---------------------------------------------------------
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 

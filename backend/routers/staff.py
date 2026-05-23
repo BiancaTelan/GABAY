@@ -12,11 +12,18 @@ from email_utils import send_patient_appointment_email
 from zoneinfo import ZoneInfo
 import calendar
 import uuid
-import shutil
-
+import cloudinary
+import cloudinary.uploader
+import os
 
 router = APIRouter(prefix="/staff", tags=["Staff"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+cloudinary.config(
+    cloud_name=os.getenv("CLOUD_NAME"),
+    api_key=os.getenv("API_KEY"),
+    api_secret=os.getenv("API_SECRET")
+)
 
 # ---------------------------------------------------------
 # Pydantic Models
@@ -522,7 +529,6 @@ def update_staff_profile(
         prof = prof[0] if len(prof) > 0 else None
         
     if not prof:
-        # Import your 'Staff' model at the top of the file!
         prof = Staff(userID=current_user.userID) 
         db.add(prof)
     
@@ -567,15 +573,12 @@ def upload_staff_profile_photo(
         prof = Staff(userID=current_user.userID, firstname="System", surname="Staff")
         db.add(prof)
 
-    file_extension = profile_photo.filename.split(".")[-1]
-    unique_filename = f"{uuid.uuid4().hex}.{file_extension}"
-    file_location = f"uploads/{unique_filename}"
-
-    with open(file_location, "wb+") as file_object:
-        shutil.copyfileobj(profile_photo.file, file_object)
-
-    base_url = str(request.base_url).rstrip("/")
-    photo_url = f"/uploads/{unique_filename}"
+    result = cloudinary.uploader.upload(
+        profile_photo.file,
+        folder="gabay_profiles/"
+    )
+    
+    photo_url = result.get("secure_url")
     
     if hasattr(prof, 'profilePhoto'):
         prof.profilePhoto = photo_url

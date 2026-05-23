@@ -15,12 +15,20 @@ import calendar
 import random
 import time
 import psutil
-import shutil
+import cloudinary
+import cloudinary.uploader
+import os
 import uuid
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+cloudinary.config(
+    cloud_name=os.getenv("CLOUD_NAME"),
+    api_key=os.getenv("API_KEY"),
+    api_secret=os.getenv("API_SECRET")
+)
 
 # ---------------------------------------------------------
 # Helper Functions
@@ -210,6 +218,7 @@ def create_personnel(
     )
 
     return {"message": f"{data.firstname}'s account was created successfully!"}
+
 # ---------------------------------------------------------
 # 3. USER UPDATING & DELETION
 # ---------------------------------------------------------
@@ -1145,15 +1154,12 @@ def upload_profile_photo(
         prof = Staff(userID=current_user.userID, firstname="System", surname="Admin")
         db.add(prof)
 
-    file_extension = profile_photo.filename.split(".")[-1]
-    unique_filename = f"{uuid.uuid4().hex}.{file_extension}"
-    file_location = f"uploads/{unique_filename}"
-
-    with open(file_location, "wb+") as file_object:
-        shutil.copyfileobj(profile_photo.file, file_object)
-
-
-    photo_url = f"/uploads/{unique_filename}"
+    result = cloudinary.uploader.upload(
+        profile_photo.file,
+        folder="gabay_profiles/"
+    )
+    
+    photo_url = result.get("secure_url")
     
     if hasattr(prof, 'profilePhoto'):
         prof.profilePhoto = photo_url
