@@ -77,7 +77,7 @@ export default function SignUp() {
       };
 
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/signup`, {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/signup`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -86,45 +86,22 @@ export default function SignUp() {
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.detail || data.message || "Failed to create account.");
+          throw new Error(data.detail || "Failed to create account.");
         }
 
-        setSuccessMsg("Account created successfully! Redirecting...");
+        const { access_token, role } = data;
         
-        const urlEncodedData = new URLSearchParams();
-        urlEncodedData.append('username', payload.email); 
-        urlEncodedData.append('password', payload.password);
-
-        const loginResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: urlEncodedData.toString(),
-        });
-        
-        if (!loginResponse.ok) {
-           throw new Error('Auto-login failed. Please go to the login page.');
-        }
-
-        const loginData = await loginResponse.json();
-        const accessToken = loginData.access_token;
-        const decodedPayload = JSON.parse(atob(accessToken.split('.')[1]));
-
         const userData = {
           firstname: payload.firstname,
           surname: payload.surname,
           email: payload.email,
         };
 
-        login(accessToken, decodedPayload.role, userData);
+        login(access_token, role, userData);
 
-        setTimeout(() => {
-            window.location.href = '/hospital-number';
-        }, 150);
-        
+        window.location.href = '/hospital-number';
 
       } catch (error) {
-        console.error("Signup Error:", error);
-        setSuccessMsg('');
         setServerError(error.message);
       }
     };

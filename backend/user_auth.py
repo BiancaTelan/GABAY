@@ -99,6 +99,10 @@ def register_patient(background_tasks: BackgroundTasks, patient_data: PatientSig
         
         db.commit()
 
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        token_payload = {"sub": new_user.email, "role": new_user.role.value}
+        access_token = create_access_token(data=token_payload, expires_delta=access_token_expires)
+
         verification_token = create_verification_token(new_user.email)
         
         background_tasks.add_task(
@@ -107,7 +111,12 @@ def register_patient(background_tasks: BackgroundTasks, patient_data: PatientSig
         token=verification_token
         )
 
-        return {"message": "Account created successfully. Please check your email to verify your account. Logging you in"}
+        return {
+            "message": "Account created successfully. Please check your email to verify your account. Logging you in",
+            "access_token": access_token,
+            "token_type": "bearer",
+            "role": new_user.role.value
+        }
 
     except HTTPException:
         raise 
