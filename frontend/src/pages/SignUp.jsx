@@ -79,8 +79,8 @@ export default function SignUp() {
       try {
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/signup`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams(payload),
         });
 
         const data = await response.json();
@@ -99,7 +99,9 @@ export default function SignUp() {
 
         login(access_token, role, userData);
 
-        window.location.href = '/hospital-number';
+        setTimeout(() => {
+            window.location.href = '/hospital-number';
+        }, 100);
 
       } catch (error) {
         setServerError(error.message);
