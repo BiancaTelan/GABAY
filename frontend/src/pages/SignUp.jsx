@@ -118,7 +118,7 @@ export default function SignUp() {
         login(accessToken, decodedPayload.role, userData);
 
         setTimeout(() => {
-            navigate('/hospital-number');
+            window.location.href = '/hospital-number';
         }, 150);
         
 
