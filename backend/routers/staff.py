@@ -84,13 +84,16 @@ class ScheduleUpdateRequest(BaseModel):
 @router.get("/appointments")
 def get_staff_appointments(db: Session = Depends(get_db), current_staff: User = Depends(get_current_user)):
     staff_profile = db.query(Staff).filter(Staff.userID == current_staff.userID).first()
-    if not staff_profile or not staff_profile.deptID:
+    
+    if not staff_profile or not staff_profile.departments:
         return []
     
+    dept_ids = [d.deptID for d in staff_profile.departments]
+
     try:
         appointments = (
             db.query(Appointment)
-            .filter(Appointment.deptID == staff_profile.deptID)
+            .filter(Appointment.deptID.in_(dept_ids))
             .order_by(Appointment.createdAt.desc())
             .all()
         )
@@ -785,10 +788,13 @@ def get_departments_and_doctors(
 @router.get("/doctors/list")
 def get_staff_doctors(db: Session = Depends(get_db), current_staff: User = Depends(get_current_user)):
     staff_profile = db.query(Staff).filter(Staff.userID == current_staff.userID).first()
-    if not staff_profile or not staff_profile.department:
+    
+    if not staff_profile or not staff_profile.departments:
         return []
 
-    doctors = db.query(Doctor).filter(Doctor.department == staff_profile.department).all()
+    dept_ids = [d.deptID for d in staff_profile.departments]
+    doctors = db.query(Doctor).filter(Doctor.deptID.in_(dept_ids)).all()
+    
     results = []
     
     for doc in doctors:
@@ -981,14 +987,15 @@ def get_status_id(db: Session, status_name: str):
 def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depends(get_current_user)):
    
     staff_profile = db.query(Staff).filter(Staff.userID == current_staff.userID).first()
-    if not staff_profile or not staff_profile.deptID:
+    if not staff_profile or not staff_profile.departments:
         raise HTTPException(status_code=403, detail="Unauthorized: No department assigned.")
+
+    dept_ids = [d.deptID for d in staff_profile.departments]
 
     ph_tz = ZoneInfo("Asia/Manila")
     today = datetime.now(ph_tz)
     today_date = today.date()
 
-    dept_id = staff_profile.deptID
     current_year = today.year
     current_month = today.month
     today_name = today.strftime('%A') 
@@ -1012,21 +1019,21 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
 
     # === MONTHLY OVERVIEW STATS ===
     for_approval = db.query(Appointment).filter(
-        Appointment.deptID == dept_id, 
+        Appointment.deptID.in_(dept_ids), 
         Appointment.statusID == pending_id,
         extract('year', Appointment.preferredStartDate) == current_year,
         extract('month', Appointment.preferredStartDate) == current_month
     ).count()
 
     approved_month = db.query(Appointment).filter(
-        Appointment.deptID == dept_id, 
+        Appointment.deptID.in_(dept_ids), 
         Appointment.statusID.in_(valid_approved_ids), 
         extract('year', Appointment.assignedDate) == current_year,
         extract('month', Appointment.assignedDate) == current_month
     ).count()
 
     cancelled_month = db.query(Appointment).filter(
-        Appointment.deptID == dept_id, 
+        Appointment.deptID.in_(dept_ids), 
         Appointment.statusID == cancelled_id,
         extract('year', Appointment.assignedDate) == current_year,
         extract('month', Appointment.assignedDate) == current_month
@@ -1034,7 +1041,7 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
 
     # === DAILY SLOT CAPACITY ===
     active_doctors = db.query(Doctor).filter(
-        Doctor.deptID == dept_id,
+        Doctor.deptID.in_(dept_ids), 
         Doctor.isAvailable == True 
     ).all()
 
@@ -1064,11 +1071,11 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
             
     available_slots = total_available_slots
 
-    # === DAILY QUEUE FETCHING (Strictly for Today) ===
+    # === DAILY QUEUE FETCHING ===
     todays_appointments = db.query(Appointment).outerjoin(
         DailyQueue, Appointment.appointmentID == DailyQueue.appointmentID
     ).filter(
-        Appointment.deptID == dept_id,
+        Appointment.deptID.in_(dept_ids), 
         Appointment.assignedDate == today_date,
         Appointment.statusID.in_(valid_approved_ids), 
         DailyQueue.queueID == None  
@@ -1077,7 +1084,7 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
     raw_queue_records = db.query(DailyQueue).join(
         Appointment, DailyQueue.appointmentID == Appointment.appointmentID
     ).filter(
-        Appointment.deptID == dept_id,
+        Appointment.deptID.in_(dept_ids), 
         Appointment.assignedDate == today_date,
         Appointment.statusID.in_(valid_approved_ids),
         DailyQueue.queueStatus.in_([
@@ -1139,10 +1146,11 @@ def update_queue_status(
     current_staff: User = Depends(get_current_user)
 ):
     staff_profile = db.query(Staff).filter(Staff.userID == current_staff.userID).first()
+    dept_ids = [d.deptID for d in staff_profile.departments] 
     
     appointment = db.query(Appointment).filter(
         Appointment.appointmentID == appointment_id, 
-        Appointment.deptID == staff_profile.deptID
+        Appointment.deptID.in_(dept_ids)
     ).first()
     
     if not appointment:
@@ -1155,12 +1163,11 @@ def update_queue_status(
     today = now.date()
 
     if action == "add_to_queue":
-        
         current_queue_count = db.query(DailyQueue).join(
             Appointment, DailyQueue.appointmentID == Appointment.appointmentID
         ).filter(
             Appointment.assignedDate == today, 
-            Appointment.deptID == staff_profile.deptID
+            Appointment.deptID.in_(dept_ids) 
         ).count()
         
         existing_queue = db.query(DailyQueue).filter(DailyQueue.appointmentID == appointment_id).first()
@@ -1220,10 +1227,15 @@ def update_queue_status(
 @router.get("/no-shows")
 def get_no_shows(db: Session = Depends(get_db), current_staff: User = Depends(get_current_user)):
     staff_profile = db.query(Staff).filter(Staff.userID == current_staff.userID).first()
+    
+    if not staff_profile or not staff_profile.departments:
+        return []
+        
+    dept_ids = [d.deptID for d in staff_profile.departments]
     noshow_id = get_status_id(db, "No Show")
     
     no_shows = db.query(Appointment).filter(
-        Appointment.deptID == staff_profile.deptID,
+        Appointment.deptID.in_(dept_ids), 
         Appointment.statusID == noshow_id
     ).order_by(Appointment.assignedDate.desc()).all()
 
