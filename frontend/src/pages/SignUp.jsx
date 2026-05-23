@@ -89,7 +89,8 @@ export default function SignUp() {
           throw new Error(data.detail || "Failed to create account.");
         }
 
-        const { access_token, role } = data;
+        const accessToken = data.access_token;
+        const userRole = data.role ? data.role.toLowerCase() : 'patient';
         
         const userData = {
           firstname: payload.firstname,
@@ -97,11 +98,11 @@ export default function SignUp() {
           email: payload.email,
         };
 
-        login(access_token, role, userData);
+        login(access_token, UserRole, userData);
 
         setTimeout(() => {
-            window.location.href = '/hospital-number';
-        }, 150);
+              navigate('/hospital-number');
+          }, 150);
 
       } catch (error) {
         setServerError(error.message);
