@@ -5,7 +5,10 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token') || null);
   const [userRole, setUserRole] = useState(localStorage.getItem('role') || null);
-  const [userInfo, setUserInfo] = useState(null);
+  const [userInfo, setUserInfo] = useState(() => {
+  const storedUser = localStorage.getItem('userInfo');
+  return storedUser ? JSON.parse(storedUser) : null;
+});
   const [unreadCount, setUnreadCount] = useState(0);
   
 
