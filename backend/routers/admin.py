@@ -331,7 +331,7 @@ def get_audit_logs(db: Session = Depends(get_db)):
 @router.get("/personnel")
 def get_personnel_list(db: Session = Depends(get_db)):
     users = db.query(User).options(
-        joinedload(User.staff_profile).joinedload(Staff.department)
+        joinedload(User.staff_profile).joinedload(Staff.departments)
     ).filter(User.role.in_([roleEnum.Admin, roleEnum.Staff])).all()
     
     formatted_personnel = []
@@ -557,7 +557,8 @@ def get_department_stats(db: Session = Depends(get_db)):
     formatted_depts = []
     for d in depts:
         doc_count = db.query(Doctor).filter(Doctor.deptID == d.deptID).count()
-        staff_count = db.query(Staff).filter(Staff.deptID == d.deptID).count()
+        
+        staff_count = len(d.staff)
         
         used_slots = db.query(Appointment).filter(
             Appointment.deptID == d.deptID,
