@@ -68,7 +68,7 @@ class PersonnelUpdate(BaseModel):
 
 class PersonnelPageUpdate(BaseModel):
     role: str
-    deptID: Optional[int] = None
+    deptIDs: Optional[List[int]] = []
     workingDays: Optional[str] = None
     workingHours: Optional[str] = None
     firstname: Optional[str] = None 
@@ -77,7 +77,7 @@ class PersonnelPageUpdate(BaseModel):
 class DoctorCreate(BaseModel):
     firstname: str
     surname: str
-    deptID: int
+    deptIDs: List[int] = []
     workingDays: str  
     workingHours: str 
 
