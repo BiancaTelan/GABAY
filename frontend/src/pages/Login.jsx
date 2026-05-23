@@ -54,10 +54,15 @@ export default function Login() {
     urlEncodedData.append('password', formData.password);
 
     try {
+      const payload = {
+        email: formData.email.trim(),
+        password: formData.password
+      };
+
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: urlEncodedData.toString(),
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify(payload),
       });
       
       const textResponse = await response.text();
