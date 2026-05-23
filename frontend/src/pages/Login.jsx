@@ -49,12 +49,8 @@ export default function Login() {
       return; 
     }
 
-    const urlEncodedData = new URLSearchParams();
-    urlEncodedData.append('username', formData.email); 
-    urlEncodedData.append('password', formData.password);
-
     try {
-      const payload = {
+      const loginpayload = {
         email: formData.email.trim(),
         password: formData.password
       };
@@ -62,7 +58,7 @@ export default function Login() {
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify(payload),
+        body: JSON.stringify(loginpayload),
       });
       
       const textResponse = await response.text();
@@ -85,8 +81,8 @@ export default function Login() {
       }
 
       const accessToken = data.access_token;
-      const payload = JSON.parse(atob(accessToken.split('.')[1]));
-      const userRole = payload.role?.toLowerCase() || '';
+      const decodedpayload = JSON.parse(atob(accessToken.split('.')[1]));
+      const userRole = decodedpayload.role?.toLowerCase() || '';
 
       if (['staff', 'admin'].includes(userRole)) {
         setErrors({ email: " ", password: "Staff/Admin members cannot log in here. Please use the employee login page." });
