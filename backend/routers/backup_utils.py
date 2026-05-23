@@ -13,7 +13,6 @@ def perform_database_backup():
     DB_USER = os.getenv("DB_USER", "root")
     DB_PASS = os.getenv("DB_PASSWORD", "")
     DB_NAME = os.getenv("DB_NAME", "gabay_db")
-    
     DB_PORT = os.getenv("DB_PORT", "4000") 
 
     MYSQLDUMP_PATH = os.getenv("MYSQLDUMP_PATH", "mysqldump") 
@@ -25,7 +24,6 @@ def perform_database_backup():
     filename = f"{DB_NAME}_backup_{timestamp}.sql"
     filepath = os.path.join(backup_dir, filename)
 
-
     dump_cmd = [
         MYSQLDUMP_PATH, 
         "-h", DB_HOST, 
@@ -36,10 +34,8 @@ def perform_database_backup():
     if DB_PASS:
         dump_cmd.extend([f"-p{DB_PASS}"])
         
-    dump_cmd.extend([
-        "--column-statistics=0", 
-        "--set-gtid-purged=OFF"
-    ])
+    # REMOVED: The two problematic '--column-statistics' and '--set-gtid-purged' flags 
+    # were completely deleted from here!
     
     dump_cmd.append(DB_NAME)
 
