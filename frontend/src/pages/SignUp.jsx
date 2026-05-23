@@ -98,7 +98,7 @@ export default function SignUp() {
           email: payload.email,
         };
 
-        login(access_token, UserRole, userData);
+        login(accessToken, userRole, userData);
 
         setTimeout(() => {
               navigate('/hospital-number');
