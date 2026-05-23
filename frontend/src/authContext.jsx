@@ -3,7 +3,7 @@ import { createContext, useState, useEffect } from 'react';
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState( localStorage.getItem('token') || null);
+  const [token, setToken] = useState(localStorage.getItem('token') || null);
   const [userRole, setUserRole] = useState(localStorage.getItem('role') || null);
   const [userInfo, setUserInfo] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -69,11 +69,6 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('role');
     localStorage.removeItem('userInfo');
   };
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem('userInfo');
-    if (storedUser) setUserInfo(JSON.parse(storedUser));
-  }, []);
 
   return (
     <AuthContext.Provider value={{ token, userRole, userInfo, login, logout, unreadCount, updateUnreadCount }}>

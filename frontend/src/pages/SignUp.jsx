@@ -115,9 +115,8 @@ export default function SignUp() {
           email: payload.email,
         };
 
-        login(accessToken, decodedPayload.role, userData);
         setTimeout(() => {
-            window.location.href = '/hospital-number';
+            navigate('/hospital-number');
         }, 150);
         
 
