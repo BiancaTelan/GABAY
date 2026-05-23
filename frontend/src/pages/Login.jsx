@@ -177,7 +177,7 @@ export default function Login() {
             <div className="flex justify-center mt-4">
               <ReCAPTCHA
                 ref={recaptchaRef}
-                sitekey={import.meta.env.RECAPTCHA_SITE_KEY}
+                sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
                 onChange={(token) => setRecaptchaToken(token)}
                 onExpired={() => setRecaptchaToken(null)}
               />
