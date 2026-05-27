@@ -387,15 +387,25 @@ def get_personnel_list(db: Session = Depends(get_db)):
         display_id = f"ADM-{u.userID:04d}"
         dept_names = []
         dept_ids = []
-        is_specialty = False
         schedule = "Unassigned"
         time_slot = "Unassigned"
+        
+        email_str = u.email
+        phone_str = "N/A"
+        gender_str = "N/A"
+        dob_str = "N/A"
 
         if u.staff_profile:
             name = f"{u.staff_profile.firstname} {u.staff_profile.surname}"
             display_id = f"STF-{u.staff_profile.staffID:04d}"
             schedule = u.staff_profile.workingDays or "Unassigned"
             time_slot = u.staff_profile.workingHours or "Unassigned"
+            
+            phone_str = u.staff_profile.contactNumber or "N/A"
+            gender_str = u.staff_profile.gender or "N/A"
+            if getattr(u.staff_profile, 'dob', None):
+                dob_str = u.staff_profile.dob.strftime("%m/%d/%Y")
+
             if getattr(u.staff_profile, 'departments', None):
                 dept_names = [d.department for d in u.staff_profile.departments]
                 dept_ids = [d.deptID for d in u.staff_profile.departments]
@@ -411,7 +421,13 @@ def get_personnel_list(db: Session = Depends(get_db)):
             "deptIDs": dept_ids, 
             "schedule": schedule,
             "time": time_slot,
-            "status": "Active" if u.isActive else "Deactivated"
+            "status": "Active" if u.isActive else "Deactivated",
+            
+            # --- SEND TO FRONTEND ---
+            "email": email_str,
+            "phone": phone_str,
+            "gender": gender_str,
+            "dob": dob_str
         })
 
     # --- FETCH DOCTORS ---
