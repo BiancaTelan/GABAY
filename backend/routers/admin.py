@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request, File, UploadFile, Query
 from sqlalchemy.orm import Session, joinedload
 from db_connection import get_db
-from db_model import Appointment, SystemSettings, User, roleEnum, Staff, SystemLogs, actionTypeEnum, Department, Doctor, Schedule, weekDayEnum, SystemHealthLog, AppointmentStatus, CalendarEvent
+from db_model import Appointment, SystemSettings, User, roleEnum, Staff, SystemLogs, actionTypeEnum, Department, Doctor, Schedule, weekDayEnum, SystemHealthLog, AppointmentStatus, CalendarEvent, Patient
 from security import get_password_hash, get_current_user
 from typing import Optional, List
 from pydantic import BaseModel, EmailStr
@@ -56,6 +56,9 @@ class PersonnelCreate(BaseModel):
     position: str
     gender: Optional[str] = None
     contactNumber: Optional[str] = None
+    deptIDs: List[int] = []
+    workingDays: Optional[str] = "Unassigned" 
+    workingHours: Optional[str] = "Unassigned"
 
 class PersonnelUpdate(BaseModel):
     firstname: str
@@ -117,6 +120,12 @@ class CalendarEventCreate(BaseModel):
 class CapacityUpdate(BaseModel):
     daily_capacity: int
 
+class UserStatusUpdate(BaseModel):
+    status: str
+
+class PatientStatusUpdate(BaseModel):
+    status: str
+
 # ---------------------------------------------------------
 # 1. ADMIN & USER MANAGEMENT
 # ---------------------------------------------------------
@@ -157,6 +166,36 @@ def get_hospital_personnel(db: Session = Depends(get_db)):
         
     return formatted_users
 
+@router.put("/users/{user_id}/status")
+def toggle_user_status(
+    user_id: int, 
+    data: UserStatusUpdate, 
+    request: Request, 
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_user)
+):
+    user = db.query(User).filter(User.userID == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    is_activating = (data.status == "Active")
+    user.isActive = is_activating
+
+    target_name = f"{user.staff_profile.firstname} {user.staff_profile.surname}" if user.staff_profile else "System Admin"
+    action = actionTypeEnum.UPDATE if is_activating else actionTypeEnum.DELETE
+    
+    new_log = SystemLogs(
+        userID=current_admin.userID,
+        actionType=action, 
+        tableAffected="userTable",
+        details=f"{'Reactivated' if is_activating else 'Deactivated'} account for: {target_name}",
+        ipAddress=request.client.host
+    )
+    db.add(new_log)
+    db.commit()
+    
+    return {"message": f"User status successfully updated to {data.status}"}
+
 # ---------------------------------------------------------
 # 2. USER CREATION
 # ---------------------------------------------------------
@@ -193,8 +232,15 @@ def create_personnel(
         surname=data.surname,
         position=data.position,
         gender=data.gender,
-        contactNumber=data.contactNumber
+        contactNumber=data.contactNumber,
+        workingDays=data.workingDays,
+        workingHours=data.workingHours
     )
+    
+    if data.deptIDs:
+        selected_depts = db.query(Department).filter(Department.deptID.in_(data.deptIDs)).all()
+        new_staff.departments.extend(selected_depts)
+        
     db.add(new_staff)
     
     # --- AUTOMATIC AUDIT LOGGING ---
@@ -530,6 +576,22 @@ def add_doctor(
     
     db.commit()
     return {"message": "Doctor added successfully!"}
+
+@router.delete("/doctors/{doc_id}")
+def remove_doctor(doc_id: int, request: Request, db: Session = Depends(get_db), current_admin: User = Depends(get_current_user)):
+    doc = db.query(Doctor).filter(Doctor.docID == doc_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+    
+    doc_name = f"Dr. {doc.firstname} {doc.surname}"
+    db.delete(doc)
+    
+    db.add(SystemLogs(
+        userID=current_admin.userID, actionType=actionTypeEnum.DELETE, tableAffected="doctorTable",
+        details=f"Securely removed {doc_name} from the system.", ipAddress=request.client.host
+    ))
+    db.commit()
+    return {"message": f"{doc_name} has been successfully removed."}
 
 # ---------------------------------------------------------
 # 6. DEPARTMENT FETCHING
@@ -1395,3 +1457,65 @@ def create_calendar_event(
         print(f"Event Creation Error: {e}")
         raise HTTPException(status_code=500, detail="Failed to create event")
     
+# ---------------------------------------------------------
+# 17. PATIENT MANAGEMENT
+# ---------------------------------------------------------
+@router.get("/patients")
+def get_all_patients(db: Session = Depends(get_db), current_admin: User = Depends(get_current_user)):
+    patients = db.query(Patient).options(joinedload(Patient.user_account)).all()
+    
+    results = []
+    for p in patients:
+        status_val = "Active"
+        join_date = None
+        email_val = "N/A"
+        
+        if p.user_account:
+            status_val = "Active" if p.user_account.isActive else "Deactivated"
+            join_date = p.user_account.createdDate
+            email_val = p.user_account.email
+            
+        results.append({
+            "raw_id": p.user_account.userID if p.user_account else None,
+            "id": p.hospital_num or "Unregistered",
+            "name": f"{p.firstname} {p.surname}",
+            "email": email_val,
+            "phone": p.contactNumber or "N/A",
+            "gender": p.gender or "N/A",
+            "status": status_val,
+            "joinDate": join_date.isoformat() if join_date else None
+        })
+        
+    return results
+
+@router.put("/patients/{user_id}/status")
+def toggle_patient_status(
+    user_id: int, 
+    data: PatientStatusUpdate, 
+    request: Request, 
+    db: Session = Depends(get_db), 
+    current_admin: User = Depends(get_current_user)
+):
+    user = db.query(User).filter(User.userID == user_id).first()
+    if not user or user.role != roleEnum.Patient:
+        raise HTTPException(status_code=404, detail="Patient account not found.")
+
+    is_activating = (data.status == "Active")
+    user.isActive = is_activating
+    
+    target_name = "Unknown Patient"
+    if user.patient_profile:
+        target_name = f"{user.patient_profile.firstname} {user.patient_profile.surname}"
+        
+    action = actionTypeEnum.UPDATE if is_activating else actionTypeEnum.DELETE
+    
+    db.add(SystemLogs(
+        userID=current_admin.userID,
+        actionType=action,
+        tableAffected="userTable",
+        details=f"{'Reactivated' if is_activating else 'Deactivated'} patient account for: {target_name}",
+        ipAddress=request.client.host
+    ))
+    
+    db.commit()
+    return {"message": f"Patient status successfully updated to {data.status}"}
