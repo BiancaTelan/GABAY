@@ -3,13 +3,16 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, extract, cast, String
 from db_connection import get_db
 from db_model import Appointment, Department, Schedule, Staff, SystemLogs, actionTypeEnum, User, Patient, Doctor, DailyQueue, queueStatusEnum, AppointmentStatus
-from security import get_current_user
+from security import get_current_user, verify_token
 from pydantic import BaseModel
 from passlib.context import CryptContext
 from datetime import datetime, date
 from typing import Optional
 from email_utils import send_patient_appointment_email
 from zoneinfo import ZoneInfo
+from fastapi.responses import StreamingResponse
+from sse_manager import notifier
+import asyncio
 import calendar
 import uuid
 import cloudinary
@@ -222,6 +225,13 @@ def approve_appointment(
     ))
     
     db.commit()
+
+    notifier.broadcast_sync({
+        "title": "Appointment Approved",
+        "desc": f"Approved appointment #{appointment.appointmentID}",
+        "action": "APPROVE",
+        "timestamp": datetime.now().isoformat()
+    })
     
     return {"message": "Appointment scheduled successfully.", "assigned_date": str(parsed_date)}
 
@@ -272,6 +282,13 @@ def reschedule_appointment(
 
     db.commit()
 
+    notifier.broadcast_sync({
+        "title": "Appointment Rescheduled",
+        "desc": f"Rescheduled appointment #{appointment.appointmentID}",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
+
     patient_email = None
     if appointment.patient and appointment.patient.user_account:
         patient_email = appointment.patient.user_account.email 
@@ -317,6 +334,13 @@ def deny_appointment(
     )
     db.add(new_log)
     db.commit()
+
+    notifier.broadcast_sync({
+        "title": "Appointment Denied",
+        "desc": f"Denied appointment #{appointment.appointmentID}",
+        "action": "DENY",
+        "timestamp": datetime.now().isoformat()
+    })
 
     patient_email = None
     if appointment.patient and appointment.patient.user_account:
@@ -459,6 +483,13 @@ def notify_patient_reminder(
         ipAddress=request.client.host
     ))
     db.commit()
+
+    notifier.broadcast_sync({
+        "title": "Appointment Reminder Sent",
+        "desc": f"Reminder sent for appointment #{appointment.appointmentID}",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
 
     return {"message": "Reminder email successfully queued."}
 
@@ -658,6 +689,23 @@ def get_staff_notifications(
     
     return notifications[:30]
 
+@router.get("/notifications/stream")
+async def stream_notifications(request: Request, token: str = Query(...), db: Session = Depends(get_db)):
+    user = verify_token(token, db)
+    if not user:
+         raise HTTPException(status_code=401, detail="Invalid token")
+
+    async def event_generator():
+        yield "data: {\"type\": \"connected\"}\n\n"
+        
+        async for message in notifier.listen():
+            if await request.is_disconnected():
+                break
+            yield f"data: {message}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
 # ---------------------------------------------------------
 # 4. CHECK SLOT AND DOCTOR AVAILABILITY
 # ---------------------------------------------------------
@@ -841,6 +889,13 @@ def update_doctor_availability(
         details=f"Staff updated Dr. {doctor.surname} availability to {data.availability}", ipAddress=request.client.host
     ))
     db.commit()
+
+    notifier.broadcast_sync({
+        "title": "Doctor Availability Updated",
+        "desc": f"Updated availability for Dr. {doctor.surname}",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": "Status updated"}
 
 @router.put("/doctors/{doctor_id}/schedule")
@@ -864,6 +919,13 @@ def update_doctor_schedule(
         details=f"Staff updated schedule for Dr. {doctor_id}", ipAddress=request.client.host
     ))
     db.commit()
+
+    notifier.broadcast_sync({
+        "title": "Schedule Updated",
+        "desc": f"Updated schedule for Dr. {doctor_id}",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": "Schedule updated"}
 
 @router.post("/doctors/{doctor_id}/schedule/add")
@@ -918,6 +980,13 @@ def add_doctor_schedule(
     ))
     
     db.commit()
+
+    notifier.broadcast_sync({
+        "title": "Schedule Updated",
+        "desc": f"Updated schedule for Dr. {doctor_id}",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": "New schedule blocks added successfully"}
 
 @router.put("/doctors/schedule/{schedule_id}")
@@ -952,6 +1021,13 @@ def edit_specific_schedule(
         details=f"Staff updated schedule #{schedule_id}", ipAddress=request.client.host
     ))
     db.commit()
+
+    notifier.broadcast_sync({
+        "title": "Schedule Updated",
+        "desc": f"Updated schedule for Dr. {schedule.docID}",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": "Schedule updated successfully"}
 
 @router.delete("/doctors/schedule/{schedule_id}")
@@ -971,6 +1047,13 @@ def delete_specific_schedule(
         details=f"Staff deleted schedule #{schedule_id}", ipAddress=request.client.host
     ))
     db.commit()
+
+    notifier.broadcast_sync({
+        "title": "Schedule Deleted",
+        "desc": f"Deleted schedule #{schedule_id}",
+        "action": "DELETE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": "Schedule deleted successfully"}
 
 # ---------------------------------------------------------
@@ -1222,6 +1305,13 @@ def update_queue_status(
     ))
 
     db.commit()
+
+    notifier.broadcast_sync({
+        "title": "Queue Status Updated",
+        "desc": f"Updated queue status for Appointment #{appointment_id} to '{action.upper()}'",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": "Queue updated successfully"}
 
 @router.get("/no-shows")

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request,
 from sqlalchemy.orm import Session, joinedload
 from db_connection import get_db
 from db_model import Appointment, SystemSettings, User, roleEnum, Staff, SystemLogs, actionTypeEnum, Department, Doctor, Schedule, weekDayEnum, SystemHealthLog, AppointmentStatus, CalendarEvent, Patient
-from security import get_password_hash, get_current_user
+from security import get_password_hash, get_current_user, verify_token
 from typing import Optional, List
 from pydantic import BaseModel, EmailStr
 from email_utils import send_personnel_credentials_email
@@ -11,6 +11,9 @@ from sqlalchemy import func, text, desc, extract
 from passlib.context import CryptContext
 from .backup_utils import perform_database_backup
 from zoneinfo import ZoneInfo
+from fastapi.responses import StreamingResponse
+from sse_manager import notifier
+import asyncio
 import calendar
 import random
 import time
@@ -71,7 +74,8 @@ class PersonnelUpdate(BaseModel):
 
 class PersonnelPageUpdate(BaseModel):
     role: str
-    deptIDs: Optional[List[int]] = []
+    deptIDs: Optional[List[int]] = [] 
+    deptID: Optional[int] = None
     workingDays: Optional[str] = None
     workingHours: Optional[str] = None
     firstname: Optional[str] = None 
@@ -80,7 +84,7 @@ class PersonnelPageUpdate(BaseModel):
 class DoctorCreate(BaseModel):
     firstname: str
     surname: str
-    deptIDs: List[int] = []
+    deptID: int
     workingDays: str  
     workingHours: str 
 
@@ -193,6 +197,13 @@ def toggle_user_status(
     )
     db.add(new_log)
     db.commit()
+
+    notifier.broadcast_sync({
+        "title": "User Status Updated",
+        "desc": f"Updated status for User: {target_name}",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
     
     return {"message": f"User status successfully updated to {data.status}"}
 
@@ -333,6 +344,13 @@ def deactivate_personnel(
     db.add(new_log)
     
     db.commit()
+
+    notifier.broadcast_sync({
+        "title": "User Status Updated",
+        "desc": f"Updated status for User: {target_name}",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": f"Account for {target_name} has been deactivated and logged."}
 # ---------------------------------------------------------
 # 4. AUDIT LOGS
@@ -518,6 +536,9 @@ def update_personnel_page(
         user.role = roleEnum.Admin if data.role.lower() == "admin" else roleEnum.Staff
         if user.staff_profile:
             
+            user.staff_profile.firstname = data.firstname
+            user.staff_profile.surname = data.surname
+            
             # --- CLEAR AND RE-ASSIGN MULTIPLE DEPARTMENTS ---
             user.staff_profile.departments.clear()
             if data.deptIDs:
@@ -538,6 +559,13 @@ def update_personnel_page(
     db.add(new_log)
 
     db.commit()
+
+    notifier.broadcast_sync({
+        "title": "Personnel Status Updated",
+        "desc": f"Updated status for Personnel: {target_name}",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": "Personnel assignment updated successfully!"}
 
 @router.post("/doctors")
@@ -591,6 +619,12 @@ def add_doctor(
     db.add(new_log)
     
     db.commit()
+    notifier.broadcast_sync({
+        "title": "Doctor Added",
+        "desc": f"Added new doctor: {data.firstname} {data.surname}",
+        "action": "INSERT",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": "Doctor added successfully!"}
 
 @router.delete("/doctors/{doc_id}")
@@ -607,6 +641,12 @@ def remove_doctor(doc_id: int, request: Request, db: Session = Depends(get_db), 
         details=f"Securely removed {doc_name} from the system.", ipAddress=request.client.host
     ))
     db.commit()
+    notifier.broadcast_sync({
+        "title": "Doctor Removed",
+        "desc": f"Removed doctor: {doc_name}",
+        "action": "DELETE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": f"{doc_name} has been successfully removed."}
 
 # ---------------------------------------------------------
@@ -680,6 +720,12 @@ def create_department(
     db.add(new_log)
     
     db.commit()
+    notifier.broadcast_sync({
+        "title": "Department Created",
+        "desc": f"Created new department: {data.department}",
+        "action": "INSERT",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": "Department created successfully!"}
 
 @router.put("/departments/{dept_id}")
@@ -712,6 +758,12 @@ def update_department(
     db.add(new_log)
     
     db.commit()
+    notifier.broadcast_sync({
+        "title": "Department Updated",
+        "desc": f"Updated department: {data.department} (Capacity: {data.slotCapacity})",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": "Department and schedules updated successfully!"}
 
 @router.delete("/departments/{dept_id}")
@@ -734,6 +786,12 @@ def deactivate_department(
     db.add(new_log)
     
     db.commit()
+    notifier.broadcast_sync({
+        "title": "Department Deactivated",
+        "desc": f"Deactivated department: {dept.department}",
+        "action": "DELETE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": "Department deactivated successfully."}
 
 # ---------------------------------------------------------
@@ -1076,6 +1134,13 @@ def update_appointment_status(
     db.add(new_log)
     
     db.commit()
+
+    notifier.broadcast_sync({
+        "title": "Appointment Status Updated",
+        "desc": f"Updated status for appointment #{appt.appointmentID} to {data.status}",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": f"Appointment successfully marked as {data.status}!"}
 
 # ---------------------------------------------------------
@@ -1121,6 +1186,22 @@ def get_admin_notifications(db: Session = Depends(get_db), current_admin: User =
     notifications.sort(key=lambda x: x["raw_date"], reverse=True)
     
     return notifications[:30]
+
+@router.get("/notifications/stream")
+async def stream_notifications(request: Request, token: str = Query(...), db: Session = Depends(get_db)):
+    user = verify_token(token, db)
+    if not user:
+         raise HTTPException(status_code=401, detail="Invalid token")
+
+    async def event_generator():
+        yield "data: {\"type\": \"connected\"}\n\n"
+        
+        async for message in notifier.listen():
+            if await request.is_disconnected():
+                break
+            yield f"data: {message}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 # ---------------------------------------------------------
 # 13. ACCOUNT PROFILE MANAGEMENT
@@ -1270,6 +1351,13 @@ def change_account_email(
         tableAffected="userTable", details="Personnel updated their login email", ipAddress=request.client.host
     ))
     db.commit()
+
+    notifier.broadcast_sync({
+        "title": "Email Updated",
+        "desc": f"Updated email for user {current_user.userID}",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": "Email updated successfully!", "new_email": data.new_email}
 
 @router.put("/change-password")
@@ -1289,6 +1377,12 @@ def change_account_password(
         tableAffected="userTable", details="Personnel updated their login password", ipAddress=request.client.host
     ))
     db.commit()
+    notifier.broadcast_sync({
+        "title": "Password Updated",
+        "desc": f"Updated password for user {current_user.userID}",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": "Password updated successfully!"}
 
 # ---------------------------------------------------------
@@ -1463,6 +1557,13 @@ def create_calendar_event(
         db.add(new_log)
         
         db.commit()
+
+        notifier.broadcast_sync({
+        "title": "New Calendar Event Added",
+        "desc": f"Created calendar event: {data.title}",
+        "action": "INSERT",
+        "timestamp": datetime.now().isoformat()
+        })
         
         return {"message": f"{safe_type} created successfully"}
         
@@ -1492,6 +1593,7 @@ def get_all_patients(db: Session = Depends(get_db), current_admin: User = Depend
             email_val = p.user_account.email
             
         results.append({
+            "patient_id": p.patientID, 
             "raw_id": p.user_account.userID if p.user_account else None,
             "id": p.hospital_num or "Unregistered",
             "name": f"{p.firstname} {p.surname}",
@@ -1534,4 +1636,10 @@ def toggle_patient_status(
     ))
     
     db.commit()
+    notifier.broadcast_sync({
+        "title": "Patient Status Updated",
+        "desc": f"Updated status for patient {target_name} to {data.status}",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": f"Patient status successfully updated to {data.status}"}
