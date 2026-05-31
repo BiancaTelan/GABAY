@@ -7,7 +7,7 @@ from typing import Optional, List
 from pydantic import BaseModel, EmailStr
 from email_utils import send_personnel_credentials_email
 from datetime import datetime, date, timedelta
-from sqlalchemy import func, text, desc, extract
+from sqlalchemy import func, text, desc, extract, or_
 from passlib.context import CryptContext
 from .backup_utils import perform_database_backup
 from zoneinfo import ZoneInfo

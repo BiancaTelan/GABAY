@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, File, UploadFile, Query, BackgroundTasks
 from sqlalchemy.orm import Session
-from sqlalchemy import func, extract, cast, String
+from sqlalchemy import func, extract, cast, String, or_
 from db_connection import get_db
 from db_model import Appointment, Department, Schedule, Staff, SystemLogs, actionTypeEnum, User, Patient, Doctor, DailyQueue, queueStatusEnum, AppointmentStatus
 from security import get_current_user, verify_token
@@ -179,6 +179,23 @@ def approve_appointment(
 
     day_of_week = parsed_date.strftime("%A")
 
+    active_statuses = [1, 2, 5, 6, 7]
+    existing_booking = db.query(Appointment).filter(
+        Appointment.patientID == appointment.patientID,
+        Appointment.appointmentID != appointment_id,
+        Appointment.statusID.in_(active_statuses),
+        or_(
+            Appointment.assignedDate == parsed_date,
+            Appointment.preferredStartDate == parsed_date
+        )
+    ).first()
+
+    if existing_booking:
+        raise HTTPException(
+            status_code=400, 
+            detail="Double Booking Alert: This patient already has another active appointment on this date."
+        )
+
     schedule_template = db.query(Schedule).filter(
         Schedule.docID == data.assigned_doctor_id,
         Schedule.weekDay == day_of_week 
@@ -257,6 +274,23 @@ def reschedule_appointment(
         raise HTTPException(status_code=400, detail="Invalid date format.")
 
     day_of_week = parsed_date.strftime("%A")
+
+    active_statuses = [1, 2, 5, 6, 7]
+    existing_booking = db.query(Appointment).filter(
+        Appointment.patientID == appointment.patientID,
+        Appointment.appointmentID != appointment_id, 
+        Appointment.statusID.in_(active_statuses),
+        or_(
+            Appointment.assignedDate == parsed_date,
+            Appointment.preferredStartDate == parsed_date
+        )
+    ).first()
+
+    if existing_booking:
+        raise HTTPException(
+            status_code=400, 
+            detail="Double Booking Alert: This patient already has another active appointment on this newly selected date."
+        )
 
     schedule_template = db.query(Schedule).filter(
         Schedule.docID == appointment.docID,
@@ -407,14 +441,17 @@ def staff_book_appointment(
     active_statuses = [1, 2, 5, 6, 7]
     existing_booking = db.query(Appointment).filter(
         Appointment.patientID == patient.patientID,
-        Appointment.assignedDate == parsed_date,
-        Appointment.statusID.in_(active_statuses)
+        Appointment.statusID.in_(active_statuses),
+        or_(
+            Appointment.assignedDate == parsed_date,
+            Appointment.preferredStartDate == parsed_date
+        )
     ).first()
 
     if existing_booking:
         raise HTTPException(
             status_code=400, 
-            detail="Double Booking Alert: This patient already has an active appointment scheduled for this date."
+            detail="Double Booking Alert: This patient already has an active appointment or pending request scheduled for this date."
         )
 
     new_appointment = Appointment(

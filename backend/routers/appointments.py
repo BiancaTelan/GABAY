@@ -1,7 +1,7 @@
 import os
 import cloudinary
 import cloudinary.uploader
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from pydantic import BaseModel
 from datetime import datetime, date
 from typing import Optional
@@ -151,9 +151,12 @@ async def book_appointment(
 
         active_statuses = [1, 2, 5, 6, 7]
         existing_booking = db.query(Appointment).filter(
-            Appointment.patientID == patient.patientID,
-            Appointment.preferredStartDate == start_date, 
-            Appointment.statusID.in_(active_statuses)
+            Appointment.patientID == patient.patientID, 
+            Appointment.statusID.in_(active_statuses),
+            or_(
+                Appointment.assignedDate == start_date,
+                Appointment.preferredStartDate == start_date
+            )
         ).first()
 
         if existing_booking:
