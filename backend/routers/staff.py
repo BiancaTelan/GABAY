@@ -51,7 +51,7 @@ class PasswordChangeRequest(BaseModel):
 
 class AppointmentApproveRequest(BaseModel):
     assigned_date: str
-    assigned_doctor_id: Optional[int] = None # Include this if your modal lets them assign doctors
+    assigned_doctor_id: Optional[int] = None
     batch: Optional[str] = None
 
 class StaffBookRequest(BaseModel):
@@ -190,6 +190,7 @@ def approve_appointment(
             detail=f"The assigned doctor (ID: {data.assigned_doctor_id}) does not have a schedule template for {day_of_week}s."
         )
 
+    appointment.docID = data.assigned_doctor_id
     appointment.assignedScheduleID = schedule_template.scheduleID
     appointment.assignedDate = parsed_date  
     appointment.statusID =  5
