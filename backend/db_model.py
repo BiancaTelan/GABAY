@@ -1,10 +1,18 @@
 import enum
 from datetime import date, datetime, time
 from typing import Optional, List
-from sqlalchemy import String, Integer, Boolean, ForeignKey, DateTime, Date, Time, Text, Enum as SQLEnum
+from sqlalchemy import String, Integer, Boolean, ForeignKey, DateTime, Date, Time, Text, Enum as SQLEnum, Table, Column
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from db_connection import Base
+
+# === ASSOCIATION TABLES ===
+staff_department_assoc = Table(
+    "staff_department_assoc",
+    Base.metadata,
+    Column("staffID", Integer, ForeignKey("staffTable.staffID", ondelete="CASCADE"), primary_key=True),
+    Column("deptID", Integer, ForeignKey("departmentTable.deptID", ondelete="CASCADE"), primary_key=True)
+)
 
 # === ENUMS OPTIONS ===
 class EventTypeEnum(enum.Enum):
@@ -76,6 +84,7 @@ class Department(Base):
     # === Relationship ===
     appointments: Mapped[list["Appointment"]] = relationship(back_populates="department")
     doctors: Mapped[list["Doctor"]] = relationship(back_populates="department")
+    staff: Mapped[List["Staff"]] = relationship(secondary=staff_department_assoc, back_populates="departments")
 
 class Patient(Base):
     __tablename__ = "patientTable"
@@ -164,7 +173,6 @@ class Staff(Base):
 
     staffID: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     userID: Mapped[Optional[int]] = mapped_column(ForeignKey("userTable.userID", ondelete="RESTRICT"), unique=True)
-    deptID: Mapped[Optional[int]] = mapped_column(ForeignKey("departmentTable.deptID", ondelete="SET NULL"))
     firstname: Mapped[str] = mapped_column(String(100), nullable=False)
     surname: Mapped[str] = mapped_column(String(100), nullable=False)
     position: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -179,7 +187,7 @@ class Staff(Base):
 
     # === Relationships ===
     user_account: Mapped[Optional["User"]] = relationship(back_populates="staff_profile")
-    department: Mapped[Optional["Department"]] = relationship(back_populates="staff") 
+    departments: Mapped[List["Department"]] = relationship(secondary=staff_department_assoc, back_populates="staff")
 
 
 class Schedule(Base): 

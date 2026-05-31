@@ -57,7 +57,7 @@ def create_verification_token(email: str):
     return encoded_jwt
 
 # ---------------------------------------------------------
-# 4. FastAPI Dependency: Get Current Logged-in User
+# 4. Get Current Logged-in User
 # ---------------------------------------------------------
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
@@ -84,3 +84,20 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise credentials_exception
         
     return user
+
+# ---------------------------------------------------------
+# 5. Token Verification (For SSE/WebSockets)
+# ---------------------------------------------------------
+def verify_token(token: str, db: Session):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            return None
+            
+        user = db.query(User).filter(User.email == email).first()
+        return user
+        
+    except InvalidTokenError:
+        return None
+    

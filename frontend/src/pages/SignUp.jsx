@@ -6,6 +6,7 @@ import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../authContext'; 
 import { emailPattern, namePattern } from '../utils/constants';
+import toast from 'react-hot-toast';
 
 export default function SignUp() {
     const navigate = useNavigate();
@@ -20,53 +21,51 @@ export default function SignUp() {
     });
 
     const [errors, setErrors] = useState({});
-    const [serverError, setServerError] = useState('');           
-    const [successMsg, setSuccessMsg] = useState('');
 
     const handleSubmit = async (e) => {
       e.preventDefault();
-      setServerError('');
-      setSuccessMsg('');
       let newErrors = {};
       
       if (!formData.firstname.trim()) {
-        newErrors.firstname = "First name is required";
+        newErrors.firstname = "First name is required.";
       } else if (!namePattern.test(formData.firstname)) {
-        newErrors.firstname = "Names should only contain letters";
+        newErrors.firstname = "Please use only alphabetic characters.";
       }
 
       if (!formData.surname.trim()) {
-        newErrors.surname = "Last name is required";
+        newErrors.surname = "Last name is required.";
       } else if (!namePattern.test(formData.surname)) {
-        newErrors.surname = "Names should only contain letters";
+        newErrors.surname = "Please use only alphabetic characters.";
       }
 
       if (!formData.email.trim()) {
-        newErrors.email = "Email is required";
+        newErrors.email = "Email address is required.";
       } else if (!emailPattern.test(formData.email)) {
-        newErrors.email = "Please enter a valid email address";
+        newErrors.email = "Please enter a valid email address.";
       }
 
       if (!formData.password) {
-        newErrors.password = "Password is required";
+        newErrors.password = "Password is required.";
       } else if (formData.password.length < 8) {
-        newErrors.password = "Password must be at least 8 characters long";
+        newErrors.password = "Password must be at least 8 characters long.";
       } else if (!/\d/.test(formData.password)) {
-        newErrors.password = "Password must contain at least one number";
+        newErrors.password = "Password must include at least one numerical digit.";
       } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(formData.password)) {
-        newErrors.password = "Password must contain at least one special character (e.g., @, #, $)";
+        newErrors.password = "Password must include at least one special character (e.g., @, #, $).";
       }
 
       if (formData.password !== formData.confirmPassword) {
-        newErrors.confirmPassword = "Passwords do not match!";
+        newErrors.confirmPassword = "Passwords do not match.";
       }
 
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors);
+        toast.error("Please review the highlighted fields and try again.");
         return;
       }
 
       setErrors({});
+      const processingToast = toast.loading("Setting up your account...");
 
       const payload = {
         firstname: formData.firstname.trim(),
@@ -86,41 +85,31 @@ export default function SignUp() {
         const data = await response.json();
 
         if (!response.ok) {
-          setSuccessMsg(data.message);
+          toast.dismiss(processingToast);
+          throw new Error(data.detail || "Unable to create your account at this time.");
         }
 
-        setSuccessMsg("Account created successfully! Redirecting...");
+        const accessToken = data.access_token;
+        const userRole = data.role ? data.role.toLowerCase() : 'patient';
         
-        const urlEncodedData = new URLSearchParams();
-        urlEncodedData.append('username', payload.email); 
-        urlEncodedData.append('password', payload.password);
-
-        const loginResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: urlEncodedData.toString(),
-        });
-        
-        if (!loginResponse.ok) {
-           throw new Error('Auto-login failed. Please go to the login page.');
-        }
-
-        const loginData = await loginResponse.json();
-        const accessToken = loginData.access_token;
-        const decodedPayload = JSON.parse(atob(accessToken.split('.')[1]));
-
         const userData = {
           firstname: payload.firstname,
           surname: payload.surname,
           email: payload.email,
         };
 
-        login(accessToken, decodedPayload.role, userData);
-        navigate('/hospital-number');
+        login(accessToken, userRole, userData);
+
+        toast.dismiss(processingToast);
+        toast.success("Account created successfully!");
+
+        setTimeout(() => {
+              navigate('/hospital-number');
+          }, 500);
 
       } catch (error) {
-        console.error("Signup Error:", error);
-        setServerError(error.message);
+        toast.dismiss(processingToast);
+        toast.error(error.message || "A network error occurred. Please try again.");
       }
     };
 
@@ -152,17 +141,6 @@ export default function SignUp() {
             <h3 className="font-montserrat text-3xl font-bold text-gabay-blue text-center mb-2">Sign Up</h3>
             <p className="font-poppins text-gray-500 text-center text-sm mb-6">Accomplish the form below to create an account</p>
             
-            {serverError && (
-              <div className="mb-4 p-3 text-sm text-red-700 bg-red-100 rounded-lg text-center font-poppins animate-pulse">
-                {serverError}
-              </div>
-            )}
-
-            {successMsg && (
-              <div className="mb-4 p-3 text-sm text-green-700 bg-green-100 rounded-lg text-center font-poppins">
-                {successMsg}
-              </div>
-            )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

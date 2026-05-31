@@ -1,6 +1,9 @@
 from jose import JWTError
 import jwt
 import random
+import os              
+import requests        
+from pydantic import BaseModel 
 from fastapi import BackgroundTasks
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -9,24 +12,43 @@ from sqlalchemy.exc import IntegrityError
 from datetime import timedelta
 from db_connection import get_db
 from db_model import Staff, User, Patient, roleEnum
-from py_schema import PatientSignUp, ForgotPasswordRequest, ResetPasswordOTPRequest, VerifyOTPRequest, ChangeEmailRequest, ChangePasswordRequest
+from py_schema import PatientSignUp, ForgotPasswordRequest, ResetPasswordOTPRequest, VerifyOTPRequest, ChangeEmailRequest, ChangePasswordRequest, UserLogin
 from security import create_verification_token, verify_password, create_access_token, get_password_hash, ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY, ALGORITHM
 from email_utils import send_notification_email, send_otp_email, send_verification_email
 
 router = APIRouter(prefix="/auth", tags=["Authentication & Registration"])
 
+class UserLoginRequest(BaseModel):
+    email: str
+    password: str
+    recaptcha_token: str
+
 # ---------------------------------------------------------
-# 1. LOGIN ROUTE
+# 1. LOGIN ROUTE 
 # ---------------------------------------------------------
 @router.post("/login", summary="Create access token for user")
 def login_for_access_token(
-    form_data: OAuth2PasswordRequestForm = Depends(), 
+    request_data: UserLoginRequest, 
     db: Session = Depends(get_db)
 ):
     
-    user = db.query(User).filter(User.email == form_data.username).first()
+    recaptcha_secret = os.getenv("RECAPTCHA_SECRET_KEY")
+    verify_url = "https://www.google.com/recaptcha/api/siteverify"
     
-    if not user or not verify_password(form_data.password, user.passwordHash):
+    recaptcha_response = requests.post(verify_url, data={
+        "secret": recaptcha_secret,
+        "response": request_data.recaptcha_token
+    }).json()
+
+    if not recaptcha_response.get("success"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Security verification failed. Please check the reCAPTCHA box again."
+        )
+
+    user = db.query(User).filter(User.email == request_data.email).first()
+    
+    if not user or not verify_password(request_data.password, user.passwordHash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -99,6 +121,10 @@ def register_patient(background_tasks: BackgroundTasks, patient_data: PatientSig
         
         db.commit()
 
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        token_payload = {"sub": new_user.email, "role": new_user.role.value}
+        access_token = create_access_token(data=token_payload, expires_delta=access_token_expires)
+
         verification_token = create_verification_token(new_user.email)
         
         background_tasks.add_task(
@@ -107,7 +133,12 @@ def register_patient(background_tasks: BackgroundTasks, patient_data: PatientSig
         token=verification_token
         )
 
-        return {"message": "Account created successfully. Please check your email to verify your account. Logging you in"}
+        return {
+            "message": "Account created successfully. Please check your email to verify your account. Logging you in",
+            "access_token": access_token,
+            "token_type": "bearer",
+            "role": new_user.role.value
+        }
 
     except HTTPException:
         raise 

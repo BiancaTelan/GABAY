@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request, File, UploadFile, Query
 from sqlalchemy.orm import Session, joinedload
 from db_connection import get_db
-from db_model import Appointment, SystemSettings, User, roleEnum, Staff, SystemLogs, actionTypeEnum, Department, Doctor, Schedule, weekDayEnum, SystemHealthLog, AppointmentStatus, CalendarEvent
-from security import get_password_hash, get_current_user
-from typing import Optional
+from db_model import Appointment, SystemSettings, User, roleEnum, Staff, SystemLogs, actionTypeEnum, Department, Doctor, Schedule, weekDayEnum, SystemHealthLog, AppointmentStatus, CalendarEvent, Patient
+from security import get_password_hash, get_current_user, verify_token
+from typing import Optional, List
 from pydantic import BaseModel, EmailStr
 from email_utils import send_personnel_credentials_email
 from datetime import datetime, date, timedelta
@@ -11,16 +11,27 @@ from sqlalchemy import func, text, desc, extract
 from passlib.context import CryptContext
 from .backup_utils import perform_database_backup
 from zoneinfo import ZoneInfo
+from fastapi.responses import StreamingResponse
+from sse_manager import notifier
+import asyncio
 import calendar
 import random
 import time
 import psutil
-import shutil
+import cloudinary
+import cloudinary.uploader
+import os
 import uuid
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+cloudinary.config(
+    cloud_name=os.getenv("CLOUD_NAME"),
+    api_key=os.getenv("API_KEY"),
+    api_secret=os.getenv("API_SECRET")
+)
 
 # ---------------------------------------------------------
 # Helper Functions
@@ -48,6 +59,9 @@ class PersonnelCreate(BaseModel):
     position: str
     gender: Optional[str] = None
     contactNumber: Optional[str] = None
+    deptIDs: List[int] = []
+    workingDays: Optional[str] = "Unassigned" 
+    workingHours: Optional[str] = "Unassigned"
 
 class PersonnelUpdate(BaseModel):
     firstname: str
@@ -60,6 +74,7 @@ class PersonnelUpdate(BaseModel):
 
 class PersonnelPageUpdate(BaseModel):
     role: str
+    deptIDs: Optional[List[int]] = [] 
     deptID: Optional[int] = None
     workingDays: Optional[str] = None
     workingHours: Optional[str] = None
@@ -109,6 +124,12 @@ class CalendarEventCreate(BaseModel):
 class CapacityUpdate(BaseModel):
     daily_capacity: int
 
+class UserStatusUpdate(BaseModel):
+    status: str
+
+class PatientStatusUpdate(BaseModel):
+    status: str
+
 # ---------------------------------------------------------
 # 1. ADMIN & USER MANAGEMENT
 # ---------------------------------------------------------
@@ -149,6 +170,43 @@ def get_hospital_personnel(db: Session = Depends(get_db)):
         
     return formatted_users
 
+@router.put("/users/{user_id}/status")
+def toggle_user_status(
+    user_id: int, 
+    data: UserStatusUpdate, 
+    request: Request, 
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_user)
+):
+    user = db.query(User).filter(User.userID == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    is_activating = (data.status == "Active")
+    user.isActive = is_activating
+
+    target_name = f"{user.staff_profile.firstname} {user.staff_profile.surname}" if user.staff_profile else "System Admin"
+    action = actionTypeEnum.UPDATE if is_activating else actionTypeEnum.DELETE
+    
+    new_log = SystemLogs(
+        userID=current_admin.userID,
+        actionType=action, 
+        tableAffected="userTable",
+        details=f"{'Reactivated' if is_activating else 'Deactivated'} account for: {target_name}",
+        ipAddress=request.client.host
+    )
+    db.add(new_log)
+    db.commit()
+
+    notifier.broadcast_sync({
+        "title": "User Status Updated",
+        "desc": f"Updated status for User: {target_name}",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
+    
+    return {"message": f"User status successfully updated to {data.status}"}
+
 # ---------------------------------------------------------
 # 2. USER CREATION
 # ---------------------------------------------------------
@@ -185,8 +243,15 @@ def create_personnel(
         surname=data.surname,
         position=data.position,
         gender=data.gender,
-        contactNumber=data.contactNumber
+        contactNumber=data.contactNumber,
+        workingDays=data.workingDays,
+        workingHours=data.workingHours
     )
+    
+    if data.deptIDs:
+        selected_depts = db.query(Department).filter(Department.deptID.in_(data.deptIDs)).all()
+        new_staff.departments.extend(selected_depts)
+        
     db.add(new_staff)
     
     # --- AUTOMATIC AUDIT LOGGING ---
@@ -210,6 +275,7 @@ def create_personnel(
     )
 
     return {"message": f"{data.firstname}'s account was created successfully!"}
+
 # ---------------------------------------------------------
 # 3. USER UPDATING & DELETION
 # ---------------------------------------------------------
@@ -278,6 +344,13 @@ def deactivate_personnel(
     db.add(new_log)
     
     db.commit()
+
+    notifier.broadcast_sync({
+        "title": "User Status Updated",
+        "desc": f"Updated status for User: {target_name}",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": f"Account for {target_name} has been deactivated and logged."}
 # ---------------------------------------------------------
 # 4. AUDIT LOGS
@@ -322,7 +395,7 @@ def get_audit_logs(db: Session = Depends(get_db)):
 @router.get("/personnel")
 def get_personnel_list(db: Session = Depends(get_db)):
     users = db.query(User).options(
-        joinedload(User.staff_profile).joinedload(Staff.department)
+        joinedload(User.staff_profile).joinedload(Staff.departments)
     ).filter(User.role.in_([roleEnum.Admin, roleEnum.Staff])).all()
     
     formatted_personnel = []
@@ -330,11 +403,15 @@ def get_personnel_list(db: Session = Depends(get_db)):
     for u in users:
         name = "System Admin"
         display_id = f"ADM-{u.userID:04d}"
-        dept_name = "N/A"
-        dept_id = None
-        is_specialty = False
+        dept_names = []
+        dept_ids = []
         schedule = "Unassigned"
         time_slot = "Unassigned"
+        
+        email_str = u.email
+        phone_str = "N/A"
+        gender_str = "N/A"
+        dob_str = "N/A"
 
         if u.staff_profile:
             name = f"{u.staff_profile.firstname} {u.staff_profile.surname}"
@@ -342,12 +419,14 @@ def get_personnel_list(db: Session = Depends(get_db)):
             schedule = u.staff_profile.workingDays or "Unassigned"
             time_slot = u.staff_profile.workingHours or "Unassigned"
             
-            if u.staff_profile.department:
-                dept_name = u.staff_profile.department.department
-                dept_id = u.staff_profile.deptID
-                is_specialty = (u.staff_profile.department.type == "Specialty")
+            phone_str = u.staff_profile.contactNumber or "N/A"
+            gender_str = u.staff_profile.gender or "N/A"
+            if getattr(u.staff_profile, 'dob', None):
+                dob_str = u.staff_profile.dob.strftime("%m/%d/%Y")
 
-        current_status = "Active" if u.isActive else "Deactivated"
+            if getattr(u.staff_profile, 'departments', None):
+                dept_names = [d.department for d in u.staff_profile.departments]
+                dept_ids = [d.deptID for d in u.staff_profile.departments]
 
         formatted_personnel.append({
             "raw_id": u.userID,
@@ -356,12 +435,17 @@ def get_personnel_list(db: Session = Depends(get_db)):
             "name": name,
             "firstname": u.staff_profile.firstname if u.staff_profile else "System",
             "surname": u.staff_profile.surname if u.staff_profile else "Admin",      
-            "dept": dept_name,
-            "deptID": dept_id,
-            "isSpecialty": is_specialty,
+            "dept": ", ".join(dept_names) if dept_names else "N/A", 
+            "deptIDs": dept_ids, 
             "schedule": schedule,
             "time": time_slot,
-            "status": current_status
+            "status": "Active" if u.isActive else "Deactivated",
+            
+            # --- SEND TO FRONTEND ---
+            "email": email_str,
+            "phone": phone_str,
+            "gender": gender_str,
+            "dob": dob_str
         })
 
     # --- FETCH DOCTORS ---
@@ -422,7 +506,12 @@ def update_personnel_page(
         
         doc.firstname = data.firstname
         doc.surname = data.surname
-        doc.deptID = data.deptID
+        
+        if data.deptID is not None:
+            doc.deptID = data.deptID
+        elif data.deptIDs and len(data.deptIDs) > 0:
+            doc.deptID = data.deptIDs[0]
+            
         target_name = f"Dr. {data.firstname} {data.surname}"
 
         db.query(Schedule).filter(Schedule.docID == doc.docID).delete()
@@ -451,12 +540,19 @@ def update_personnel_page(
 
         user.role = roleEnum.Admin if data.role.lower() == "admin" else roleEnum.Staff
         if user.staff_profile:
-            user.staff_profile.deptID = data.deptID
+            
+            user.staff_profile.firstname = data.firstname
+            user.staff_profile.surname = data.surname
+            
+            # --- CLEAR AND RE-ASSIGN MULTIPLE DEPARTMENTS ---
+            user.staff_profile.departments.clear()
+            if data.deptIDs:
+                selected_depts = db.query(Department).filter(Department.deptID.in_(data.deptIDs)).all()
+                user.staff_profile.departments.extend(selected_depts)
+            
             user.staff_profile.workingDays = data.workingDays
             user.staff_profile.workingHours = data.workingHours
             target_name = f"{user.staff_profile.firstname} {user.staff_profile.surname}"
-        else:
-            target_name = "System Admin"
 
     new_log = SystemLogs(
         userID=current_admin.userID,
@@ -468,6 +564,13 @@ def update_personnel_page(
     db.add(new_log)
 
     db.commit()
+
+    notifier.broadcast_sync({
+        "title": "Personnel Status Updated",
+        "desc": f"Updated status for Personnel: {target_name}",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": "Personnel assignment updated successfully!"}
 
 @router.post("/doctors")
@@ -521,7 +624,35 @@ def add_doctor(
     db.add(new_log)
     
     db.commit()
+    notifier.broadcast_sync({
+        "title": "Doctor Added",
+        "desc": f"Added new doctor: {data.firstname} {data.surname}",
+        "action": "INSERT",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": "Doctor added successfully!"}
+
+@router.delete("/doctors/{doc_id}")
+def remove_doctor(doc_id: int, request: Request, db: Session = Depends(get_db), current_admin: User = Depends(get_current_user)):
+    doc = db.query(Doctor).filter(Doctor.docID == doc_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+    
+    doc_name = f"Dr. {doc.firstname} {doc.surname}"
+    db.delete(doc)
+    
+    db.add(SystemLogs(
+        userID=current_admin.userID, actionType=actionTypeEnum.DELETE, tableAffected="doctorTable",
+        details=f"Securely removed {doc_name} from the system.", ipAddress=request.client.host
+    ))
+    db.commit()
+    notifier.broadcast_sync({
+        "title": "Doctor Removed",
+        "desc": f"Removed doctor: {doc_name}",
+        "action": "DELETE",
+        "timestamp": datetime.now().isoformat()
+    })
+    return {"message": f"{doc_name} has been successfully removed."}
 
 # ---------------------------------------------------------
 # 6. DEPARTMENT FETCHING
@@ -549,7 +680,8 @@ def get_department_stats(db: Session = Depends(get_db)):
     formatted_depts = []
     for d in depts:
         doc_count = db.query(Doctor).filter(Doctor.deptID == d.deptID).count()
-        staff_count = db.query(Staff).filter(Staff.deptID == d.deptID).count()
+        
+        staff_count = len(d.staff)
         
         used_slots = db.query(Appointment).filter(
             Appointment.deptID == d.deptID,
@@ -593,6 +725,12 @@ def create_department(
     db.add(new_log)
     
     db.commit()
+    notifier.broadcast_sync({
+        "title": "Department Created",
+        "desc": f"Created new department: {data.department}",
+        "action": "INSERT",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": "Department created successfully!"}
 
 @router.put("/departments/{dept_id}")
@@ -625,6 +763,12 @@ def update_department(
     db.add(new_log)
     
     db.commit()
+    notifier.broadcast_sync({
+        "title": "Department Updated",
+        "desc": f"Updated department: {data.department} (Capacity: {data.slotCapacity})",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": "Department and schedules updated successfully!"}
 
 @router.delete("/departments/{dept_id}")
@@ -647,6 +791,12 @@ def deactivate_department(
     db.add(new_log)
     
     db.commit()
+    notifier.broadcast_sync({
+        "title": "Department Deactivated",
+        "desc": f"Deactivated department: {dept.department}",
+        "action": "DELETE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": "Department deactivated successfully."}
 
 # ---------------------------------------------------------
@@ -989,6 +1139,13 @@ def update_appointment_status(
     db.add(new_log)
     
     db.commit()
+
+    notifier.broadcast_sync({
+        "title": "Appointment Status Updated",
+        "desc": f"Updated status for appointment #{appt.appointmentID} to {data.status}",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": f"Appointment successfully marked as {data.status}!"}
 
 # ---------------------------------------------------------
@@ -1034,6 +1191,22 @@ def get_admin_notifications(db: Session = Depends(get_db), current_admin: User =
     notifications.sort(key=lambda x: x["raw_date"], reverse=True)
     
     return notifications[:30]
+
+@router.get("/notifications/stream")
+async def stream_notifications(request: Request, token: str = Query(...), db: Session = Depends(get_db)):
+    user = verify_token(token, db)
+    if not user:
+         raise HTTPException(status_code=401, detail="Invalid token")
+
+    async def event_generator():
+        yield "data: {\"type\": \"connected\"}\n\n"
+        
+        async for message in notifier.listen():
+            if await request.is_disconnected():
+                break
+            yield f"data: {message}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 # ---------------------------------------------------------
 # 13. ACCOUNT PROFILE MANAGEMENT
@@ -1145,15 +1318,12 @@ def upload_profile_photo(
         prof = Staff(userID=current_user.userID, firstname="System", surname="Admin")
         db.add(prof)
 
-    file_extension = profile_photo.filename.split(".")[-1]
-    unique_filename = f"{uuid.uuid4().hex}.{file_extension}"
-    file_location = f"uploads/{unique_filename}"
-
-    with open(file_location, "wb+") as file_object:
-        shutil.copyfileobj(profile_photo.file, file_object)
-
-
-    photo_url = f"/uploads/{unique_filename}"
+    result = cloudinary.uploader.upload(
+        profile_photo.file,
+        folder="gabay_profiles/"
+    )
+    
+    photo_url = result.get("secure_url")
     
     if hasattr(prof, 'profilePhoto'):
         prof.profilePhoto = photo_url
@@ -1186,6 +1356,13 @@ def change_account_email(
         tableAffected="userTable", details="Personnel updated their login email", ipAddress=request.client.host
     ))
     db.commit()
+
+    notifier.broadcast_sync({
+        "title": "Email Updated",
+        "desc": f"Updated email for user {current_user.userID}",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": "Email updated successfully!", "new_email": data.new_email}
 
 @router.put("/change-password")
@@ -1205,6 +1382,12 @@ def change_account_password(
         tableAffected="userTable", details="Personnel updated their login password", ipAddress=request.client.host
     ))
     db.commit()
+    notifier.broadcast_sync({
+        "title": "Password Updated",
+        "desc": f"Updated password for user {current_user.userID}",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": "Password updated successfully!"}
 
 # ---------------------------------------------------------
@@ -1249,11 +1432,11 @@ def trigger_manual_backup(db: Session = Depends(get_db), current_user: User = De
     result = perform_database_backup()
     
     if not result["success"]:
-        print(f"🚨 BACKUP FAILED: {result['error']}")
-        raise HTTPException(status_code=500, detail="Backup failed to generate on the server.")
+        print(f"🚨 BACKUP FAILED: {result.get('error')}")
+        # THE FIX: Return the actual error generated by mysqldump!
+        raise HTTPException(status_code=500, detail=f"Backup Failed: {result.get('error')}")
 
     try:
-
         new_log = SystemLogs(
             userID=current_user.userID,
             tableAffected="Entire Database",
@@ -1379,6 +1562,13 @@ def create_calendar_event(
         db.add(new_log)
         
         db.commit()
+
+        notifier.broadcast_sync({
+        "title": "New Calendar Event Added",
+        "desc": f"Created calendar event: {data.title}",
+        "action": "INSERT",
+        "timestamp": datetime.now().isoformat()
+        })
         
         return {"message": f"{safe_type} created successfully"}
         
@@ -1389,3 +1579,72 @@ def create_calendar_event(
         print(f"Event Creation Error: {e}")
         raise HTTPException(status_code=500, detail="Failed to create event")
     
+# ---------------------------------------------------------
+# 17. PATIENT MANAGEMENT
+# ---------------------------------------------------------
+@router.get("/patients")
+def get_all_patients(db: Session = Depends(get_db), current_admin: User = Depends(get_current_user)):
+    patients = db.query(Patient).options(joinedload(Patient.user_account)).all()
+    
+    results = []
+    for p in patients:
+        status_val = "Active"
+        join_date = None
+        email_val = "N/A"
+        
+        if p.user_account:
+            status_val = "Active" if p.user_account.isActive else "Deactivated"
+            join_date = p.user_account.createdDate
+            email_val = p.user_account.email
+            
+        results.append({
+            "patient_id": p.patientID, 
+            "raw_id": p.user_account.userID if p.user_account else None,
+            "id": p.hospital_num or "Unregistered",
+            "name": f"{p.firstname} {p.surname}",
+            "email": email_val,
+            "phone": p.contactNumber or "N/A",
+            "gender": p.gender or "N/A",
+            "status": status_val,
+            "joinDate": join_date.isoformat() if join_date else None
+        })
+        
+    return results
+
+@router.put("/patients/{user_id}/status")
+def toggle_patient_status(
+    user_id: int, 
+    data: PatientStatusUpdate, 
+    request: Request, 
+    db: Session = Depends(get_db), 
+    current_admin: User = Depends(get_current_user)
+):
+    user = db.query(User).filter(User.userID == user_id).first()
+    if not user or user.role != roleEnum.Patient:
+        raise HTTPException(status_code=404, detail="Patient account not found.")
+
+    is_activating = (data.status == "Active")
+    user.isActive = is_activating
+    
+    target_name = "Unknown Patient"
+    if user.patient_profile:
+        target_name = f"{user.patient_profile.firstname} {user.patient_profile.surname}"
+        
+    action = actionTypeEnum.UPDATE if is_activating else actionTypeEnum.DELETE
+    
+    db.add(SystemLogs(
+        userID=current_admin.userID,
+        actionType=action,
+        tableAffected="userTable",
+        details=f"{'Reactivated' if is_activating else 'Deactivated'} patient account for: {target_name}",
+        ipAddress=request.client.host
+    ))
+    
+    db.commit()
+    notifier.broadcast_sync({
+        "title": "Patient Status Updated",
+        "desc": f"Updated status for patient {target_name} to {data.status}",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
+    return {"message": f"Patient status successfully updated to {data.status}"}

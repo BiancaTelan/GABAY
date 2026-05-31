@@ -3,20 +3,30 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, extract, cast, String
 from db_connection import get_db
 from db_model import Appointment, Department, Schedule, Staff, SystemLogs, actionTypeEnum, User, Patient, Doctor, DailyQueue, queueStatusEnum, AppointmentStatus
-from security import get_current_user
+from security import get_current_user, verify_token
 from pydantic import BaseModel
 from passlib.context import CryptContext
 from datetime import datetime, date
 from typing import Optional
 from email_utils import send_patient_appointment_email
 from zoneinfo import ZoneInfo
+from fastapi.responses import StreamingResponse
+from sse_manager import notifier
+import asyncio
 import calendar
 import uuid
-import shutil
-
+import cloudinary
+import cloudinary.uploader
+import os
 
 router = APIRouter(prefix="/staff", tags=["Staff"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+cloudinary.config(
+    cloud_name=os.getenv("CLOUD_NAME"),
+    api_key=os.getenv("API_KEY"),
+    api_secret=os.getenv("API_SECRET")
+)
 
 # ---------------------------------------------------------
 # Pydantic Models
@@ -77,13 +87,16 @@ class ScheduleUpdateRequest(BaseModel):
 @router.get("/appointments")
 def get_staff_appointments(db: Session = Depends(get_db), current_staff: User = Depends(get_current_user)):
     staff_profile = db.query(Staff).filter(Staff.userID == current_staff.userID).first()
-    if not staff_profile or not staff_profile.deptID:
+    
+    if not staff_profile or not staff_profile.departments:
         return []
     
+    dept_ids = [d.deptID for d in staff_profile.departments]
+
     try:
         appointments = (
             db.query(Appointment)
-            .filter(Appointment.deptID == staff_profile.deptID)
+            .filter(Appointment.deptID.in_(dept_ids))
             .order_by(Appointment.createdAt.desc())
             .all()
         )
@@ -212,6 +225,13 @@ def approve_appointment(
     ))
     
     db.commit()
+
+    notifier.broadcast_sync({
+        "title": "Appointment Approved",
+        "desc": f"Approved appointment #{appointment.appointmentID}",
+        "action": "APPROVE",
+        "timestamp": datetime.now().isoformat()
+    })
     
     return {"message": "Appointment scheduled successfully.", "assigned_date": str(parsed_date)}
 
@@ -262,6 +282,13 @@ def reschedule_appointment(
 
     db.commit()
 
+    notifier.broadcast_sync({
+        "title": "Appointment Rescheduled",
+        "desc": f"Rescheduled appointment #{appointment.appointmentID}",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
+
     patient_email = None
     if appointment.patient and appointment.patient.user_account:
         patient_email = appointment.patient.user_account.email 
@@ -307,6 +334,13 @@ def deny_appointment(
     )
     db.add(new_log)
     db.commit()
+
+    notifier.broadcast_sync({
+        "title": "Appointment Denied",
+        "desc": f"Denied appointment #{appointment.appointmentID}",
+        "action": "DENY",
+        "timestamp": datetime.now().isoformat()
+    })
 
     patient_email = None
     if appointment.patient and appointment.patient.user_account:
@@ -450,6 +484,13 @@ def notify_patient_reminder(
     ))
     db.commit()
 
+    notifier.broadcast_sync({
+        "title": "Appointment Reminder Sent",
+        "desc": f"Reminder sent for appointment #{appointment.appointmentID}",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
+
     return {"message": "Reminder email successfully queued."}
 
 
@@ -522,7 +563,6 @@ def update_staff_profile(
         prof = prof[0] if len(prof) > 0 else None
         
     if not prof:
-        # Import your 'Staff' model at the top of the file!
         prof = Staff(userID=current_user.userID) 
         db.add(prof)
     
@@ -567,15 +607,12 @@ def upload_staff_profile_photo(
         prof = Staff(userID=current_user.userID, firstname="System", surname="Staff")
         db.add(prof)
 
-    file_extension = profile_photo.filename.split(".")[-1]
-    unique_filename = f"{uuid.uuid4().hex}.{file_extension}"
-    file_location = f"uploads/{unique_filename}"
-
-    with open(file_location, "wb+") as file_object:
-        shutil.copyfileobj(profile_photo.file, file_object)
-
-    base_url = str(request.base_url).rstrip("/")
-    photo_url = f"/uploads/{unique_filename}"
+    result = cloudinary.uploader.upload(
+        profile_photo.file,
+        folder="gabay_profiles/"
+    )
+    
+    photo_url = result.get("secure_url")
     
     if hasattr(prof, 'profilePhoto'):
         prof.profilePhoto = photo_url
@@ -651,6 +688,23 @@ def get_staff_notifications(
     notifications.sort(key=lambda x: x["raw_date"], reverse=True)
     
     return notifications[:30]
+
+@router.get("/notifications/stream")
+async def stream_notifications(request: Request, token: str = Query(...), db: Session = Depends(get_db)):
+    user = verify_token(token, db)
+    if not user:
+         raise HTTPException(status_code=401, detail="Invalid token")
+
+    async def event_generator():
+        yield "data: {\"type\": \"connected\"}\n\n"
+        
+        async for message in notifier.listen():
+            if await request.is_disconnected():
+                break
+            yield f"data: {message}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
 
 # ---------------------------------------------------------
 # 4. CHECK SLOT AND DOCTOR AVAILABILITY
@@ -782,10 +836,13 @@ def get_departments_and_doctors(
 @router.get("/doctors/list")
 def get_staff_doctors(db: Session = Depends(get_db), current_staff: User = Depends(get_current_user)):
     staff_profile = db.query(Staff).filter(Staff.userID == current_staff.userID).first()
-    if not staff_profile or not staff_profile.department:
+    
+    if not staff_profile or not staff_profile.departments:
         return []
 
-    doctors = db.query(Doctor).filter(Doctor.department == staff_profile.department).all()
+    dept_ids = [d.deptID for d in staff_profile.departments]
+    doctors = db.query(Doctor).filter(Doctor.deptID.in_(dept_ids)).all()
+    
     results = []
     
     for doc in doctors:
@@ -832,6 +889,13 @@ def update_doctor_availability(
         details=f"Staff updated Dr. {doctor.surname} availability to {data.availability}", ipAddress=request.client.host
     ))
     db.commit()
+
+    notifier.broadcast_sync({
+        "title": "Doctor Availability Updated",
+        "desc": f"Updated availability for Dr. {doctor.surname}",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": "Status updated"}
 
 @router.put("/doctors/{doctor_id}/schedule")
@@ -855,6 +919,13 @@ def update_doctor_schedule(
         details=f"Staff updated schedule for Dr. {doctor_id}", ipAddress=request.client.host
     ))
     db.commit()
+
+    notifier.broadcast_sync({
+        "title": "Schedule Updated",
+        "desc": f"Updated schedule for Dr. {doctor_id}",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": "Schedule updated"}
 
 @router.post("/doctors/{doctor_id}/schedule/add")
@@ -909,6 +980,13 @@ def add_doctor_schedule(
     ))
     
     db.commit()
+
+    notifier.broadcast_sync({
+        "title": "Schedule Updated",
+        "desc": f"Updated schedule for Dr. {doctor_id}",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": "New schedule blocks added successfully"}
 
 @router.put("/doctors/schedule/{schedule_id}")
@@ -943,6 +1021,13 @@ def edit_specific_schedule(
         details=f"Staff updated schedule #{schedule_id}", ipAddress=request.client.host
     ))
     db.commit()
+
+    notifier.broadcast_sync({
+        "title": "Schedule Updated",
+        "desc": f"Updated schedule for Dr. {schedule.docID}",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": "Schedule updated successfully"}
 
 @router.delete("/doctors/schedule/{schedule_id}")
@@ -962,6 +1047,13 @@ def delete_specific_schedule(
         details=f"Staff deleted schedule #{schedule_id}", ipAddress=request.client.host
     ))
     db.commit()
+
+    notifier.broadcast_sync({
+        "title": "Schedule Deleted",
+        "desc": f"Deleted schedule #{schedule_id}",
+        "action": "DELETE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": "Schedule deleted successfully"}
 
 # ---------------------------------------------------------
@@ -978,14 +1070,15 @@ def get_status_id(db: Session, status_name: str):
 def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depends(get_current_user)):
    
     staff_profile = db.query(Staff).filter(Staff.userID == current_staff.userID).first()
-    if not staff_profile or not staff_profile.deptID:
+    if not staff_profile or not staff_profile.departments:
         raise HTTPException(status_code=403, detail="Unauthorized: No department assigned.")
+
+    dept_ids = [d.deptID for d in staff_profile.departments]
 
     ph_tz = ZoneInfo("Asia/Manila")
     today = datetime.now(ph_tz)
     today_date = today.date()
 
-    dept_id = staff_profile.deptID
     current_year = today.year
     current_month = today.month
     today_name = today.strftime('%A') 
@@ -1009,21 +1102,21 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
 
     # === MONTHLY OVERVIEW STATS ===
     for_approval = db.query(Appointment).filter(
-        Appointment.deptID == dept_id, 
+        Appointment.deptID.in_(dept_ids), 
         Appointment.statusID == pending_id,
         extract('year', Appointment.preferredStartDate) == current_year,
         extract('month', Appointment.preferredStartDate) == current_month
     ).count()
 
     approved_month = db.query(Appointment).filter(
-        Appointment.deptID == dept_id, 
+        Appointment.deptID.in_(dept_ids), 
         Appointment.statusID.in_(valid_approved_ids), 
         extract('year', Appointment.assignedDate) == current_year,
         extract('month', Appointment.assignedDate) == current_month
     ).count()
 
     cancelled_month = db.query(Appointment).filter(
-        Appointment.deptID == dept_id, 
+        Appointment.deptID.in_(dept_ids), 
         Appointment.statusID == cancelled_id,
         extract('year', Appointment.assignedDate) == current_year,
         extract('month', Appointment.assignedDate) == current_month
@@ -1031,7 +1124,7 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
 
     # === DAILY SLOT CAPACITY ===
     active_doctors = db.query(Doctor).filter(
-        Doctor.deptID == dept_id,
+        Doctor.deptID.in_(dept_ids), 
         Doctor.isAvailable == True 
     ).all()
 
@@ -1061,11 +1154,11 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
             
     available_slots = total_available_slots
 
-    # === DAILY QUEUE FETCHING (Strictly for Today) ===
+    # === DAILY QUEUE FETCHING ===
     todays_appointments = db.query(Appointment).outerjoin(
         DailyQueue, Appointment.appointmentID == DailyQueue.appointmentID
     ).filter(
-        Appointment.deptID == dept_id,
+        Appointment.deptID.in_(dept_ids), 
         Appointment.assignedDate == today_date,
         Appointment.statusID.in_(valid_approved_ids), 
         DailyQueue.queueID == None  
@@ -1074,7 +1167,7 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
     raw_queue_records = db.query(DailyQueue).join(
         Appointment, DailyQueue.appointmentID == Appointment.appointmentID
     ).filter(
-        Appointment.deptID == dept_id,
+        Appointment.deptID.in_(dept_ids), 
         Appointment.assignedDate == today_date,
         Appointment.statusID.in_(valid_approved_ids),
         DailyQueue.queueStatus.in_([
@@ -1136,10 +1229,11 @@ def update_queue_status(
     current_staff: User = Depends(get_current_user)
 ):
     staff_profile = db.query(Staff).filter(Staff.userID == current_staff.userID).first()
+    dept_ids = [d.deptID for d in staff_profile.departments] 
     
     appointment = db.query(Appointment).filter(
         Appointment.appointmentID == appointment_id, 
-        Appointment.deptID == staff_profile.deptID
+        Appointment.deptID.in_(dept_ids)
     ).first()
     
     if not appointment:
@@ -1152,12 +1246,11 @@ def update_queue_status(
     today = now.date()
 
     if action == "add_to_queue":
-        
         current_queue_count = db.query(DailyQueue).join(
             Appointment, DailyQueue.appointmentID == Appointment.appointmentID
         ).filter(
             Appointment.assignedDate == today, 
-            Appointment.deptID == staff_profile.deptID
+            Appointment.deptID.in_(dept_ids) 
         ).count()
         
         existing_queue = db.query(DailyQueue).filter(DailyQueue.appointmentID == appointment_id).first()
@@ -1212,15 +1305,27 @@ def update_queue_status(
     ))
 
     db.commit()
+
+    notifier.broadcast_sync({
+        "title": "Queue Status Updated",
+        "desc": f"Updated queue status for Appointment #{appointment_id} to '{action.upper()}'",
+        "action": "UPDATE",
+        "timestamp": datetime.now().isoformat()
+    })
     return {"message": "Queue updated successfully"}
 
 @router.get("/no-shows")
 def get_no_shows(db: Session = Depends(get_db), current_staff: User = Depends(get_current_user)):
     staff_profile = db.query(Staff).filter(Staff.userID == current_staff.userID).first()
+    
+    if not staff_profile or not staff_profile.departments:
+        return []
+        
+    dept_ids = [d.deptID for d in staff_profile.departments]
     noshow_id = get_status_id(db, "No Show")
     
     no_shows = db.query(Appointment).filter(
-        Appointment.deptID == staff_profile.deptID,
+        Appointment.deptID.in_(dept_ids), 
         Appointment.statusID == noshow_id
     ).order_by(Appointment.assignedDate.desc()).all()
 

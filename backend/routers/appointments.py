@@ -1,5 +1,6 @@
 import os
-import shutil
+import cloudinary
+import cloudinary.uploader
 from sqlalchemy import func
 from pydantic import BaseModel
 from datetime import datetime, date
@@ -17,6 +18,12 @@ router = APIRouter(prefix="/api/appointments", tags=["Appointments"])
 
 allow_admin_and_staff = RoleChecker([roleEnum.Admin, roleEnum.Staff])
 allow_medical_team = RoleChecker([roleEnum.Admin, roleEnum.Staff])
+
+cloudinary.config(
+    cloud_name=os.getenv("CLOUD_NAME"),
+    api_key=os.getenv("API_KEY"),
+    api_secret=os.getenv("API_SECRET")
+)
 
 # ---------------------------------------------------------
 # Pydantic Models
@@ -131,12 +138,13 @@ async def book_appointment(
             if not referral_file:
                 raise HTTPException(status_code=400, detail="Referral document is required for Specialty appointments.")
             
-            timestamp = int(datetime.now().timestamp())
-            safe_filename = f"{patient.hospital_num}_{timestamp}_{referral_file.filename}"
-            file_path = os.path.join(UPLOAD_DIR, safe_filename)
+            result = cloudinary.uploader.upload(
+                referral_file.file,
+                folder="gabay_referrals/", 
+                resource_type="auto"       
+            )
             
-            with open(file_path, "wb") as buffer:
-                shutil.copyfileobj(referral_file.file, buffer)
+            file_path = result.get("secure_url")
 
         start_date = datetime.strptime(preferredStartDate, "%Y-%m-%d").date()
         end_date = datetime.strptime(preferredEndDate, "%Y-%m-%d").date() if preferredEndDate else None
