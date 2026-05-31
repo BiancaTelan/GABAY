@@ -506,7 +506,12 @@ def update_personnel_page(
         
         doc.firstname = data.firstname
         doc.surname = data.surname
-        doc.deptID = data.deptIDs[0] if data.deptIDs else None
+        
+        if data.deptID is not None:
+            doc.deptID = data.deptID
+        elif data.deptIDs and len(data.deptIDs) > 0:
+            doc.deptID = data.deptIDs[0]
+            
         target_name = f"Dr. {data.firstname} {data.surname}"
 
         db.query(Schedule).filter(Schedule.docID == doc.docID).delete()
