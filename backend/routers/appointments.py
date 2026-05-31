@@ -149,6 +149,19 @@ async def book_appointment(
         start_date = datetime.strptime(preferredStartDate, "%Y-%m-%d").date()
         end_date = datetime.strptime(preferredEndDate, "%Y-%m-%d").date() if preferredEndDate else None
 
+        active_statuses = [1, 2, 5, 6, 7]
+        existing_booking = db.query(Appointment).filter(
+            Appointment.patientID == patient.patientID,
+            Appointment.preferredStartDate == start_date, 
+            Appointment.statusID.in_(active_statuses)
+        ).first()
+
+        if existing_booking:
+            raise HTTPException(
+                status_code=400, 
+                detail="You already have an active appointment request for this date. Please select a different date or cancel your existing request."
+            )
+
         new_appointment = Appointment(
             patientID=patient.patientID,
             deptID=department.deptID,

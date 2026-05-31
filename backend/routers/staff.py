@@ -402,6 +402,19 @@ def staff_book_appointment(
         )
         db.add(patient)
         db.flush()
+    
+    active_statuses = [1, 2, 5, 6, 7]
+    existing_booking = db.query(Appointment).filter(
+        Appointment.patientID == patient.patientID,
+        Appointment.assignedDate == parsed_date,
+        Appointment.statusID.in_(active_statuses)
+    ).first()
+
+    if existing_booking:
+        raise HTTPException(
+            status_code=400, 
+            detail="Double Booking Alert: This patient already has an active appointment scheduled for this date."
+        )
 
     new_appointment = Appointment(
         patientID=patient.patientID,
