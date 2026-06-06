@@ -3,19 +3,45 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import gabayLogo from '../assets/gabayLogo.png';
 import Button from '../components/button';
 import { AuthContext } from '../authContext';
-import { Calendar, Mail, User, ClipboardClock, Menu, X } from 'lucide-react';
+import { Calendar, Mail, User, ClipboardClock, Menu, X, LogOut } from 'lucide-react';
+import ConfirmationModal from '../components/confirmModal';
 
 export default function Header({ isLoggedIn }) {
-  const { unreadCount } = useContext(AuthContext);
+  const { unreadCount, logout } = useContext(AuthContext);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'logout',
+    onConfirm: () => {}
+  });
 
   const isActive = (path) => location.pathname === path;
 
   const handleNav = (path) => {
     navigate(path);
     setIsMenuOpen(false);
+  };
+
+  const closeModal = () => {
+    setModalConfig((prev) => ({ ...prev, isOpen: false }));
+  };
+
+  const openLogoutModal = () => {
+    setModalConfig({
+      isOpen: true,
+      title: 'Confirm Logout',
+      message: 'Are you sure you want to log out of your GABAY account?',
+      type: 'logout',
+      onConfirm: () => {
+        logout(); 
+        handleNav('/login');
+        closeModal();
+      }
+    });
   };
 
   return (
@@ -125,7 +151,7 @@ export default function Header({ isLoggedIn }) {
 
           <div className="flex flex-col gap-3">
             {isLoggedIn ? (
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-5 gap-2">
                 <button onClick={() => handleNav('/prevAppt')} 
                   className={`p-3 rounded-lg flex justify-center transition-all ${isActive('/prevAppt') 
                   ? 'bg-gabay-blue text-white shadow-md' : 'bg-transparent text-gray-400 hover:bg-blue-50 hover:text-gabay-blue'}`}>
@@ -157,6 +183,13 @@ export default function Header({ isLoggedIn }) {
                   ? 'bg-gabay-blue text-white shadow-md' : 'bg-transparent text-gray-400 hover:bg-blue-50 hover:text-gabay-blue'}`}>
                   <User size={24} />
                 </button>
+
+                <button onClick={openLogoutModal} 
+                  className="p-3 rounded-lg flex justify-center transition-all bg-transparent text-gray-400 hover:bg-red-50 hover:text-red-500"
+                  title="Log Out"
+                >
+                  <LogOut size={24} />
+                </button>
               </div>
             ) : (
               <>
@@ -165,6 +198,14 @@ export default function Header({ isLoggedIn }) {
               </>
             )}
           </div>
+          <ConfirmationModal 
+            isOpen={modalConfig.isOpen}
+            onClose={closeModal}
+            onConfirm={modalConfig.onConfirm}
+            title={modalConfig.title}
+            message={modalConfig.message}
+            type={modalConfig.type}
+          />
         </div>
       )}
     </header>
