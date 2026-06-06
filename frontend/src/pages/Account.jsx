@@ -21,7 +21,10 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
     contactNumber: "",
     dob: "",
     gender: "Female",
-    address: "",
+    houseNumber: "",
+    barangay: "",
+    city: "",
+    province: "",
     emergencyContact: "",
     emergencyContactNum: "",
     emergencyEmail: ""
@@ -337,10 +340,69 @@ const handleSave = async () => {
                 error={errors.dob}
               />
 
-              <div className="md:col-span-1">
-                <Input label="Home Address" name="address" value={localUserInfo.address} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} required error={errors.address} />
-              </div>
               <Input label="Contact Number" name="contactNumber" value={localUserInfo.contactNumber} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} required error={errors.contactNumber} />
+
+              <div className="md:col-span-2">
+
+                {isEditing ? (
+                  /* Grid block that scales to 2 columns on tablets/desktops */
+                  <div className="grid col-span-1 md:grid-cols-2 gap-4">
+                    <Input 
+                      label="House No. / Street / Subdivision" 
+                      name="houseNumber" 
+                      value={localUserInfo.houseNumber || ""} 
+                      onChange={handleInputChange} 
+                      error={errors.houseNumber} 
+                      isEditing={isEditing} 
+                      required 
+                    />
+                    
+                    <Input 
+                      label="Barangay" 
+                      name="barangay" 
+                      value={localUserInfo.barangay || ""} 
+                      onChange={handleInputChange} 
+                      error={errors.barangay} 
+                      isEditing={isEditing} 
+                      required 
+                    />
+
+                    <Input 
+                      label="City / Municipality" 
+                      name="city" 
+                      value={localUserInfo.city || ""} 
+                      onChange={handleInputChange} 
+                      error={errors.city} 
+                      isEditing={isEditing} 
+                      required 
+                    />
+
+                    <Input 
+                      label="Province" 
+                      name="province" 
+                      value={localUserInfo.province || ""} 
+                      onChange={handleInputChange} 
+                      error={errors.province} 
+                      isEditing={isEditing} 
+                      required 
+                    />
+                  </div>
+                ) : (
+                  /* Concatenates the fields cleanly with commas when in read-only mode */
+                  <Input 
+                    label="Home Address" 
+                    value={[
+                      localUserInfo.houseNumber,
+                      localUserInfo.barangay,
+                      localUserInfo.city,
+                      localUserInfo.province
+                    ].filter(Boolean).join(', ')} 
+                    readOnly 
+                    noHover 
+                  />
+                )}
+              </div>
+
             </div>
           </section>
 
