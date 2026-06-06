@@ -259,7 +259,7 @@ const handleSave = async () => {
               {isEditing ? (
                 <>
                   <Input label="First Name" name="firstname" value={localUserInfo.firstname} onChange={handleInputChange} error={errors.firstname} isEditing={isEditing} required />
-                  <Input label="Middle Name" name="middlename" value={localUserInfo.middlename} onChange={handleInputChange} error={errors.middlename} isEditing={isEditing} />
+                  <Input label="Middle Name" name="middlename" value={localUserInfo.middlename} onChange={handleInputChange} error={errors.middlename} isEditing={isEditing} required /> 
                   <Input label="Last Name" name="surname" value={localUserInfo.surname} onChange={handleInputChange} error={errors.surname} isEditing={isEditing} required />
                   <div className="flex flex-col gap-1 w-full">
                   <label className="text-sm font-poppins font-medium text-gray-700">Name Extension</label>
