@@ -57,10 +57,14 @@ class AppointmentApproveRequest(BaseModel):
 class StaffBookRequest(BaseModel):
     hospitalNo: str
     firstName: str
+    middlename: Optional[str] = ""
     lastName: str
     email: str
     contactNo: str
-    address: str
+    street: Optional[str] = ""
+    barangay: Optional[str] = ""
+    city: Optional[str] = ""
+    province: Optional[str] = ""
     department_id: int
     doctor_id: int  
     date: str      
@@ -394,6 +398,27 @@ def deny_appointment(
     
     return {"message": "Appointment denied and patient notified."}
 
+@router.get("/appointments/patient-lookup/{hospital_no}")
+def lookup_patient(hospital_no: str, db: Session = Depends(get_db)):
+    patient = db.query(Patient).filter(Patient.hospital_num == hospital_no).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found.")
+    
+    # Split the concatenated address back into fields for the frontend
+    addr_parts = (patient.address or "").split(" | ")
+    
+    return {
+        "firstName": patient.firstname,
+        "middleName": patient.middlename or "",
+        "lastName": patient.surname,
+        "email": patient.user_account.email if patient.user_account else "",
+        "contactNo": patient.contactNumber or "",
+        "street": addr_parts[0] if len(addr_parts) > 0 else "",
+        "barangay": addr_parts[1] if len(addr_parts) > 1 else "",
+        "city": addr_parts[2] if len(addr_parts) > 2 else "",
+        "province": addr_parts[3] if len(addr_parts) > 3 else ""
+    }
+
 @router.post("/appointments/staff-book")
 def staff_book_appointment(
     data: StaffBookRequest, 
@@ -430,10 +455,11 @@ def staff_book_appointment(
         patient = Patient(
             hospital_num=data.hospitalNo,
             firstname=data.firstName,
+            middlename=data.middlename,
             surname=data.lastName,
             email=data.email,
             contactNo=data.contactNo,
-            address=data.address
+            address=f"{data.street} | {data.barangay} | {data.city} | {data.province}"
         )
         db.add(patient)
         db.flush()
