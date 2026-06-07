@@ -117,7 +117,7 @@ def update_patient_profile(
             
         patient.dob = dob_date
     except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid date format.")
+        raise HTTPException(status_code=400, detail="Date format must be YYYY-MM-DD.")
 
     patient.firstname = data.firstname
     patient.surname = data.surname

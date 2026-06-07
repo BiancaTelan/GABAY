@@ -132,7 +132,7 @@ export default function SignUp() {
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               
               {/* Name Fields Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <Input label="First Name" name="firstname" placeholder="Juan" value={formData.firstname} error={errors.firstname} onChange={(e) => setFormData({...formData, firstname: e.target.value})} required isEditing={true} />
                 <Input label="Middle Name" name="middlename" placeholder="Santos" value={formData.middlename} error={errors.middlename} onChange={(e) => setFormData({...formData, middlename: e.target.value})} isEditing={true} />
                 <Input label="Last Name" name="surname" placeholder="Dela Cruz" value={formData.surname} error={errors.surname} onChange={(e) => setFormData({...formData, surname: e.target.value})} required isEditing={true} />
@@ -141,7 +141,7 @@ export default function SignUp() {
               <Input label="Email Address" type="email" name="email" placeholder="juan@example.com" value={formData.email} error={errors.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required isEditing={true} />
               
               {/* Password Fields Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <Input label="Password" type="password" placeholder="Enter password" value={formData.password} error={errors.password} onChange={(e) => setFormData({...formData, password: e.target.value})} required isEditing={true} />
                 <Input label="Confirm Password" type="password" placeholder="Confirm password" value={formData.confirmPassword} error={errors.confirmPassword} onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})} required isEditing={true} />
               </div>

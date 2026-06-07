@@ -188,13 +188,16 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
   const handleSave = async () => {     
     if (validate()) {
       try {
+        const [m, d, y] = localUserInfo.dob.split('/');
+        const payload = { ...localUserInfo, dob: `${y}-${m}-${d}` };
+
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/patients/update-profile`, {
           method: 'PUT',
           headers: { 
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}` 
           },
-          body: JSON.stringify(localUserInfo)
+          body: JSON.stringify(payload)
         });
 
         const data = await response.json();
@@ -203,18 +206,16 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
           throw new Error(data.detail || "Failed to save changes.");
         }
 
-        if (onUpdateProfile) {
-          onUpdateProfile(localUserInfo);
-        }
+        if (onUpdateProfile) onUpdateProfile(localUserInfo);
         setIsEditing(false);
         setShowToast(true);
 
       } catch (error) {
-        console.error("Save Error:", error);
-        alert(error.message); 
+        toast.error(error.message); 
       }
     }
   };
+
 
   const formatDisplayDate = (dateStr) => {
     if (!dateStr || dateStr.includes('/')) return dateStr;
