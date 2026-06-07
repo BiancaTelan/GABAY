@@ -115,6 +115,7 @@ def register_patient(background_tasks: BackgroundTasks, patient_data: PatientSig
         new_patient = Patient(
             userID=new_user.userID,
             firstname=patient_data.firstname,
+            middlename=patient_data.middlename,
             surname=patient_data.surname
         )
         db.add(new_patient)

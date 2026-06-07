@@ -9,13 +9,13 @@ import { emailPattern, namePattern } from '../utils/constants';
 import LegalModal from '../components/legalModal';
 import toast from 'react-hot-toast';
  
-
 export default function SignUp() {
     const navigate = useNavigate();
     const { login } = useContext(AuthContext); 
     
     const [formData, setFormData] = useState({
       firstname: '',
+      middlename: '', // NEW: Added middle name state
       surname: '',
       email: '',
       password: '',
@@ -23,8 +23,6 @@ export default function SignUp() {
     });
 
     const [errors, setErrors] = useState({});
-    
-    // NEW: States for the terms checkbox and modal
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
 
@@ -36,6 +34,11 @@ export default function SignUp() {
         newErrors.firstname = "First name is required.";
       } else if (!namePattern.test(formData.firstname)) {
         newErrors.firstname = "Please use only alphabetic characters.";
+      }
+
+      // NEW: Middle name validation (optional, but must be alphabetic if provided)
+      if (formData.middlename.trim() && !namePattern.test(formData.middlename)) {
+        newErrors.middlename = "Please use only alphabetic characters.";
       }
 
       if (!formData.surname.trim()) {
@@ -70,9 +73,12 @@ export default function SignUp() {
         return;
       }
 
+      const processingToast = toast.loading("Setting up your account...");
+
       try {
         const payload = {
           firstname: formData.firstname.trim(),
+          middlename: formData.middlename.trim(), // NEW: Passing it to the backend
           surname: formData.surname.trim(),
           email: formData.email.trim(),
           password: formData.password
@@ -90,44 +96,57 @@ export default function SignUp() {
           throw new Error(data.detail || "Failed to create account.");
         }
 
+        toast.dismiss(processingToast);
         toast.success("Account successfully created!");
         navigate('/login');
 
       } catch (error) {
+        toast.dismiss(processingToast);
         toast.error(error.message);
       }
     };
 
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 relative overflow-hidden font-poppins">
-        {/* Background Layer */}
-        <div className="absolute inset-0 z-0">
-          <img src={caintaBg} alt="Cainta Municipal Hospital" className="w-full h-full object-cover brightness-50" />
-          <div className="absolute inset-0 bg-gabay-blue/60 mix-blend-multiply" />
+      <div className="relative min-h-screen flex items-center justify-center font-sans animate-in fade-in duration-500 text-left">
+        {/* Background Match */}
+        <div className="absolute inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${caintaBg})` }} />
+        <div className="absolute top-6 left-6 z-30 cursor-pointer hover:opacity-80 transition" onClick={() => navigate('/')}>
+          <img src={gabayLogo} alt="GABAY Logo" className="h-10 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]" />
         </div>
+        <div className="absolute inset-0 z-10 bg-black opacity-50" />
 
-        {/* Content Container */}
-        <div className="relative z-10 w-full max-w-md p-6">
-          <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-8 border border-white/20 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            
-            <div className="flex flex-col items-center mb-8">
-              <div className="w-20 h-20 bg-white rounded-2xl shadow-md flex items-center justify-center p-3 mb-4 rotate-3 hover:rotate-0 transition-transform">
-                <img src={gabayLogo} alt="GABAY Logo" className="w-full h-full object-contain" />
-              </div>
-              <h2 className="text-2xl font-montserrat font-bold text-gabay-navy">Create Account</h2>
-              <p className="text-sm text-gray-500 mt-1">Join the GABAY portal today</p>
-            </div>
+        {/* Card Match */}
+        <div className="relative z-20 flex flex-col md:flex-row w-full max-w-5xl bg-white shadow-2xl overflow-hidden md:rounded-2sm mx-4 text-left">
+          
+          {/* Left Column Match */}
+          <div className="hidden md:flex flex-1 bg-gabay-blue p-12 flex-col justify-center text-white text-left">
+            <h1 className="font-montserrat text-4xl font-bold leading-tight mb-6">General to Specialty Appointment & Booking Assistant for You</h1>
+            <h2 className="font-montserrat text-xl font-semibold mb-6">Your health, our priority.</h2>
+            <p className="font-poppins">A helpful guide to reserve your appointment slots in Cainta Municipal Hospital.</p>
+          </div>
+
+          <div className="flex-1 p-8 md:p-12 bg-white">
+            <h3 className="font-montserrat text-3xl font-bold text-gabay-blue text-center mb-2">Sign Up</h3>
+            <p className="font-poppins text-gray-500 text-center text-sm mb-8">Accomplish the form below to create an account</p>
 
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-              <div className="grid grid-cols-2 gap-4">
+              
+              {/* Name Fields Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Input label="First Name" name="firstname" placeholder="Juan" value={formData.firstname} error={errors.firstname} onChange={(e) => setFormData({...formData, firstname: e.target.value})} required isEditing={true} />
+                <Input label="Middle Name" name="middlename" placeholder="Santos" value={formData.middlename} error={errors.middlename} onChange={(e) => setFormData({...formData, middlename: e.target.value})} isEditing={true} />
                 <Input label="Last Name" name="surname" placeholder="Dela Cruz" value={formData.surname} error={errors.surname} onChange={(e) => setFormData({...formData, surname: e.target.value})} required isEditing={true} />
               </div>
 
               <Input label="Email Address" type="email" name="email" placeholder="juan@example.com" value={formData.email} error={errors.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required isEditing={true} />
-              <Input label="Password" type="password" placeholder="Enter your password" value={formData.password} error={errors.password} onChange={(e) => setFormData({...formData, password: e.target.value})} required isEditing={true} />
-              <Input label="Confirm Password" type="password" placeholder="Confirm your password" value={formData.confirmPassword} error={errors.confirmPassword} onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})} required isEditing={true} />
               
+              {/* Password Fields Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input label="Password" type="password" placeholder="Enter password" value={formData.password} error={errors.password} onChange={(e) => setFormData({...formData, password: e.target.value})} required isEditing={true} />
+                <Input label="Confirm Password" type="password" placeholder="Confirm password" value={formData.confirmPassword} error={errors.confirmPassword} onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})} required isEditing={true} />
+              </div>
+              
+              {/* Terms Checkbox */}
               <div className="flex items-start gap-2 mt-4 px-1">
                 <input
                   type="checkbox"
@@ -150,30 +169,20 @@ export default function SignUp() {
               </div>
 
               <div className="flex justify-center mt-6">
-                <Button variant="teal" type="submit" className="w-full">
-                  REGISTER ACCOUNT
+                <Button variant="teal" type="submit" className="w-48">
+                  REGISTER
                 </Button>
               </div>
             </form>
 
             <p className="font-poppins text-center text-sm mt-6 text-gray-600">
               Already have an account? 
-              <button 
-                type="button"
-                onClick={() => navigate('/login')} 
-                className="text-gabay-blue font-bold ml-1 hover:underline"
-              >
-                Log In
-              </button>
+              <button type="button" onClick={() => navigate('/login')} className="text-gabay-blue font-bold ml-1 hover:underline">Log In</button>
             </p>
           </div>
         </div>
 
-        <LegalModal 
-          isOpen={isLegalModalOpen}
-          onClose={() => setIsLegalModalOpen(false)}
-          type="privacy" 
-        />
+        <LegalModal isOpen={isLegalModalOpen} onClose={() => setIsLegalModalOpen(false)} type="privacy" />
       </div>
     );
 }
