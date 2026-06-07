@@ -44,15 +44,17 @@ class HospitalNumberRequest(BaseModel):
 class PatientProfileUpdate(BaseModel):
     firstname: str
     surname: str
-    email: EmailStr
-    hospital_num: str
+    middlename: Optional[str] = ""
     contactNumber: str
     dob: str
     gender: str
-    address: str
-    emergencyContact: Optional[str] = None
-    emergencyContactNum: Optional[str] = None
-    emergencyEmail: Optional[str] = None
+    street: Optional[str] = ""
+    barangay: Optional[str] = ""
+    city: Optional[str] = ""
+    province: Optional[str] = ""
+    emergencyContact: Optional[str] = ""
+    emergencyContactNum: Optional[str] = ""
+    emergencyEmail: Optional[str] = ""
     
 # ==========================================
 # USER SCHEMAS (Accounts & Authentication)

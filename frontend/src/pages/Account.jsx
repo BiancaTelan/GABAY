@@ -13,13 +13,17 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
   
   const [localUserInfo, setLocalUserInfo] = useState({
     firstname: "",
+    middlename: "",
     surname: "",
     hospital_num: "",
     email: "",
     contactNumber: "",
     dob: "",
     gender: "Female",
-    address: "",
+    street: "",
+    barangay: "",
+    city: "",
+    province: "",
     emergencyContact: "",
     emergencyContactNum: "",
     emergencyEmail: ""
@@ -36,13 +40,27 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const userEmail = payload.sub;
-
+        
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/patients/profile/${userEmail}`);
-        if (response.ok) {
-          const data = await response.json();
-          // BUG FIX: Merge database response with the default state to prevent uncontrolled input crashes
-          setLocalUserInfo(prev => ({ ...prev, ...data }));
-        }
+        if (!response.ok) throw new Error("Failed to fetch");
+        
+        const data = await response.json();
+
+        const addressStr = data.address || "";
+        const [street = "", barangay = "", city = "", province = ""] = addressStr.split(" | ");
+        
+        const formattedData = { 
+           ...data, 
+           middlename: data.middlename || "",
+           street, 
+           barangay, 
+           city, 
+           province 
+        };
+
+        setLocalUserInfo(formattedData);
+        setTempUserInfo(formattedData);
+
       } catch (error) {
         console.error("Failed to fetch profile data:", error);
       }
@@ -82,46 +100,27 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
   
   const openLogoutModal = () => {
     setModalConfig({
-      isOpen: true,
-      type: 'info',
-      title: 'Log Out',
+      isOpen: true, type: 'info', title: 'Log Out',
       message: 'Are you sure you want to log out of GABAY? You will need to sign in again to book appointments.',
-      onConfirm: () => {
-        onLogout(); 
-        navigate('/');
-      }
+      onConfirm: () => { onLogout(); navigate('/'); }
     });
   };
 
   const openDeleteModal = () => {
     setModalConfig({
-      isOpen: true,
-      type: 'danger',
-      title: 'Delete Account',
+      isOpen: true, type: 'danger', title: 'Delete Account',
       message: 'This action is permanent. Your hospital records and appointment history will be removed from the GABAY system.',
       onConfirm: async () => {
         closeModal();
-        
         try {
           const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/patients/delete-account`, {
             method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
           });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || "Failed to delete account.");
-          }
-
-          console.log("Account successfully deleted from database.");
+          if (!response.ok) throw new Error("Failed to delete account.");
           onLogout(); 
           navigate('/'); 
-          
         } catch (error) {
-          console.error("Error deleting account:", error);
           alert(error.message);
         }
       }
@@ -146,6 +145,7 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
     if (!localUserInfo.email.trim()) newErrors.email = "Email address is required";
     else if (!emailPattern.test(localUserInfo.email)) newErrors.email = "Enter a valid email address";
 
+    // Age Validation
     if (!localUserInfo.dob.trim() || localUserInfo.dob === "MM/DD/YYYY") {
       newErrors.dob = "Date of birth is required";
     } else if (!dobPattern.test(localUserInfo.dob)) {
@@ -158,11 +158,15 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
         let age = today.getFullYear() - birthDate.getFullYear();
         const monthDiff = today.getMonth() - birthDate.getMonth();
         if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) age--;
-        if (age < minAgeRequirement) newErrors.dob = `USER MUST BE ATLEAST ${minAgeRequirement} YEARS OLD`;
+        if (age < 18) newErrors.dob = "You must be at least 18 years old.";
       }
     }
 
-    if (!localUserInfo.address.trim()) newErrors.address = "Home address is required";
+    if (!localUserInfo.street.trim()) newErrors.street = "Required";
+    if (!localUserInfo.barangay.trim()) newErrors.barangay = "Required";
+    if (!localUserInfo.city.trim()) newErrors.city = "Required";
+    if (!localUserInfo.province.trim()) newErrors.province = "Required";
+
     if (!localUserInfo.contactNumber.trim()) newErrors.contactNumber = "Contact number is required";
     else if (!phonePattern.test(localUserInfo.contactNumber)) newErrors.contactNumber = "Must be a valid 11-digit number";
 
@@ -181,12 +185,15 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
     setIsEditing(false);
   };
 
-  const handleSave = async () => {
+  const handleSave = async () => {     
     if (validate()) {
       try {
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/patients/update-profile`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` 
+          },
           body: JSON.stringify(localUserInfo)
         });
 
@@ -255,17 +262,14 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
           <section>
             <h2 className="text-lg font-semibold text-gabay-blue mb-6 tracking-wider uppercase">Personal Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-              {isEditing ? (
-                <>
-                  <Input label="First Name" name="firstname" value={localUserInfo.firstname} onChange={handleInputChange} error={errors.firstname} isEditing={isEditing} required />
-                  <Input label="Last Name" name="surname" value={localUserInfo.surname} onChange={handleInputChange} error={errors.surname} isEditing={isEditing} required />
-                </>
-              ) : (
-                <Input label="Full Name" value={`${localUserInfo.firstname} ${localUserInfo.surname}`} readOnly noHover />
-              )}
               
-
-              <Input label="Hospital Number" value={localUserInfo.hospital_num} readOnly noHover />
+              <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <Input label="First Name" name="firstname" value={localUserInfo.firstname} onChange={handleInputChange} disabled={!isEditing} error={errors.firstname} required />
+                <Input label="Middle Name" name="middlename" value={localUserInfo.middlename} onChange={handleInputChange} disabled={!isEditing} />
+                <Input label="Surname" name="surname" value={localUserInfo.surname} onChange={handleInputChange} disabled={!isEditing} error={errors.surname} required />
+              </div>
+              
+              <Input label="Hospital Number" value={localUserInfo.hospital_num || 'Unregistered'} readOnly noHover />
               <div className="relative">
                 <Input 
                   label={
@@ -276,8 +280,6 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
                           <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wider uppercase cursor-help">
                             Unverified
                           </span>
-                          
-                          {/* NEW: Hover Tooltip for Email Verification */}
                           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-52 p-3 bg-gray-800 text-white text-xs text-center rounded-lg shadow-xl z-50 normal-case tracking-normal font-normal pointer-events-none animate-in fade-in zoom-in duration-200">
                             Please check your registered email for the verification link to verify your account.
                             <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
@@ -326,11 +328,18 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
                 maxLength={10}
                 error={errors.dob}
               />
-
-              <div className="md:col-span-1">
-                <Input label="Home Address" name="address" value={localUserInfo.address} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} required error={errors.address} />
-              </div>
+              
               <Input label="Contact Number" name="contactNumber" value={localUserInfo.contactNumber} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} required error={errors.contactNumber} />
+            </div>
+            
+            <div className="md:col-span-2 border-t border-gray-100 pt-6 mt-6">
+              <h4 className="text-sm font-semibold text-gabay-blue tracking-wider uppercase mb-4">Complete Address</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                 <Input label="House No./Block/Lot/Street" name="street" value={localUserInfo.street} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} required error={errors.street} />
+                 <Input label="Barangay" name="barangay" value={localUserInfo.barangay} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} required error={errors.barangay}/>
+                 <Input label="City" name="city" value={localUserInfo.city} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} required error={errors.city}/>
+                 <Input label="Province" name="province" value={localUserInfo.province} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} required error={errors.province}/>
+              </div>
             </div>
           </section>
 
@@ -361,7 +370,6 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
           </button>
           {isEditing && (
             <>
-            
               <button onClick={() => { setModalType('email'); setIsModalOpen(true); }}
               className="text-gabay-blue hover:text-gabay-navy transition-colors hover:underline text-sm font-medium text-left">
               Change Email

@@ -7,6 +7,7 @@ from db_connection import get_db
 from db_model import User, Patient
 from py_schema import HospitalNumberRequest, PatientProfileUpdate, ContactFormRequest
 from email_utils import send_contact_us_email
+from datetime import datetime, date
 
 router = APIRouter(prefix="/patients", tags=["Patient Management"])
 
@@ -97,54 +98,42 @@ def get_patient_profile(email: str, db: Session = Depends(get_db)):
 # 3. UPDATE PATIENT PROFILE
 # ---------------------------------------------------------
 @router.put("/update-profile")
-def update_patient_profile(profile_data: PatientProfileUpdate, db: Session = Depends(get_db)):
+def update_patient_profile(
+    data: PatientProfileUpdate, 
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    patient = db.query(Patient).filter(Patient.userID == current_user.userID).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient profile not found.")
+
     try:
-        user = db.query(User).filter(User.email == profile_data.email).first()
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found.")
+        dob_date = datetime.strptime(data.dob, "%Y-%m-%d").date()
+        today = date.today()
+        age = today.year - dob_date.year - ((today.month, today.day) < (dob_date.month, dob_date.day))
+        
+        if age < 18:
+            raise HTTPException(status_code=400, detail="You must be at least 18 years old to register or update a profile.")
             
-        patient = db.query(Patient).filter(Patient.userID == user.userID).first()
-        if not patient:
-            raise HTTPException(status_code=404, detail="Patient profile not found.")
+        patient.dob = dob_date
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format.")
 
-        existing_hn = db.query(Patient).filter(
-            Patient.hospital_num == profile_data.hospital_num, 
-            Patient.patientID != patient.patientID 
-        ).first()
-        
-        if existing_hn:
-            raise HTTPException(
-                status_code=400, 
-                detail="This Hospital Number is already registered to another account. Please verify with the hospital administration."
-            )
-        
-        try:
-            formatted_dob = datetime.strptime(profile_data.dob, "%m/%d/%Y").date()
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid Date of Birth format. Use MM/DD/YYYY.")
+    patient.firstname = data.firstname
+    patient.surname = data.surname
+    patient.middlename = data.middlename 
+    patient.contactNumber = data.contactNumber
+    patient.gender = data.gender
+    
+    safe_address = f"{data.street} | {data.barangay} | {data.city} | {data.province}"
+    patient.address = safe_address
 
-        patient.firstname = profile_data.firstname 
-        patient.surname = profile_data.surname
-        patient.hospital_num = profile_data.hospital_num
-        patient.contactNumber = profile_data.contactNumber
-        patient.dob = formatted_dob
-        patient.gender = profile_data.gender
-        patient.address = profile_data.address
-        patient.emergencyContact = profile_data.emergencyContact
-        patient.emergencyContactNum = profile_data.emergencyContactNum
-        patient.emergencyEmail = profile_data.emergencyEmail
-        
-        db.commit()
-        
-        return {"message": "Profile completed successfully."}
+    patient.emergencyContact = data.emergencyContact
+    patient.emergencyContactNum = data.emergencyContactNum
+    patient.emergencyEmail = data.emergencyEmail
 
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"\n❌ ERROR UPDATING PROFILE: {str(e)}\n")
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Server Error: {str(e)}")
-
+    db.commit()
+    return {"message": "Profile successfully updated!"}
 # ---------------------------------------------------------
 # 4. PATIENT ACCOUNT DELETION
 # ---------------------------------------------------------

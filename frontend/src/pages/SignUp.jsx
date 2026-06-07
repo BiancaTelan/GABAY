@@ -6,7 +6,9 @@ import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../authContext'; 
 import { emailPattern, namePattern } from '../utils/constants';
+import LegalModal from '../components/legalModal';
 import toast from 'react-hot-toast';
+ 
 
 export default function SignUp() {
     const navigate = useNavigate();
@@ -21,6 +23,10 @@ export default function SignUp() {
     });
 
     const [errors, setErrors] = useState({});
+    
+    // NEW: States for the terms checkbox and modal
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
+    const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
 
     const handleSubmit = async (e) => {
       e.preventDefault();
@@ -39,19 +45,15 @@ export default function SignUp() {
       }
 
       if (!formData.email.trim()) {
-        newErrors.email = "Email address is required.";
+        newErrors.email = "Email is required.";
       } else if (!emailPattern.test(formData.email)) {
-        newErrors.email = "Please enter a valid email address.";
+        newErrors.email = "Invalid email format.";
       }
 
       if (!formData.password) {
         newErrors.password = "Password is required.";
       } else if (formData.password.length < 8) {
-        newErrors.password = "Password must be at least 8 characters long.";
-      } else if (!/\d/.test(formData.password)) {
-        newErrors.password = "Password must include at least one numerical digit.";
-      } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(formData.password)) {
-        newErrors.password = "Password must include at least one special character (e.g., @, #, $).";
+        newErrors.password = "Password must be at least 8 characters.";
       }
 
       if (formData.password !== formData.confirmPassword) {
@@ -60,144 +62,96 @@ export default function SignUp() {
 
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors);
-        toast.error("Please review the highlighted fields and try again.");
         return;
       }
 
-      setErrors({});
-      const processingToast = toast.loading("Setting up your account...");
-
-      const payload = {
-        firstname: formData.firstname.trim(),
-        surname: formData.surname.trim(),
-        email: formData.email.trim(),
-        password: formData.password,
-        confirm_password: formData.confirmPassword
-      };
+      if (!acceptedTerms) {
+        toast.error("You must agree to the Terms of Service & Privacy Policy to register.");
+        return;
+      }
 
       try {
+        const payload = {
+          firstname: formData.firstname.trim(),
+          surname: formData.surname.trim(),
+          email: formData.email.trim(),
+          password: formData.password
+        };
+
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/signup`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(payload)
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-          toast.dismiss(processingToast);
-          throw new Error(data.detail || "Unable to create your account at this time.");
+          throw new Error(data.detail || "Failed to create account.");
         }
 
-        const accessToken = data.access_token;
-        const userRole = data.role ? data.role.toLowerCase() : 'patient';
-        
-        const userData = {
-          firstname: payload.firstname,
-          surname: payload.surname,
-          email: payload.email,
-        };
-
-        login(accessToken, userRole, userData);
-
-        toast.dismiss(processingToast);
-        toast.success("Account created successfully!");
-
-        setTimeout(() => {
-              navigate('/hospital-number');
-          }, 500);
+        toast.success("Account successfully created!");
+        navigate('/login');
 
       } catch (error) {
-        toast.dismiss(processingToast);
-        toast.error(error.message || "A network error occurred. Please try again.");
+        toast.error(error.message);
       }
     };
 
     return (
-      <div className="relative min-h-screen flex items-center justify-center font-sans animate-in fade-in duration-500 text-left">
-        <div 
-          className="absolute inset-0 z-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${caintaBg})` }}
-        />
-        <div 
-          className="absolute top-6 left-6 z-30 cursor-pointer hover:opacity-80 transition"
-          onClick={() => navigate('/')}>
-          <img src={gabayLogo} alt="GABAY Logo" className="h-10 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]" />
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 relative overflow-hidden font-poppins">
+        {/* Background Layer */}
+        <div className="absolute inset-0 z-0">
+          <img src={caintaBg} alt="Cainta Municipal Hospital" className="w-full h-full object-cover brightness-50" />
+          <div className="absolute inset-0 bg-gabay-blue/60 mix-blend-multiply" />
         </div>
-        <div className="absolute inset-0 z-10 bg-black opacity-50" />
 
-        <div className="relative z-20 flex flex-col md:flex-row w-full max-w-5xl bg-white shadow-2xl overflow-hidden md:rounded-2sm mx-4">
-          <div className="hidden md:flex flex-1 bg-gabay-blue p-12 flex-col justify-center text-white">
-            <h1 className="font-montserrat text-4xl font-bold leading-tight mb-6 text-left">
-              General to Specialty Appointment & Booking Assistant for You
-            </h1>
-            <h2 className="font-montserrat text-xl font-semibold mb-6 text-left">Your health, our priority.</h2>
-            <p className="font-poppins text-left">
-              A helpful guide to reserve your appointment slots in Cainta Municipal Hospital.
-            </p>
-          </div>
-
-          <div className="flex-1 p-8 md:p-12 bg-white text-left">
-            <h3 className="font-montserrat text-3xl font-bold text-gabay-blue text-center mb-2">Sign Up</h3>
-            <p className="font-poppins text-gray-500 text-center text-sm mb-6">Accomplish the form below to create an account</p>
+        {/* Content Container */}
+        <div className="relative z-10 w-full max-w-md p-6">
+          <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-8 border border-white/20 animate-in fade-in slide-in-from-bottom-4 duration-700">
             
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input 
-                  label="First Name" 
-                  placeholder="Enter your first name" 
-                  value={formData.firstname}
-                  error={errors.firstname}
-                  onChange={(e) => setFormData({...formData, firstname: e.target.value})}
-                  required
-                  isEditing={true}
-                />
-                <Input
-                  label="Last Name" 
-                  placeholder="Enter your last name" 
-                  value={formData.surname}
-                  error={errors.surname}
-                  onChange={(e) => setFormData({...formData, surname: e.target.value})}
-                  required
-                  isEditing={true}
-                />
+            <div className="flex flex-col items-center mb-8">
+              <div className="w-20 h-20 bg-white rounded-2xl shadow-md flex items-center justify-center p-3 mb-4 rotate-3 hover:rotate-0 transition-transform">
+                <img src={gabayLogo} alt="GABAY Logo" className="w-full h-full object-contain" />
               </div>
+              <h2 className="text-2xl font-montserrat font-bold text-gabay-navy">Create Account</h2>
+              <p className="text-sm text-gray-500 mt-1">Join the GABAY portal today</p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+              <div className="grid grid-cols-2 gap-4">
+                <Input label="First Name" name="firstname" placeholder="Juan" value={formData.firstname} error={errors.firstname} onChange={(e) => setFormData({...formData, firstname: e.target.value})} required isEditing={true} />
+                <Input label="Last Name" name="surname" placeholder="Dela Cruz" value={formData.surname} error={errors.surname} onChange={(e) => setFormData({...formData, surname: e.target.value})} required isEditing={true} />
+              </div>
+
+              <Input label="Email Address" type="email" name="email" placeholder="juan@example.com" value={formData.email} error={errors.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required isEditing={true} />
+              <Input label="Password" type="password" placeholder="Enter your password" value={formData.password} error={errors.password} onChange={(e) => setFormData({...formData, password: e.target.value})} required isEditing={true} />
+              <Input label="Confirm Password" type="password" placeholder="Confirm your password" value={formData.confirmPassword} error={errors.confirmPassword} onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})} required isEditing={true} />
               
-              <Input 
-                label="Email Address" 
-                type="email" 
-                placeholder="emailaddress@gmail.com" 
-                value={formData.email}
-                error={errors.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                required
-                isEditing={true}
-              />
-              <Input 
-                label="Password" 
-                type="password" 
-                placeholder="Enter your password" 
-                value={formData.password}
-                error={errors.password}
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
-                required
-                isEditing={true}
-              />
-              <Input 
-                label="Confirm Password" 
-                type="password" 
-                placeholder="Confirm your password" 
-                value={formData.confirmPassword}
-                error={errors.confirmPassword}
-                onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-                required
-                isEditing={true}
-              />
-              
+              <div className="flex items-start gap-2 mt-4 px-1">
+                <input
+                  type="checkbox"
+                  id="terms"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="mt-1 w-4 h-4 accent-gabay-teal cursor-pointer shrink-0"
+                />
+                <label htmlFor="terms" className="text-xs font-poppins text-gray-600 leading-snug">
+                  I acknowledge that I have read and agree to the{' '}
+                  <button
+                    type="button"
+                    onClick={() => setIsLegalModalOpen(true)}
+                    className="text-gabay-blue font-bold hover:underline"
+                  >
+                    Terms of Service & Privacy Policy
+                  </button>
+                  .
+                </label>
+              </div>
+
               <div className="flex justify-center mt-6">
-                <Button variant="teal" type="submit" className="w-48">
-                  SUBMIT
+                <Button variant="teal" type="submit" className="w-full">
+                  REGISTER ACCOUNT
                 </Button>
               </div>
             </form>
@@ -214,6 +168,12 @@ export default function SignUp() {
             </p>
           </div>
         </div>
+
+        <LegalModal 
+          isOpen={isLegalModalOpen}
+          onClose={() => setIsLegalModalOpen(false)}
+          type="privacy" 
+        />
       </div>
     );
 }
