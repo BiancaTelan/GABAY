@@ -121,6 +121,9 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
     if (!formData.reason) newErrors.reason = "Please provide a reason for booking.";
     if (!startDate) newErrors.appointmentDate = "Please select a date range.";
     if (!referralImage && !isReadOnly) newErrors.referral = "Medical referral is required.";
+    if (formData.reason.length > 150) {
+    newErrors.reason = "Reason cannot exceed 150 characters";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -238,18 +241,37 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
           </div>
 
           <div className="flex flex-col">
-            <label className="text-gabay-blue font-semibold mb-1 text-lg uppercase tracking-wide">Reason for Specialty Consultation</label>
-            <textarea 
-              name="reason"
-              rows="4"
-              value={formData.reason}
-              onChange={handleInputChange}
-              readOnly={isReadOnly}
-              className={`p-3 text-base rounded-md border outline-none resize-none transition-all ${isReadOnly ? 'bg-gray-100 border-gray-300 text-gray-500 cursor-default' : errors.reason ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 focus:ring-1 focus:ring-gabay-teal'}`}
-              placeholder="Briefly explain the condition requiring a specialist..."
-            />
-            {errors.reason && <p className="text-red-500 text-[11px] mt-1 font-medium uppercase">{errors.reason}</p>}
+          <div className="flex justify-between items-baseline">
+            <label className="text-gabay-blue font-semibold mb-1 text-lg uppercase tracking-wide">
+              Reason for Consultation
+            </label>
+            {!isReadOnly && (
+              <span className="text-xs text-gray-400 font-medium">
+                {formData.reason?.length || 0}/150
+              </span>
+            )}
           </div>
+
+          <textarea 
+            name="reason"
+            rows="4"
+            value={formData.reason}
+            onChange={handleInputChange}
+            readOnly={isReadOnly}
+            maxLength={150} 
+            className={`p-3 text-base rounded-md border outline-none resize-none transition-all ${
+              isReadOnly ? 'bg-gray-100 border-gray-300 text-gray-500 cursor-default' : 
+              errors.reason ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 focus:ring-1 focus:ring-gabay-teal'
+            }`}
+            placeholder="Pakiulat ang iyong sintomas..."
+          />
+          
+          {errors.reason && (
+            <p className="text-red-500 text-[11px] mt-1 font-medium uppercase">
+              {errors.reason}
+            </p>
+          )}
+        </div>
         </div>
 
         <div className="w-full md:w-1/3 space-y-8 pt-5">

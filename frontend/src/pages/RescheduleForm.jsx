@@ -38,6 +38,9 @@ export default function RescheduleForm({ userInfo }) {
       setError("Please provide a reason for rescheduling.");
       return;
     }
+    if (newReason && newReason.length > 150) {
+  newErrors.newReason = "Reason cannot exceed 150 characters";
+    }
 
     setIsSubmitting(true);
     setError("");
@@ -126,21 +129,30 @@ export default function RescheduleForm({ userInfo }) {
             />
           </div>
 
-          <div className="flex flex-col">
-            <label className="text-gabay-blue font-bold mb-2 uppercase text-sm tracking-wide">Reason for Reschedule</label>
-            <textarea 
-              rows="4"
-              value={newReason}
-              onChange={(e) => {
-                setNewReason(e.target.value);
-                setError("");
-              }}
-              placeholder="e.g., Personal emergency, schedule conflict..."
-              className={`p-3 border rounded-xl outline-none resize-none transition-all ${
-                error && !newReason ? 'border-red-500 ring-1 ring-red-500' : 'border-gabay-teal focus:ring-2 focus:ring-teal-200'
-              }`}
-            />
-          </div>
+        <div className="flex flex-col">
+         <div className="flex justify-between items-baseline mb-2">
+          <label className="text-gabay-blue font-bold uppercase text-sm tracking-wide">Reason for Reschedule</label>
+          {!isReadOnly && (
+            <span className="text-xs text-gray-400 font-medium">
+              {newReason?.length || 0}/150
+            </span>
+          )}
+         </div>
+
+         <textarea 
+          rows="4"
+          value={newReason}
+          onChange={(e) => {
+            setNewReason(e.target.value);
+            setError("");
+          }}
+          maxLength={150}
+          placeholder="Pakiulat ang dahilan ng inyong pagreskedyul..."
+          className={`p-3 border rounded-xl outline-none resize-none transition-all ${
+            error && !newReason ? 'border-red-500 ring-1 ring-red-500' : 'border-gabay-teal focus:ring-2 focus:ring-teal-200'
+          }`}
+          />
+        </div>
 
           {error && (
             <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-200 font-medium">

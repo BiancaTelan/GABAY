@@ -229,7 +229,7 @@ export default function GeneralForm({ userInfo, onConfirm }) {
           <div className="flex flex-col">
           <div className="flex justify-between items-baseline">
             <label className="text-gabay-blue font-semibold mb-1 text-lg uppercase tracking-wide">
-              Reason for Booking
+              Reason for Consultation
             </label>
             {/* Real-time Character Counter Display */}
             {!isReadOnly && (
@@ -250,7 +250,7 @@ export default function GeneralForm({ userInfo, onConfirm }) {
               isReadOnly ? 'bg-gray-100 border-gray-300 text-gray-500 cursor-default' : 
               errors.reason ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 focus:ring-1 focus:ring-gabay-teal'
             }`}
-            placeholder="Describe your symptoms..."
+            placeholder="Pakiulat ang iyong sintomas..."
           />
           
           {errors.reason && (
