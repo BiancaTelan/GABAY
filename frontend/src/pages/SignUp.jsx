@@ -53,9 +53,13 @@ export default function SignUp({ onCompleteSignUp }) {
     }
 
     if (!formData.password) {
-      newErrors.password = "Password is required.";
+        newErrors.password = "Password is required.";
     } else if (formData.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters.";
+        newErrors.password = "Password must be at least 8 characters long.";
+    } else if (!/\d/.test(formData.password)) {
+      newErrors.password = "Password must include at least one numerical digit.";
+    } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(formData.password)) {
+      newErrors.password = "Password must include at least one special character (e.g., @, #, $).";
     }
 
     if (formData.password !== formData.confirmPassword) {
@@ -72,10 +76,10 @@ export default function SignUp({ onCompleteSignUp }) {
       return;
     }
 
+    setErrors({});
     const processingToast = toast.loading("Creating your account...");
 
-    try {
-      const payload = {
+    const payload = {
         firstname: formData.firstname.trim(),
         middlename: formData.middlename.trim(),
         surname: formData.surname.trim(),
@@ -84,6 +88,8 @@ export default function SignUp({ onCompleteSignUp }) {
         confirm_password: formData.confirmPassword
       };
 
+    try {
+    
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -96,27 +102,28 @@ export default function SignUp({ onCompleteSignUp }) {
         throw new Error(data.detail || "Failed to create account.");
       }
 
-      // AUTO-LOGIN: Use the token from backend
-      if (data.access_token) {
-        const userInfo = {
-          email: formData.email.trim(),
-          firstname: formData.firstname.trim(),
-          middlename: formData.middlename.trim(),
-          surname: formData.surname.trim(),
-          role: data.role || 'patient'
-        };
-        login(data.access_token, userInfo);
-      }
+      const accessToken = data.access_token;
+      const userRole = data.role ? data.role.toLowerCase() : 'patient';
+        
+      const userData = {
+        firstname: payload.firstname,
+        surname: payload.surname,
+        email: payload.email,
+      };
+
+      login(accessToken, userRole, userData);
 
       toast.dismiss(processingToast);
       toast.success("Account created successfully!");
 
-      navigate('/hospital-number');
+      setTimeout(() => {
+         navigate('/hospital-number');
+      }, 500);
  
 
     } catch (error) {
       toast.dismiss(processingToast);
-      toast.error(error.message);
+      toast.error(error.message || "A network error occurred. Please try again.");
     }
   };
 
