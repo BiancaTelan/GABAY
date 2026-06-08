@@ -270,31 +270,31 @@ def get_appointment_history(email: str, db: Session = Depends(get_db)):
        
 # ---------------------------------------------------------
 # 5. Update Appointment Status (Patient side)
-# ---------------------------------------------------------
-@router.put("/{appointment_id}/status")
-def update_appointment_status(appointment_id: int, request: StatusUpdate, db: Session = Depends(get_db)):
-    try:
-        appointment = db.query(Appointment).filter(Appointment.appointmentID == appointment_id).first()
-        if not appointment:
-            raise HTTPException(status_code=404, detail="Appointment not found.")
 
-        status_obj = db.query(AppointmentStatus).filter(AppointmentStatus.statusName == request.status).first()
+#@router.put("/{appointment_id}/status")
+#def update_appointment_status(appointment_id: int, request: StatusUpdate, db: Session = Depends(get_db)):
+#    try:
+#        appointment = db.query(Appointment).filter(Appointment.appointmentID == appointment_id).first()
+#        if not appointment:
+#            raise HTTPException(status_code=404, detail="Appointment not found.")
 
-        if not status_obj:
-            status_obj = AppointmentStatus(statusName=request.status, statusColor="#e5e7eb")
-            db.add(status_obj)
-            db.commit()
-            db.refresh(status_obj)
+#        status_obj = db.query(AppointmentStatus).filter(AppointmentStatus.statusName == request.status).first()
 
-        appointment.statusID = status_obj.statusID
-        db.commit()
+#            status_obj = AppointmentStatus(statusName=request.status, statusColor="#e5e7eb")
+#            db.add(status_obj)
+#            db.commit()
+#            db.refresh(status_obj)
 
-        return {"message": f"Appointment successfully updated to {request.status}!"}
+#        appointment.statusID = status_obj.statusID
+#        db.commit()
+
+#        return {"message": f"Appointment successfully updated to {request.status}!"}
         
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
-    
+#    except Exception as e:
+#        db.rollback()
+#        raise HTTPException(status_code=500, detail=str(e))
+# ---------------------------------------------------------
+
 # ---------------------------------------------------------
 # 6. Main Reservation Endpoint (Patient Reschedule)
 # ---------------------------------------------------------

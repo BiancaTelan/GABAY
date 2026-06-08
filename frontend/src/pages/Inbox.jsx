@@ -49,28 +49,20 @@ export default function Inbox() {
             if (statusLower.includes('pending')) {
               type = 'reservation';
               title = 'Reservation Submitted';
-              displayStatus = 'PENDING APPROVAL'; // Matched Staff Side terminology
+              displayStatus = 'PENDING APPROVAL'; 
               message = 'Please check your email address for further updates with regards to your reserved appointment.';
               icon = Mail;
-              colorTheme = 'gray'; // Staff side: Gray
+              colorTheme = 'gray'; 
             } else if (statusLower.includes('approved')) {
               title = 'Upcoming Appointment';
-              displayStatus = 'APPROVED - ACTION REQUIRED';
-              message = 'Your schedule has been approved! Please confirm or cancel your attendance below.';
-              showActionButtons = true; 
+              displayStatus = 'APPROVED';
+              message = 'Your schedule has been approved! Please attend your appointment on the specified date.';
               colorTheme = 'orange'; 
             } else if (statusLower.includes('rescheduled')) {
               title = 'Appointment Rescheduled';
-              displayStatus = 'RESCHEDULED - ACTION REQUIRED';
-              message = 'Your schedule has been changed. Please confirm or cancel your new attendance date below.';
-              showActionButtons = true; 
+              displayStatus = 'RESCHEDULED';
+              message = 'Your schedule has been changed. Please check the new date and attend your appointment accordingly.';
               colorTheme = 'yellow';
-            } else if (statusLower.includes('confirmed')) {
-              title = 'Appointment Confirmed';
-              displayStatus = 'CONFIRMED';
-              message = 'You have successfully confirmed your attendance. See you there!';
-              icon = Check;
-              colorTheme = 'green'; 
             } else if (statusLower.includes('denied') || statusLower.includes('declined')) {
               title = 'Appointment Denied';
               displayStatus = 'DENIED';
@@ -163,54 +155,54 @@ export default function Inbox() {
     }
   };
 
-  const handleApprove = async (note) => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/${note.id}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'Confirmed' })
-      });
+  //const handleApprove = async (note) => {
+  //  try {
+  //    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/${note.id}/status`, {
+  //      method: 'PUT',
+  //      headers: { 'Content-Type': 'application/json' },
+  //      body: JSON.stringify({ status: 'Confirmed' })
+  //    });
 
-      if (!response.ok) throw new Error("Failed to confirm appointment. Please try again.");
+  //    if (!response.ok) throw new Error("Failed to confirm appointment. Please try again.");
 
-      navigate('/appointment-confirmed', {
-        state: {
-          patientName: patientFullName,
-          department: note.department,
-          date: note.date,
-          doctor: note.doctor,
-        },
-      });
-    } catch (error) {
-      console.error(error);
-      alert(error.message);
-    }
-  };
+  //    navigate('/appointment-confirmed', {
+  //      state: {
+  //        patientName: patientFullName,
+  //        department: note.department,
+  //        date: note.date,
+  //        doctor: note.doctor,
+  //      },
+  //    });
+  //  } catch (error) {
+  //    console.error(error);
+  //    alert(error.message);
+  //  }
+  //};
 
-  const handleReject = async (note) => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/${note.id}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'Cancelled' })
-      });
+  //const handleReject = async (note) => {
+    //try {
+      //const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/${note.id}/status`, {
+        //method: 'PUT',
+    //    headers: { 'Content-Type': 'application/json' },
+    //    body: JSON.stringify({ status: 'Cancelled' })
+    //  });
 
-      if (!response.ok) throw new Error("Failed to cancel appointment. Please try again.");
+    //  if (!response.ok) throw new Error("Failed to cancel appointment. Please try again.");
 
-      navigate('/appointment-cancelled', {
-        state: {
-          id: note.id,
-          patientName: patientFullName,
-          department: note.department,
-          date: note.date,
-          doctor: note.doctor,
-        },
-      });
-    } catch (error) {
-      console.error(error);
-      alert(error.message);
-    }
-  };
+    //  navigate('/appointment-cancelled', {
+    //    state: {
+    //      id: note.id,
+    //      patientName: patientFullName,
+    //      department: note.department,
+    //      date: note.date,
+    //      doctor: note.doctor,
+    //    },
+    //  });
+  //  } catch (error) {
+  //    console.error(error);
+  //    alert(error.message);
+  //  }
+//  };
 
   const getThemeClasses = (colorTheme) => {
     switch (colorTheme) {
@@ -301,7 +293,7 @@ export default function Inbox() {
                       {note.type === 'appointment' && (
                         <div className="relative">
                           
-                          {note.showActionButtons && (
+                        {/* {note.showActionButtons && (
                             <div className="absolute bottom-1 right-1 flex gap-2">
                               <button
                                 onClick={() => handleApprove(note)}
@@ -318,7 +310,7 @@ export default function Inbox() {
                                 <X size={18} />
                               </button>
                             </div>
-                          )}
+                          )}*/}
 
                           <div className={`space-y-2 font-poppins text-sm grid grid-cols-1 md:grid-cols-2 p-4 rounded-lg ${theme.boxBg}`}>
                             <p><span className="font-semibold text-gabay-navy">Date:</span> {note.date}</p>
