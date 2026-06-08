@@ -174,6 +174,7 @@ class Staff(Base):
     staffID: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     userID: Mapped[Optional[int]] = mapped_column(ForeignKey("userTable.userID", ondelete="RESTRICT"), unique=True)
     firstname: Mapped[str] = mapped_column(String(100), nullable=False)
+    middlename: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     surname: Mapped[str] = mapped_column(String(100), nullable=False)
     position: Mapped[str] = mapped_column(String(100), nullable=False)
     gender: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)

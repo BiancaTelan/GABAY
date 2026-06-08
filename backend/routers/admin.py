@@ -100,12 +100,16 @@ class AppointmentAction(BaseModel):
 class ProfileUpdate(BaseModel):
     firstname: str
     surname: str
+    middlename: Optional[str] = "" 
     mi: Optional[str] = ""
     suffix: Optional[str] = ""
     contactNumber: str
     dob: str
     gender: str
-    address: Optional[str] = ""
+    street: Optional[str] = ""
+    barangay: Optional[str] = ""
+    city: Optional[str] = ""
+    province: Optional[str] = ""
 
 class EmailChangeRequest(BaseModel):
     current_password: str
@@ -1265,39 +1269,44 @@ def get_my_profile(current_user: User = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 @router.put("/update-profile")
-def update_my_profile(
+def update_staff_profile(
     data: ProfileUpdate, 
     request: Request,
     db: Session = Depends(get_db), 
     current_user: User = Depends(get_current_user)
 ):
     prof = current_user.staff_profile
-    
     if isinstance(prof, list):
         prof = prof[0] if len(prof) > 0 else None
         
     if not prof:
-        prof = Staff(userID=current_user.userID)
+        prof = Staff(userID=current_user.userID) 
         db.add(prof)
-    
+
+    try:
+        dob_date = datetime.strptime(data.dob, "%Y-%m-%d").date()
+        today = date.today()
+        age = today.year - dob_date.year - ((today.month, today.day) < (dob_date.month, dob_date.day))
+        
+        if age < 18:
+            raise HTTPException(status_code=400, detail="Personnel must be at least 18 years old.")
+            
+        if hasattr(prof, 'birthdate'): prof.dob = dob_date
+        elif hasattr(prof, 'birthDate'): prof.dob = dob_date
+        elif hasattr(prof, 'birthday'): prof.dob = dob_date
+        else: prof.dob = dob_date
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Date format must be YYYY-MM-DD.")
+
     prof.firstname = data.firstname
+    prof.middlename = data.middlename # NEW
     prof.surname = data.surname
+    prof.mi = data.mi
     prof.suffix = data.suffix
     prof.contactNumber = data.contactNumber
     prof.gender = data.gender
-    prof.address = data.address
     
-    try:
-        if data.dob:
-            prof.dob = datetime.strptime(data.dob, "%m/%d/%Y").date()
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid date format.")
-
-    new_log = SystemLogs(
-        userID=current_user.userID, actionType=actionTypeEnum.UPDATE, tableAffected="staffTable",
-        details=f"Updated personal account profile", ipAddress=request.client.host
-    )
-    db.add(new_log)
+    prof.address = f"{data.street} | {data.barangay} | {data.city} | {data.province}"
 
     db.commit()
     return {"message": "Profile updated successfully"}
