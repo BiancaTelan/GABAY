@@ -108,19 +108,6 @@ export default function GeneralForm({ userInfo, onConfirm }) {
     });
   };
 
-  const getWordCount = (text) => {
-    return text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
-  };
-
-  const handleReasonChange = (e) => {
-    const inputText = e.target.value;
-    const currentWords = getWordCount(inputText);
-
-    if (currentWords <= 150 || inputText.length < formData.reason.length) {
-      setFormData({ ...formData, reason: inputText });
-    }
-  };
-
   const validateForm = () => {
     let newErrors = {};
     if (!formData.department) newErrors.department = "Department is required.";
@@ -274,11 +261,8 @@ export default function GeneralForm({ userInfo, onConfirm }) {
           </div>
 
           <div className="flex flex-col">
-            <label className="text-gabay-blue font-semibold mb-1 text-lg uppercase tracking-wide">
-              Reason for Booking <span className="text-red-500">*</span>
-            </label>
+            <label className="text-gabay-blue font-semibold mb-1 text-lg uppercase tracking-wide">Reason for Booking</label>
             <textarea 
-              required
               name="reason"
               rows="4"
               value={formData.reason}
@@ -290,11 +274,6 @@ export default function GeneralForm({ userInfo, onConfirm }) {
               }`}
               placeholder="Describe your symptoms..."
             />
-            <div className="flex justify-end mt-1">
-                <span className={`text-xs font-medium ${getWordCount(formData.reason) >= 150 ? 'text-red-500' : 'text-gray-400'}`}>
-                  {getWordCount(formData.reason)} / 150 words
-                </span>
-            </div>  
           </div>
         </div>
 

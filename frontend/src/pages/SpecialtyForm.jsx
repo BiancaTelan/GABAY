@@ -130,19 +130,6 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
     setImagePreview(null);
   };
 
-  const getWordCount = (text) => {
-    return text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
-  };
-
-  const handleReasonChange = (e) => {
-    const inputText = e.target.value;
-    const currentWords = getWordCount(inputText);
-
-    if (currentWords <= 150 || inputText.length < formData.reason.length) {
-      setFormData({ ...formData, reason: inputText });
-    }
-  };
-
   const validateForm = () => {
     let newErrors = {};
     if (!formData.department) newErrors.department = "Department is required.";
@@ -310,11 +297,8 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
           </div>
 
           <div className="flex flex-col">
-            <label className="text-gabay-blue font-semibold mb-1 text-lg uppercase tracking-wide">
-              Reason for Specialty Consultation <span className="text-red-500">*</span>
-            </label>
+            <label className="text-gabay-blue font-semibold mb-1 text-lg uppercase tracking-wide">Reason for Specialty Consultation</label>
             <textarea 
-              required
               name="reason"
               rows="4"
               value={formData.reason}
@@ -324,11 +308,6 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
               placeholder="Briefly explain the condition requiring a specialist..."
             />
             {errors.reason && <p className="text-red-500 text-[11px] mt-1 font-medium uppercase">{errors.reason}</p>}
-            <div className="flex justify-end mt-1">
-                <span className={`text-xs font-medium ${getWordCount(formData.reason) >= 150 ? 'text-red-500' : 'text-gray-400'}`}>
-                  {getWordCount(formData.reason)} / 150 words
-                </span>
-            </div> 
           </div>
         </div>
 
