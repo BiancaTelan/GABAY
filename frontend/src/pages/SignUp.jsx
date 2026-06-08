@@ -36,7 +36,6 @@ export default function SignUp({ onCompleteSignUp }) {
       newErrors.firstname = "Please use only alphabetic characters.";
     }
 
-    // NEW: Middle name validation (optional, but must be alphabetic if provided)
     if (formData.middlename.trim() && !namePattern.test(formData.middlename)) {
       newErrors.middlename = "Please use only alphabetic characters.";
     }
@@ -73,12 +72,12 @@ export default function SignUp({ onCompleteSignUp }) {
       return;
     }
 
-    const processingToast = toast.loading("Setting up your account...");
+    const processingToast = toast.loading("Creating your account...");
 
     try {
       const payload = {
         firstname: formData.firstname.trim(),
-        middlename: formData.middlename.trim(), // NEW: Passing it to the backend
+        middlename: formData.middlename.trim(),
         surname: formData.surname.trim(),
         email: formData.email.trim(),
         password: formData.password,
@@ -97,8 +96,24 @@ export default function SignUp({ onCompleteSignUp }) {
         throw new Error(data.detail || "Failed to create account.");
       }
 
+      // AUTO-LOGIN: Use the token from backend
+      if (data.access_token) {
+        const userInfo = {
+          email: formData.email.trim(),
+          firstname: formData.firstname.trim(),
+          middlename: formData.middlename.trim(),
+          surname: formData.surname.trim(),
+          role: data.role || 'patient'
+        };
+        
+        // This will store the token and update auth state
+        login(data.access_token, userInfo);
+      }
+
       toast.dismiss(processingToast);
-      toast.success("Account successfully created!");
+      toast.success("Account created successfully! Redirecting to complete your profile...");
+      
+      // Navigate to hospital number registration
       if (onCompleteSignUp) {
         onCompleteSignUp({
           firstname: formData.firstname.trim(),
@@ -107,7 +122,7 @@ export default function SignUp({ onCompleteSignUp }) {
           email: formData.email.trim()
         });
       } else {
-        navigate('/login');
+        navigate('/hospital-number');
       }
 
     } catch (error) {
@@ -118,16 +133,13 @@ export default function SignUp({ onCompleteSignUp }) {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center font-sans animate-in fade-in duration-500 text-left">
-      {/* Background Match */}
       <div className="absolute inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${caintaBg})` }} />
       <div className="absolute top-6 left-6 z-30 cursor-pointer hover:opacity-80 transition" onClick={() => navigate('/')}>
         <img src={gabayLogo} alt="GABAY Logo" className="h-10 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]" />
       </div>
       <div className="absolute inset-0 z-10 bg-black opacity-50" />
 
-      {/* Card Match */}
       <div className="relative z-20 flex flex-col md:flex-row w-full max-w-5xl bg-white shadow-2xl overflow-hidden md:rounded-2sm mx-4 text-left">
-
         <div className="hidden md:flex flex-1 bg-gabay-blue p-12 flex-col justify-center text-white text-left">
           <h1 className="font-montserrat text-4xl font-bold leading-tight mb-6">General to Specialty Appointment & Booking Assistant for You</h1>
           <h2 className="font-montserrat text-xl font-semibold mb-6">Your health, our priority.</h2>
@@ -139,23 +151,19 @@ export default function SignUp({ onCompleteSignUp }) {
           <p className="font-poppins text-gray-500 text-center text-sm mb-8">Accomplish the form below to create an account</p>
 
           <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-
-            {/* Name Fields Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Input label="First Name" name="firstname" placeholder="Juan" value={formData.firstname} error={errors.firstname} onChange={(e) => setFormData({ ...formData, firstname: e.target.value })} required isEditing={true} />
-              <Input label="Middle Name" name="middlename" placeholder="Santos" value={formData.middlename} error={errors.middlename} onChange={(e) => setFormData({ ...formData, middlename: e.target.value })} isEditing={true} />
-              <Input label="Last Name" name="surname" placeholder="Dela Cruz" value={formData.surname} error={errors.surname} onChange={(e) => setFormData({ ...formData, surname: e.target.value })} required isEditing={true} />
+              <Input label="First Name" name="firstname" placeholder="Juan" value={formData.firstname} error={errors.firstname} onChange={(e) => setFormData({...formData, firstname: e.target.value})} required isEditing={true} />
+              <Input label="Middle Name" name="middlename" placeholder="Santos" value={formData.middlename} error={errors.middlename} onChange={(e) => setFormData({...formData, middlename: e.target.value})} isEditing={true} />
+              <Input label="Last Name" name="surname" placeholder="Dela Cruz" value={formData.surname} error={errors.surname} onChange={(e) => setFormData({...formData, surname: e.target.value})} required isEditing={true} />
             </div>
 
-            <Input label="Email Address" type="email" name="email" placeholder="juan@example.com" value={formData.email} error={errors.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required isEditing={true} />
-
-            {/* Password Fields Grid */}
+            <Input label="Email Address" type="email" name="email" placeholder="juan@example.com" value={formData.email} error={errors.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required isEditing={true} />
+            
             <div className="grid grid-cols-1 gap-4">
-              <Input label="Password" type="password" placeholder="Enter password" value={formData.password} error={errors.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} required isEditing={true} />
-              <Input label="Confirm Password" type="password" placeholder="Confirm password" value={formData.confirmPassword} error={errors.confirmPassword} onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} required isEditing={true} />
+              <Input label="Password" type="password" placeholder="Enter password" value={formData.password} error={errors.password} onChange={(e) => setFormData({...formData, password: e.target.value})} required isEditing={true} />
+              <Input label="Confirm Password" type="password" placeholder="Confirm password" value={formData.confirmPassword} error={errors.confirmPassword} onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})} required isEditing={true} />
             </div>
-
-            {/* Terms Checkbox */}
+            
             <div className="flex items-start gap-2 mt-4 px-1">
               <input
                 type="checkbox"
@@ -185,7 +193,7 @@ export default function SignUp({ onCompleteSignUp }) {
           </form>
 
           <p className="font-poppins text-center text-sm mt-6 text-gray-600">
-            Already have an account?
+            Already have an account? 
             <button type="button" onClick={() => navigate('/login')} className="text-gabay-blue font-bold ml-1 hover:underline">Log In</button>
           </p>
         </div>
