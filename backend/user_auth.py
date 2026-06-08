@@ -105,7 +105,7 @@ def register_patient(background_tasks: BackgroundTasks, patient_data: PatientSig
         new_user = User(
             email=patient_data.email,
             passwordHash=hashed_password,
-            role=roleEnum.Patient,
+            role=roleEnum.patient,
             isActive=True
         )
 
