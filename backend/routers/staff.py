@@ -106,12 +106,12 @@ def get_staff_appointments(db: Session = Depends(get_db), current_staff: User = 
         # Updated status mapping with simplified workflow
         status_mapping = {
             1: 'pending',
-            2: 'approved',      # CHANGED: Was "confirmed" (intermediate), now final
+            5: 'approved',      # CHANGED: Was "confirmed" (intermediate), now final
             3: 'canceled',
             4: 'denied',   
-            5: 'rescheduled',    # CHANGED: Status IDs shifted
-            6: 'no show',        # CHANGED: Status IDs shifted
-            7: 'completed'       # CHANGED: Status IDs shifted
+            6: 'rescheduled',    # CHANGED: Status IDs shifted
+            7: 'no show',        # CHANGED: Status IDs shifted
+            8: 'completed'       # CHANGED: Status IDs shifted
         }
  
         results = []
@@ -193,7 +193,7 @@ def approve_appointment(
     day_of_week = parsed_date.strftime("%A")
  
     # Check for double-booking
-    active_statuses = [1, 2, 5]  # pending, approved, rescheduled
+    active_statuses = [1, 5, 6]  # pending, approved, rescheduled
     existing_booking = db.query(Appointment).filter(
         Appointment.patientID == appointment.patientID,
         Appointment.appointmentID != appointment_id,
@@ -256,6 +256,7 @@ def approve_appointment(
     staff_profile = db.query(Staff).filter(Staff.userID == current_staff.userID).first()
     approving_staff_display = f"{staff_profile.firstname} {staff_profile.surname}" if staff_profile else "Hospital Staff"
     staff_position = staff_profile.position if staff_profile else "Staff Member"
+ 
  
     # Send approval email with staff validation info
     if patient_email:
@@ -324,7 +325,7 @@ def reschedule_appointment(
     day_of_week = parsed_date.strftime("%A")
  
     # Check for double-booking
-    active_statuses = [1, 2, 5]
+    active_statuses = [1, 5, 6]
     existing_booking = db.query(Appointment).filter(
         Appointment.patientID == appointment.patientID,
         Appointment.appointmentID != appointment_id, 
@@ -351,7 +352,7 @@ def reschedule_appointment(
  
     appointment.assignedDate = parsed_date
     appointment.assignedScheduleID = schedule_template.scheduleID
-    appointment.statusID = 5  # Rescheduled status
+    appointment.statusID = 6  # Rescheduled status
  
     appointment.actionBy_userID = current_staff.userID
     appointment.actionDate = func.now()
@@ -491,6 +492,24 @@ def staff_book_appointment(
         raise HTTPException(status_code=400, detail="Invalid date format.")
  
     day_of_week = parsed_date.strftime("%A")
+
+    # Check for double-booking
+    active_statuses = [1, 5, 6]
+    existing_booking = db.query(Appointment).filter(
+        Appointment.patientID == data.hospitalNo,
+        Appointment.appointmentID != appointment.appointmentID, 
+        Appointment.statusID.in_(active_statuses),
+        or_(
+            Appointment.assignedDate == parsed_date,
+            Appointment.preferredStartDate == parsed_date
+        )
+    ).first()
+ 
+    if existing_booking:
+        raise HTTPException(
+            status_code=400, 
+            detail="Double Booking Alert: This patient already has another active appointment on this newly selected date."
+        )
  
     schedule_template = db.query(Schedule).filter(
         Schedule.docID == data.doctor_id,
@@ -541,14 +560,13 @@ def staff_book_appointment(
             db.rollback()
             raise HTTPException(status_code=400, detail=f"Error creating patient: {str(e)}")
  
-    # Create appointment directly in APPROVED status (statusID = 2)
     appointment = Appointment(
         patientID=patient.patientID,
         docID=data.doctor_id,
         deptID=data.department_id,
         assignedScheduleID=schedule_template.scheduleID,
         assignedDate=parsed_date,
-        statusID=2,  # APPROVED - final status
+        statusID=5,  # APPROVED - final status
         purposeDetailed=data.reason,
         preferredStartDate=parsed_date,
         actionBy_userID=current_staff.userID,
