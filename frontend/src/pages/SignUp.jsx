@@ -109,18 +109,10 @@ export default function SignUp({ onCompleteSignUp }) {
       }
 
       toast.dismiss(processingToast);
-      toast.success("Account created successfully! Redirecting to complete your profile...");
-      
-      if (onCompleteSignUp) {
-        onCompleteSignUp({
-          firstname: formData.firstname.trim(),
-          middlename: formData.middlename.trim(),
-          surname: formData.surname.trim(),
-          email: formData.email.trim()
-        });
-      } else {
-        navigate('/hospital-number');
-      }
+      toast.success("Account created successfully!");
+
+      navigate('/hospital-number');
+ 
 
     } catch (error) {
       toast.dismiss(processingToast);
