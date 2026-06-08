@@ -18,7 +18,6 @@ class PatientSignUp(BaseModel):
     surname: str = Field(..., min_length=2, max_length=100)
     email: EmailStr
     password: str = Field(..., min_length=8, max_length=72)
-    confirm_password: str
 
     @model_validator(mode='after')
     def check_passwords_match(self) -> 'PatientSignUp':
