@@ -180,8 +180,7 @@ def approve_appointment(
     appointment = db.query(Appointment).filter(Appointment.appointmentID == appointment_id).first()
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found")
- 
-    # Validate date format
+    
     try:
         if "-" in data.assigned_date:
             parsed_date = datetime.strptime(data.assigned_date, "%Y-%m-%d").date()
@@ -189,76 +188,35 @@ def approve_appointment(
             parsed_date = datetime.strptime(data.assigned_date, "%m/%d/%Y").date()
     except ValueError:
         raise HTTPException(status_code=400, detail=f"Invalid date format received: {data.assigned_date}")
- 
+
     day_of_week = parsed_date.strftime("%A")
- 
-    # Check for double-booking
-    active_statuses = [1, 5, 6]  # pending, approved, rescheduled
-    existing_booking = db.query(Appointment).filter(
-        Appointment.patientID == appointment.patientID,
-        Appointment.appointmentID != appointment_id,
-        Appointment.statusID.in_(active_statuses),
-        or_(
-            Appointment.assignedDate == parsed_date,
-            Appointment.preferredStartDate == parsed_date
-        )
-    ).first()
- 
-    if existing_booking:
-        raise HTTPException(
-            status_code=400, 
-            detail="Double Booking Alert: This patient already has another active appointment on this date."
-        )
- 
-    # Verify doctor has schedule for the day
+
     schedule_template = db.query(Schedule).filter(
         Schedule.docID == data.assigned_doctor_id,
         Schedule.weekDay == day_of_week 
     ).first()
- 
+
     if not schedule_template:
         raise HTTPException(
             status_code=400, 
             detail=f"The assigned doctor (ID: {data.assigned_doctor_id}) does not have a schedule template for {day_of_week}s."
         )
- 
-    # Check slot availability with warning if last slot
-    booked_count = db.query(Appointment).filter(
-        Appointment.assignedScheduleID == schedule_template.scheduleID,
-        Appointment.assignedDate == parsed_date,
-        Appointment.statusID.in_(active_statuses)
-    ).count()
- 
-    if booked_count >= schedule_template.maxPatients - 1:
-        print(f"⚠️  WARNING: Last available slot for Dr. {schedule_template.doctor.surname} on {parsed_date}")
- 
-    # Update appointment with final status (statusID = 2 means "approved" - FINAL)
-    appointment.docID = data.assigned_doctor_id
+
     appointment.assignedScheduleID = schedule_template.scheduleID
     appointment.assignedDate = parsed_date  
-    appointment.statusID = 5
- 
-    # Track approving staff
+    appointment.statusID =  5
+
     appointment.actionBy_userID = current_staff.userID
     appointment.actionDate = func.now()
-    appointment.actionReason = "Approved and scheduled by staff"
- 
+    appointment.actionReason = "Approved schedule"
+
     db.commit()
- 
-    # Prepare email with staff information
+
     patient_first = getattr(appointment.patient, 'firstname', 'Patient')
     patient_email = appointment.patient.user_account.email if (appointment.patient and appointment.patient.user_account) else "N/A"
     doctor_full_name = f"Dr. {getattr(schedule_template.doctor, 'surname', 'Assigned Doctor')}"
     formatted_date = parsed_date.strftime("%B %d, %Y")
-    batch_time = schedule_template.startTime.strftime("%I:%M %p") if schedule_template.startTime else "To be confirmed"
-    
-    # Get approving staff full name and title
-    staff_profile = db.query(Staff).filter(Staff.userID == current_staff.userID).first()
-    approving_staff_display = f"{staff_profile.firstname} {staff_profile.surname}" if staff_profile else "Hospital Staff"
-    staff_position = staff_profile.position if staff_profile else "Staff Member"
- 
- 
-    # Send approval email with staff validation info
+
     if patient_email:
         background_tasks.add_task(
             send_patient_appointment_email, 
@@ -267,38 +225,28 @@ def approve_appointment(
             status="Approved",
             doctor_name=doctor_full_name, 
             date=formatted_date,
-            batch_time=batch_time,
-            approving_staff_name=approving_staff_display,
-            approving_staff_position=staff_position,
-            additional_notes="Your appointment is now confirmed. Please arrive 15 minutes before your batch time for hospital validation."
+            additional_notes="Please arrive 15 minutes before your batch time."
         )
     
-    # Log system activity
     db.add(SystemLogs(
         userID=current_staff.userID,
         actionType=actionTypeEnum.APPROVE,
         tableAffected="appointmentTable",
-        details=f"Approved and finalized appointment #{appointment.appointmentID} for {parsed_date} with Dr. {doctor_full_name}",
+        details=f"Approved appointment #{appointment.appointmentID} for {parsed_date} (Template: {day_of_week})",
         ipAddress=request.client.host
     ))
     
     db.commit()
- 
-    # Broadcast notification to staff
+
     notifier.broadcast_sync({
         "title": "Appointment Approved",
-        "desc": f"Appointment #{appointment.appointmentID} approved and finalized for patient {patient_first}",
+        "desc": f"Approved appointment #{appointment.appointmentID}",
         "action": "APPROVE",
         "timestamp": datetime.now().isoformat()
     })
     
-    return {
-        "message": "Appointment approved and finalized successfully.",
-        "assigned_date": str(parsed_date),
-        "approving_staff": approving_staff_display,
-        "batch_time": batch_time
-    }
- 
+    return {"message": "Appointment scheduled successfully.", "assigned_date": str(parsed_date)}
+
 @router.put("/appointments/{appointment_id}/reschedule")
 def reschedule_appointment(
     appointment_id: int,
