@@ -177,13 +177,6 @@ def approve_appointment(
     db: Session = Depends(get_db),
     current_staff: User = Depends(get_current_user) 
 ):
-    """
-    UPDATED WORKFLOW:
-    - Staff approves appointment
-    - Appointment is immediately FINALIZED (statusID = 2)
-    - NO intermediate "awaiting patient confirmation" state
-    - Patient receives email with staff name (for hospital validation)
-    """
     appointment = db.query(Appointment).filter(Appointment.appointmentID == appointment_id).first()
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found")
@@ -243,7 +236,7 @@ def approve_appointment(
     appointment.docID = data.assigned_doctor_id
     appointment.assignedScheduleID = schedule_template.scheduleID
     appointment.assignedDate = parsed_date  
-    appointment.statusID = 2  # CHANGED: Direct to final status (was 5 for intermediate approval)
+    appointment.statusID = 5
  
     # Track approving staff
     appointment.actionBy_userID = current_staff.userID
