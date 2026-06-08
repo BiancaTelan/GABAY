@@ -24,6 +24,7 @@ export default function GeneralForm({ userInfo, onConfirm }) {
   const [selectedDates, setSelectedDates] = useState([]);
   const [doctorAvailability, setDoctorAvailability] = useState({ working_days: [], fully_booked_dates: [] });
   const [mode, setMode] = useState("fill");
+  const [reasonCharCount, setReasonCharCount] = useState(0);
   const isReadOnly = mode === "confirm";
   
   const [formData, setFormData] = useState({
@@ -96,6 +97,13 @@ export default function GeneralForm({ userInfo, onConfirm }) {
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }));
+
+    if (name === 'reason') {
+    const text = value.slice(0, 150); 
+    setReasonCharCount(text.length); 
+    setFormData(prev => ({ ...prev, reason: text }));
+    return;
+  }
 
     setFormData(prev => {
       const updates = { [name]: type === 'checkbox' ? checked : value };
@@ -262,9 +270,13 @@ export default function GeneralForm({ userInfo, onConfirm }) {
 
           <div className="flex flex-col">
             <label className="text-gabay-blue font-semibold mb-1 text-lg uppercase tracking-wide">Reason for Booking</label>
+              <span className="text-xs text-gray-400 mt-1 self-end">
+                {reasonCharCount} / 150 characters
+              </span>
             <textarea 
               name="reason"
               rows="4"
+              maxLength={150}
               value={formData.reason}
               onChange={handleInputChange}
               readOnly={isReadOnly}

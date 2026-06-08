@@ -146,10 +146,13 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
   };
 
   const handleReasonChange = (e) => {
-    const text = e.target.value.slice(0, MAX_REASON_CHARS);
-    setReason(text);
-    setReasonCharCount(text.length);
-  };
+  const text = e.target.value.slice(0, MAX_REASON_CHARS);
+  
+  setFormData(prev => ({ ...prev, reason: text }));
+  setReasonCharCount(text.length);
+  
+  if (errors.reason) setErrors(prev => ({ ...prev, reason: "" }));
+};
 
   const handleConfirmSubmit = () => {
 
@@ -312,10 +315,11 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
             <textarea 
               name="reason"
               rows="4"
+              maxLength={MAX_REASON_CHARS} 
               value={formData.reason}
               onChange={handleReasonChange}
               readOnly={isReadOnly}
-              className={`p-3 text-base rounded-md border outline-none resize-none transition-all ${isReadOnly ? 'bg-gray-100 border-gray-300 text-gray-500 cursor-default' : errors.reason ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 focus:ring-1 focus:ring-gabay-teal'}`}
+              className={`p-3 text-base rounded-md border outline-none resize-none transition-all ...`}
               placeholder="Briefly explain the condition requiring a specialist..."
             />
             {errors.reason && <p className="text-red-500 text-[11px] mt-1 font-medium uppercase">{errors.reason}</p>}
