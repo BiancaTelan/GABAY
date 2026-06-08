@@ -81,6 +81,7 @@ def get_patient_profile(email: str, db: Session = Depends(get_db)):
 
     return {
         "firstname": patient.firstname,
+        "middlename": patient.middlename or "",
         "surname": patient.surname,
         "email": user.email,
         "is_verified": user.is_verified,

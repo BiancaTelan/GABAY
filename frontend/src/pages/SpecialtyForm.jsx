@@ -27,8 +27,12 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
   const [referralImage, setReferralImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [mode, setMode] = useState("fill");
+  const [reasonCharCount, setReasonCharCount] = useState(0);
   const isReadOnly = mode === "confirm";
   
+  const MAX_REASON_CHARS = 150;   
+  const MIN_REASON_CHARS = 0;
+
   const [formData, setFormData] = useState({
     firstname: userInfo?.firstname || "",
     surname: userInfo?.surname|| "",
@@ -139,6 +143,12 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleReasonChange = (e) => {
+    const text = e.target.value.slice(0, MAX_REASON_CHARS);
+    setReason(text);
+    setReasonCharCount(text.length);
   };
 
   const handleConfirmSubmit = () => {
@@ -298,11 +308,12 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
 
           <div className="flex flex-col">
             <label className="text-gabay-blue font-semibold mb-1 text-lg uppercase tracking-wide">Reason for Specialty Consultation</label>
+              <span className="font-poppins text-xs text-gray-400">{reasonCharCount} / {MAX_REASON_CHARS}</span>
             <textarea 
               name="reason"
               rows="4"
               value={formData.reason}
-              onChange={handleInputChange}
+              onChange={handleReasonChange}
               readOnly={isReadOnly}
               className={`p-3 text-base rounded-md border outline-none resize-none transition-all ${isReadOnly ? 'bg-gray-100 border-gray-300 text-gray-500 cursor-default' : errors.reason ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 focus:ring-1 focus:ring-gabay-teal'}`}
               placeholder="Briefly explain the condition requiring a specialist..."
