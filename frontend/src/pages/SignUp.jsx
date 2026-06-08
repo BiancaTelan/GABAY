@@ -103,17 +103,14 @@ export default function SignUp({ onCompleteSignUp }) {
           firstname: formData.firstname.trim(),
           middlename: formData.middlename.trim(),
           surname: formData.surname.trim(),
-          role: data.role || 'patient'
+          role: data.role || 'Patient'
         };
-        
-        // This will store the token and update auth state
         login(data.access_token, userInfo);
       }
 
       toast.dismiss(processingToast);
       toast.success("Account created successfully! Redirecting to complete your profile...");
       
-      // Navigate to hospital number registration
       if (onCompleteSignUp) {
         onCompleteSignUp({
           firstname: formData.firstname.trim(),
