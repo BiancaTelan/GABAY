@@ -81,7 +81,8 @@ export default function SignUp() {
           middlename: formData.middlename.trim(), // NEW: Passing it to the backend
           surname: formData.surname.trim(),
           email: formData.email.trim(),
-          password: formData.password
+          password: formData.password,
+          confirm_password: formData.confirmPassword
         };
 
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/signup`, {
