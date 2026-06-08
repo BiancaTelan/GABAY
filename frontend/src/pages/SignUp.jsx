@@ -103,7 +103,7 @@ export default function SignUp({ onCompleteSignUp }) {
           firstname: formData.firstname.trim(),
           middlename: formData.middlename.trim(),
           surname: formData.surname.trim(),
-          role: data.role || 'Patient'
+          role: data.role || 'patient'
         };
         login(data.access_token, userInfo);
       }
