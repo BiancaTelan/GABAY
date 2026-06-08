@@ -15,7 +15,7 @@ export default function SignUp() {
     
     const [formData, setFormData] = useState({
       firstname: '',
-      middlename: '', // NEW: Added middle name state
+      middlename: '', 
       surname: '',
       email: '',
       password: '',
@@ -36,7 +36,6 @@ export default function SignUp() {
         newErrors.firstname = "Please use only alphabetic characters.";
       }
 
-      // NEW: Middle name validation (optional, but must be alphabetic if provided)
       if (formData.middlename.trim() && !namePattern.test(formData.middlename)) {
         newErrors.middlename = "Please use only alphabetic characters.";
       }
@@ -78,7 +77,7 @@ export default function SignUp() {
       try {
         const payload = {
           firstname: formData.firstname.trim(),
-          middlename: formData.middlename.trim(), // NEW: Passing it to the backend
+          middlename: formData.middlename.trim(), 
           surname: formData.surname.trim(),
           email: formData.email.trim(),
           password: formData.password
