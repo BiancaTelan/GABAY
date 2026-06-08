@@ -36,6 +36,7 @@ export default function SignUp() {
         newErrors.firstname = "Please use only alphabetic characters.";
       }
 
+      // NEW: Middle name validation (optional, but must be alphabetic if provided)
       if (formData.middlename.trim() && !namePattern.test(formData.middlename)) {
         newErrors.middlename = "Please use only alphabetic characters.";
       }
@@ -77,7 +78,7 @@ export default function SignUp() {
       try {
         const payload = {
           firstname: formData.firstname.trim(),
-          middlename: formData.middlename.trim(), 
+          middlename: formData.middlename.trim(), // NEW: Passing it to the backend
           surname: formData.surname.trim(),
           email: formData.email.trim(),
           password: formData.password
