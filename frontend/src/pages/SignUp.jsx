@@ -9,7 +9,7 @@ import { emailPattern, namePattern } from '../utils/constants';
 import LegalModal from '../components/legalModal';
 import toast from 'react-hot-toast';
 
-export default function SignUp() {
+export default function SignUp({ onCompleteSignUp }) {
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
 
@@ -99,7 +99,16 @@ export default function SignUp() {
 
       toast.dismiss(processingToast);
       toast.success("Account successfully created!");
-      navigate('/login');
+      if (onCompleteSignUp) {
+        onCompleteSignUp({
+          firstname: formData.firstname.trim(),
+          middlename: formData.middlename.trim(),
+          surname: formData.surname.trim(),
+          email: formData.email.trim()
+        });
+      } else {
+        navigate('/login');
+      }
 
     } catch (error) {
       toast.dismiss(processingToast);
@@ -129,7 +138,7 @@ export default function SignUp() {
           <h3 className="font-montserrat text-3xl font-bold text-gabay-blue text-center mb-2">Sign Up</h3>
           <p className="font-poppins text-gray-500 text-center text-sm mb-8">Accomplish the form below to create an account</p>
 
-          <form onSubmit={handleCompleteSignUp} className="space-y-4" noValidate>
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
 
             {/* Name Fields Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
