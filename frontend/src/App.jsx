@@ -33,7 +33,7 @@ const PatientRoute = () => {
   const location = useLocation();
   const isLoggedIn = !!token;
   
-  if (!isLoggedIn || (userRole !== 'patient')) {
+  if (!isLoggedIn || (userRole !== 'Patient')) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   return <Outlet />; 
