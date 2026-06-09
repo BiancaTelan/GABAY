@@ -478,6 +478,9 @@ def staff_book_appointment(
     
     db.commit()
 
+    staff_profile = db.query(Staff).filter(Staff.userID == current_staff.userID).first()
+    approving_staff_name = f"{staff_profile.firstname} {staff_profile.surname}" if staff_profile else "Hospital Staff"
+
     if data.email:
         background_tasks.add_task(
             send_patient_appointment_email, 
@@ -486,7 +489,7 @@ def staff_book_appointment(
             status="Approved", 
             doctor_name=f"Dr. {schedule_template.doctor.surname}", 
             date=parsed_date.strftime("%B %d, %Y"),
-            approving_staff_name=f"{current_staff.firstname} {current_staff.surname}",
+            approving_staff_name=approving_staff_name,
             additional_notes="This was booked by hospital staff. Please arrive 15 minutes before your batch time."
         )
     
