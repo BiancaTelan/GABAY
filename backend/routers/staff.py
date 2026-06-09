@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, File, UploadFile, Query, BackgroundTasks
 from sqlalchemy.orm import Session
-from sqlalchemy import func, extract, cast, String
+from sqlalchemy import func, extract, cast, String, or_
 from db_connection import get_db
 from db_model import Appointment, Department, Schedule, Staff, SystemLogs, actionTypeEnum, User, Patient, Doctor, DailyQueue, queueStatusEnum, AppointmentStatus, weekDayEnum
 from security import get_current_user, verify_token
@@ -433,7 +433,6 @@ def staff_book_appointment(
         patient = Patient(
             hospital_num=data.hospital_num,
             firstname=data.firstname,
-            middlename=data.middlename,
             surname=data.surname,
             email=data.email,
             contactNo=data.contactNo,
@@ -441,6 +440,22 @@ def staff_book_appointment(
         )
         db.add(patient)
         db.flush()
+    
+    active_statuses = [1, 2, 5, 6, 7]
+    existing_booking = db.query(Appointment).filter(
+        Appointment.patientID == patient.patientID,
+        Appointment.statusID.in_(active_statuses),
+        or_(
+            Appointment.assignedDate == parsed_date,
+            Appointment.preferredStartDate == parsed_date
+        )
+    ).first()
+
+    if existing_booking:
+        raise HTTPException(
+            status_code=400, 
+            detail="Double Booking Alert: This patient already has an active appointment or pending request scheduled for this date."
+        )
 
     new_appointment = Appointment(
         patientID=patient.patientID,
@@ -467,6 +482,13 @@ def staff_book_appointment(
     
     db.commit()
 
+    approving_staff_name = ""
+    if new_appointment.actionBy_userID:
+        approving_staff = db.query(Staff).filter(Staff.userID == new_appointment.actionBy_userID).first()
+        if approving_staff:
+            approving_staff_name = f"{approving_staff.firstname} {approving_staff.surname}"
+
+
     if data.email:
         background_tasks.add_task(
             send_patient_appointment_email, 
@@ -475,7 +497,8 @@ def staff_book_appointment(
             status="Approved", 
             doctor_name=f"Dr. {schedule_template.doctor.surname}", 
             date=parsed_date.strftime("%B %d, %Y"),
-            additional_notes="This appointment was booked on your behalf by hospital staff."
+            approving_staff_name=approving_staff_name,
+            additional_notes="This appointment was booked by a hospital staff. Please arrive 15 minutes before your batch time."
         )
 
     return {"message": "Appointment successfully booked."}
