@@ -40,7 +40,10 @@ class ProfileUpdate(BaseModel):
     contactNumber: str
     dob: str
     gender: str
-    address: str = ""
+    street: str = ""
+    barangay: str = ""
+    city: str = ""
+    province: str = ""
 
 class EmailChangeRequest(BaseModel):
     current_password: str
@@ -571,12 +574,13 @@ def get_staff_profile(current_user: User = Depends(get_current_user)):
         if not prof:
             return {
                 "email": current_user.email, "role": user_role,
-                "firstname": "System", "surname": "Staff", "mi": "", "suffix": "",
+                "firstname": "System", "middlename": "", "surname": "Staff", "mi": "", "suffix": "",
                 "contactNumber": "", "dob": "", "gender": "Male", "address": "", "profilePhoto": None
             }
 
         fname = getattr(prof, 'firstname', "System")
         lname = getattr(prof, 'surname', "Staff")
+        middlename = getattr(prof, 'middlename', "")
         mi = getattr(prof, 'mi', "")
         suffix = getattr(prof, 'suffix', "")
         contact = getattr(prof, 'contactNumber', "")
@@ -600,6 +604,7 @@ def get_staff_profile(current_user: User = Depends(get_current_user)):
             "email": current_user.email,
             "role": user_role,
             "firstname": fname or "System",
+            "middlename": middlename or "",
             "surname": lname or "Staff",
             "mi": mi or "",
             "suffix": suffix or "",
@@ -630,18 +635,19 @@ def update_staff_profile(
     
     prof.firstname = data.firstname
     prof.surname = data.surname
+    prof.middlename = data.middlename
     prof.mi = data.mi
     prof.suffix = data.suffix
     prof.contactNumber = data.contactNumber
     prof.gender = data.gender
-    prof.address = data.address
+    prof.address = f'{data.street} | {data.barangay} | {data.city} | {data.province}'
     
     try:
         if data.dob:
             parsed_date = datetime.strptime(data.dob, "%m/%d/%Y").date()
-            if hasattr(prof, 'birthdate'): prof.birthdate = parsed_date
-            elif hasattr(prof, 'birthDate'): prof.birthDate = parsed_date
-            elif hasattr(prof, 'birthday'): prof.birthday = parsed_date
+            if hasattr(prof, 'birthdate'): prof.dob = parsed_date
+            elif hasattr(prof, 'birthDate'): prof.dob = parsed_date
+            elif hasattr(prof, 'birthday'): prof.dob = parsed_date
             else: prof.dob = parsed_date
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format.")
