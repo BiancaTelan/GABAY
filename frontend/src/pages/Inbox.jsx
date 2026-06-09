@@ -57,7 +57,7 @@ export default function Inbox() {
               title = 'Upcoming Appointment';
               displayStatus = 'APPROVED';
               message = 'Your schedule has been approved! Please attend your appointment on the specified date.';
-              colorTheme = 'orange'; 
+              colorTheme = 'green'; 
             } else if (statusLower.includes('rescheduled')) {
               title = 'Appointment Rescheduled';
               displayStatus = 'RESCHEDULED';
