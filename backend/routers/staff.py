@@ -418,9 +418,14 @@ def staff_book_appointment(
 
     day_of_week = parsed_date.strftime("%A")
 
+    try:
+        day_enum = weekDayEnum[day_of_week]  # 
+    except KeyError:
+        raise HTTPException(status_code=400, detail=f"Invalid day: {day_of_week}")
+
     schedule_template = db.query(Schedule).filter(
         Schedule.docID == data.doctor_id,
-        Schedule.weekDay == day_of_week 
+        Schedule.weekDay == day_enum
     ).first()
 
     if not schedule_template:
