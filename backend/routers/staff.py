@@ -54,6 +54,7 @@ class AppointmentApproveRequest(BaseModel):
     assigned_date: str
     assigned_doctor_id: Optional[int] = None # Include this if your modal lets them assign doctors
     batch: Optional[str] = None
+    approving_staff_name: str = ""
 
 class StaffBookRequest(BaseModel):
     hospitalNo: str
@@ -213,6 +214,13 @@ def approve_appointment(
     patient_email = appointment.patient.user_account.email if (appointment.patient and appointment.patient.user_account) else "N/A"
     doctor_full_name = f"Dr. {getattr(schedule_template.doctor, 'surname', 'Assigned Doctor')}"
     formatted_date = parsed_date.strftime("%B %d, %Y")
+    approving_staff_name = ""
+    if appointment.actionBy_userID:
+        approving_staff = db.query(Staff).filter(Staff.userID == appointment.actionBy_userID).first()
+        if approving_staff:
+            approving_staff_name = f"{approving_staff.firstname} {approving_staff.surname}"
+
+
 
     if patient_email:
         background_tasks.add_task(
@@ -222,6 +230,7 @@ def approve_appointment(
             status="Approved",
             doctor_name=doctor_full_name, 
             date=formatted_date,
+            approving_staff_name=approving_staff_name,
             additional_notes="Please arrive 15 minutes before your batch time."
         )
     
@@ -310,6 +319,7 @@ def reschedule_appointment(
             status="Rescheduled", 
             doctor_name=f"Dr. {schedule_template.doctor.surname}", 
             date=parsed_date.strftime("%B %d, %Y"),
+            approving_staff_name=f"{current_staff.staff_profile[0].firstname} {current_staff.staff_profile[0].surname}" if current_staff.staff_profile else "Hospital Staff",
             additional_notes=f"Reason for schedule change: {data.reason}"
         )
 
@@ -470,7 +480,8 @@ def staff_book_appointment(
             status="Approved", 
             doctor_name=f"Dr. {schedule_template.doctor.surname}", 
             date=parsed_date.strftime("%B %d, %Y"),
-            additional_notes="This appointment was booked on your behalf by hospital staff."
+            approving_staff_name=f"{current_staff.firstname} {current_staff.surname}",
+            additional_notes="This was booked by hospital staff. Please arrive 15 minutes before your batch time."
         )
 
     return {"message": "Appointment successfully booked."}
