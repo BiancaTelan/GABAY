@@ -428,7 +428,7 @@ def staff_book_appointment(
     if not department_record:
         raise HTTPException(status_code=400, detail="Department not found in database.")
 
-    patient = db.query(Patient).filter(Patient.hospital_num == data.hospitalNo).first()
+    patient = db.query(Patient).filter(Patient.hospital_num == data.hospital_num).first()
     if not patient:
         patient = Patient(
             hospital_num=data.hospital_num,
@@ -462,7 +462,7 @@ def staff_book_appointment(
         userID=current_staff.userID,
         actionType=actionTypeEnum.BOOK,
         tableAffected="appointmentTable",
-        details=f"Staff booked appointment for Patient {data.hospitalNo} on {parsed_date}"
+        details=f"Staff booked appointment for Patient {data.hospital_num} on {parsed_date}"
     ))
     
     db.commit()
