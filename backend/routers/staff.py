@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, File, UploadFile, Query, BackgroundTasks
 from sqlalchemy.orm import Session
-from sqlalchemy import func, extract, cast, String, or_
+from sqlalchemy import func, extract, cast, String
 from db_connection import get_db
 from db_model import Appointment, Department, Schedule, Staff, SystemLogs, actionTypeEnum, User, Patient, Doctor, DailyQueue, queueStatusEnum, AppointmentStatus
 from security import get_current_user, verify_token
@@ -18,42 +18,43 @@ import uuid
 import cloudinary
 import cloudinary.uploader
 import os
- 
+
 router = APIRouter(prefix="/staff", tags=["Staff"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
- 
+
 cloudinary.config(
     cloud_name=os.getenv("CLOUD_NAME"),
     api_key=os.getenv("API_KEY"),
     api_secret=os.getenv("API_SECRET")
 )
- 
+
 # ---------------------------------------------------------
 # Pydantic Models
 # ---------------------------------------------------------
 class ProfileUpdate(BaseModel):
     firstname: str
     surname: str
+    middlename: Optional[str] = ""
     mi: str = ""
     suffix: str = ""
     contactNumber: str
     dob: str
     gender: str
     address: str = ""
- 
+
 class EmailChangeRequest(BaseModel):
     current_password: str
     new_email: str
- 
+
 class PasswordChangeRequest(BaseModel):
     current_password: str
     new_password: str
- 
+
 class AppointmentApproveRequest(BaseModel):
     assigned_date: str
-    assigned_doctor_id: Optional[int] = None
+    assigned_doctor_id: Optional[int] = None # Include this if your modal lets them assign doctors
     batch: Optional[str] = None
- 
+
 class StaffBookRequest(BaseModel):
     hospitalNo: str
     firstName: str
@@ -61,59 +62,61 @@ class StaffBookRequest(BaseModel):
     lastName: str
     email: str
     contactNo: str
-    street: Optional[str] = ""
-    barangay: Optional[str] = ""
-    city: Optional[str] = ""
-    province: Optional[str] = ""
+    city: str
+    province: str
+    street: str
+    barangay: str
     department_id: int
     doctor_id: int  
     date: str      
     reason: str
- 
+
 class RescheduleRequest(BaseModel):
     new_date: str
     batch: str
     reason: str
- 
+
 class AppointmentDenyRequest(BaseModel):
     reason: str
- 
+
 class StatusUpdateRequest(BaseModel):
     availability: str
- 
+
 class ScheduleUpdateRequest(BaseModel):
     schedule: str  
     timePeriod: str
- 
+
 # ---------------------------------------------------------
 # 1. STAFF ACTION: APPOINTMENT MANAGEMENT 
 # ---------------------------------------------------------
- 
 @router.get("/appointments")
 def get_staff_appointments(db: Session = Depends(get_db), current_staff: User = Depends(get_current_user)):
-    """
-    UPDATED: Fetch ALL hospital appointments (all departments)
-    Previously: Only showed assigned department appointments
-    """
+    staff_profile = db.query(Staff).filter(Staff.userID == current_staff.userID).first()
+    
+    if not staff_profile or not staff_profile.departments:
+        return []
+    
+    dept_ids = [d.deptID for d in staff_profile.departments]
+
     try:
-        # Get all appointments from ALL departments (removed department filtering)
         appointments = (
             db.query(Appointment)
+            .filter(Appointment.deptID.in_(dept_ids))
             .order_by(Appointment.createdAt.desc())
             .all()
         )
- 
-        # Updated status mapping with simplified workflow
+
         status_mapping = {
-            1: 'pending',
-            5: 'approved',      # CHANGED: Was "confirmed" (intermediate), now final
+            1: 'pending', 
             3: 'canceled',
             4: 'denied',   
-            6: 'rescheduled',    # CHANGED: Status IDs shifted
-            7: 'no show',        # CHANGED: Status IDs shifted
-            8: 'completed'       # CHANGED: Status IDs shifted
+            5: 'approved',   
+            6: 'rescheduled',
+            7: 'book',
+            8: 'no show',
+            9: 'completed'
         }
- 
+
         results = []
         for appt in appointments:
             patient_name = f"{getattr(appt.patient, 'firstname', '')} {getattr(appt.patient, 'surname', '')}".strip() if appt.patient else "Unknown Patient"
@@ -123,11 +126,8 @@ def get_staff_appointments(db: Session = Depends(get_db), current_staff: User = 
             req_start = appt.preferredStartDate.strftime("%m/%d/%Y") if appt.preferredStartDate else ""
             req_end = appt.preferredEndDate.strftime("%m/%d/%Y") if appt.preferredEndDate else req_start
             reason = appt.purposeDetailed if appt.purposeDetailed else "Consultation"
-            
-            # Get department name for display
-            department_name = appt.department.department if appt.department else "Unknown Department"
             raw_status = status_mapping.get(appt.statusID, 'pending')
- 
+
             appt_date = "Not set"
             if getattr(appt, 'assignedDate', None):
                 appt_date = appt.assignedDate.strftime("%m/%d/%Y")
@@ -136,18 +136,11 @@ def get_staff_appointments(db: Session = Depends(get_db), current_staff: User = 
             if appt.assignedSchedule and hasattr(appt.assignedSchedule, 'startTime'):
                 batch_time = appt.assignedSchedule.startTime.strftime("%I:%M %p")
             
-            # Get approving staff name if available
-            approving_staff_name = ""
-            if appt.action_by_user:
-                approving_staff = db.query(Staff).filter(Staff.userID == appt.action_by_user.userID).first()
-                if approving_staff:
-                    approving_staff_name = f"{approving_staff.firstname} {approving_staff.surname}"
- 
+
             results.append({
                 "id": appt.appointmentID,
                 "name": patient_name,
                 "hospitalNo": hospitalNo,
-                "department": department_name,
                 "reason": reason,                     
                 "requestedStartDate": req_start,      
                 "requestedEndDate": req_end,          
@@ -158,16 +151,15 @@ def get_staff_appointments(db: Session = Depends(get_db), current_staff: User = 
                 "assignedDoctor": doctor_name,
                 "docID": appt.docID,
                 "email": patient_email,
-                "approvingStaffName": approving_staff_name,
                 "attachedFile": appt.referral_doc if hasattr(appt, 'referral_doc') else None
             })
- 
+
         return results
- 
+
     except Exception as e:
         print(f"Error fetching appointments: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch appointments")
- 
+
 @router.put("/appointments/{appointment_id}/approve")
 def approve_appointment(
     appointment_id: int, 
@@ -180,7 +172,7 @@ def approve_appointment(
     appointment = db.query(Appointment).filter(Appointment.appointmentID == appointment_id).first()
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found")
-    
+
     try:
         if "-" in data.assigned_date:
             parsed_date = datetime.strptime(data.assigned_date, "%Y-%m-%d").date()
@@ -255,13 +247,10 @@ def reschedule_appointment(
     db: Session = Depends(get_db),
     current_staff: User = Depends(get_current_user)
 ):
-    """
-    Reschedule an already approved appointment
-    """
     appointment = db.query(Appointment).filter(Appointment.appointmentID == appointment_id).first()
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found")
- 
+
     try:
         if "-" in data.new_date:
             parsed_date = datetime.strptime(data.new_date, "%Y-%m-%d").date()
@@ -269,63 +258,45 @@ def reschedule_appointment(
             parsed_date = datetime.strptime(data.new_date, "%m/%d/%Y").date()
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format.")
- 
+
     day_of_week = parsed_date.strftime("%A")
- 
-    # Check for double-booking
-    active_statuses = [1, 5, 6]
-    existing_booking = db.query(Appointment).filter(
-        Appointment.patientID == appointment.patientID,
-        Appointment.appointmentID != appointment_id, 
-        Appointment.statusID.in_(active_statuses),
-        or_(
-            Appointment.assignedDate == parsed_date,
-            Appointment.preferredStartDate == parsed_date
-        )
-    ).first()
- 
-    if existing_booking:
-        raise HTTPException(
-            status_code=400, 
-            detail="Double Booking Alert: This patient already has another active appointment on this newly selected date."
-        )
- 
+
     schedule_template = db.query(Schedule).filter(
         Schedule.docID == appointment.docID,
         Schedule.weekDay == day_of_week
     ).first()
- 
+
     if not schedule_template:
         raise HTTPException(status_code=400, detail="Doctor is not available on this newly selected date.")
- 
+
     appointment.assignedDate = parsed_date
     appointment.assignedScheduleID = schedule_template.scheduleID
-    appointment.statusID = 6  # Rescheduled status
- 
+    appointment.statusID = 6 
+
     appointment.actionBy_userID = current_staff.userID
     appointment.actionDate = func.now()
     appointment.actionReason = f"Rescheduled: {data.reason}"
- 
+
     db.add(SystemLogs(
         userID=current_staff.userID,
         actionType=actionTypeEnum.UPDATE, 
         tableAffected="appointmentTable",
         details=f"Staff rescheduled appointment {appointment_id} to {parsed_date}. Reason: {data.reason}"
     ))
- 
+
     db.commit()
- 
+
     notifier.broadcast_sync({
         "title": "Appointment Rescheduled",
         "desc": f"Rescheduled appointment #{appointment.appointmentID}",
         "action": "UPDATE",
         "timestamp": datetime.now().isoformat()
     })
- 
+
     patient_email = None
     if appointment.patient and appointment.patient.user_account:
         patient_email = appointment.patient.user_account.email 
- 
+
     if patient_email:
         background_tasks.add_task(
             send_patient_appointment_email, 
@@ -334,12 +305,11 @@ def reschedule_appointment(
             status="Rescheduled", 
             doctor_name=f"Dr. {schedule_template.doctor.surname}", 
             date=parsed_date.strftime("%B %d, %Y"),
-            batch_time=schedule_template.startTime.strftime("%I:%M %p") if schedule_template.startTime else "To be confirmed",
-            additional_notes=f"Your appointment has been rescheduled. Reason: {data.reason}. Please arrive 15 minutes early."
+            additional_notes=f"Reason for schedule change: {data.reason}"
         )
- 
+
     return {"message": "Appointment successfully rescheduled."}
- 
+
 @router.put("/appointments/{appointment_id}/deny")
 def deny_appointment(
     appointment_id: int, 
@@ -349,19 +319,16 @@ def deny_appointment(
     db: Session = Depends(get_db),
     current_staff: User = Depends(get_current_user)
 ):
-    """
-    Deny an appointment request with reason
-    """
     appointment = db.query(Appointment).filter(Appointment.appointmentID == appointment_id).first()
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found")
     
-    appointment.statusID = 4  # Denied status
- 
+    appointment.statusID = 4 
+
     appointment.actionBy_userID = current_staff.userID
     appointment.actionDate = func.now()
     appointment.actionReason = f"Denied: {data.reason}"
- 
+
     new_log = SystemLogs(
         userID=current_staff.userID,
         actionType=actionTypeEnum.DENY,
@@ -371,18 +338,18 @@ def deny_appointment(
     )
     db.add(new_log)
     db.commit()
- 
+
     notifier.broadcast_sync({
         "title": "Appointment Denied",
         "desc": f"Denied appointment #{appointment.appointmentID}",
         "action": "DENY",
         "timestamp": datetime.now().isoformat()
     })
- 
+
     patient_email = None
     if appointment.patient and appointment.patient.user_account:
         patient_email = appointment.patient.user_account.email 
- 
+
     if patient_email:
         background_tasks.add_task(
             send_patient_appointment_email,
@@ -391,11 +358,11 @@ def deny_appointment(
             status="Denied",
             doctor_name="Hospital Staff", 
             date="N/A",
-            additional_notes=f"Your appointment request was not approved. Reason: {data.reason}. You may contact the hospital for more information."
+            additional_notes=f"Your appointment request was not approved. Reason: {data.reason}"
         )
     
     return {"message": "Appointment denied and patient notified."}
- 
+
 @router.get("/appointments/patient-lookup/{hospital_no}")
 def lookup_patient(hospital_no: str, db: Session = Depends(get_db)):
     """
@@ -427,10 +394,7 @@ def staff_book_appointment(
     db: Session = Depends(get_db),
     current_staff: User = Depends(get_current_user)
 ):
-    """
-    Staff proxy booking for walk-in patients
-    Directly creates approved appointment (no pending state)
-    """
+    
     try:
         if "-" in data.date:
             parsed_date = datetime.strptime(data.date, "%Y-%m-%d").date()
@@ -438,134 +402,73 @@ def staff_book_appointment(
             parsed_date = datetime.strptime(data.date, "%m/%d/%Y").date()
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format.")
- 
+
     day_of_week = parsed_date.strftime("%A")
 
-    # Check for double-booking
-    active_statuses = [1, 5, 6]
-    existing_booking = db.query(Appointment).filter(
-        Appointment.patientID == data.hospitalNo,
-        Appointment.appointmentID != appointment.appointmentID, 
-        Appointment.statusID.in_(active_statuses),
-        or_(
-            Appointment.assignedDate == parsed_date,
-            Appointment.preferredStartDate == parsed_date
-        )
-    ).first()
- 
-    if existing_booking:
-        raise HTTPException(
-            status_code=400, 
-            detail="Double Booking Alert: This patient already has another active appointment on this newly selected date."
-        )
- 
     schedule_template = db.query(Schedule).filter(
         Schedule.docID == data.doctor_id,
         Schedule.weekDay == day_of_week 
     ).first()
- 
+
     if not schedule_template:
         raise HTTPException(status_code=400, detail="Doctor is not available on this date.")
- 
+
     department_record = db.query(Department).filter(Department.deptID == data.department_id).first()
     
     if not department_record:
-        raise HTTPException(status_code=400, detail="Department not found.")
- 
-    # Build address
-    address_parts = [data.street, data.barangay, data.city, data.province]
-    full_address = " | ".join([p for p in address_parts if p])
- 
-    # Find or create patient
+        raise HTTPException(status_code=400, detail="Department not found in database.")
+
     patient = db.query(Patient).filter(Patient.hospital_num == data.hospitalNo).first()
-    
     if not patient:
-        # Create new patient if doesn't exist
-        try:
-            user = db.query(User).filter(User.email == data.email).first()
-            if not user:
-                user = User(
-                    email=data.email,
-                    passwordHash="",
-                    role="Patient",
-                    is_verified=True
-                )
-                db.add(user)
-                db.flush()
- 
-            patient = Patient(
-                userID=user.userID,
-                firstname=data.firstName,
-                middlename=data.middlename,
-                surname=data.lastName,
-                hospital_num=data.hospitalNo,
-                contactNumber=data.contactNo,
-                address=full_address
-            )
-            db.add(patient)
-            db.flush()
-        except Exception as e:
-            db.rollback()
-            raise HTTPException(status_code=400, detail=f"Error creating patient: {str(e)}")
- 
-    appointment = Appointment(
+        patient = Patient(
+            hospital_num=data.hospitalNo,
+            firstname=data.firstName,
+            middlename=data.middlename,
+            surname=data.lastName,
+            email=data.email,
+            contactNo=data.contactNo,
+            address= f"{data.street} | {data.barangay} | {data.city} | {data.province}"
+        )
+        db.add(patient)
+        db.flush()
+
+    new_appointment = Appointment(
         patientID=patient.patientID,
         docID=data.doctor_id,
         deptID=data.department_id,
-        assignedScheduleID=schedule_template.scheduleID,
-        assignedDate=parsed_date,
-        statusID=5,  # APPROVED - final status
         purposeDetailed=data.reason,
-        preferredStartDate=parsed_date,
+        statusID=5, 
+        assignedDate=parsed_date,
+        assignedScheduleID=schedule_template.scheduleID,
+        preferredStartDate=parsed_date, 
+        preferredEndDate=parsed_date,
         actionBy_userID=current_staff.userID,
         actionDate=func.now(),
-        actionReason="Walk-in appointment booked by staff"
+        actionReason="Booked by Staff"
     )
+    db.add(new_appointment)
     
-    db.add(appointment)
-    db.flush()
- 
     db.add(SystemLogs(
         userID=current_staff.userID,
         actionType=actionTypeEnum.BOOK,
         tableAffected="appointmentTable",
-        details=f"Staff booked walk-in appointment #{appointment.appointmentID} for patient {data.firstName} {data.lastName}",
-        ipAddress=""
+        details=f"Staff booked appointment for Patient {data.hospitalNo} on {parsed_date}"
     ))
- 
+    
     db.commit()
- 
-    # Send confirmation email
-    staff_profile = db.query(Staff).filter(Staff.userID == current_staff.userID).first()
-    approving_staff_display = f"{staff_profile.firstname} {staff_profile.surname}" if staff_profile else "Hospital Staff"
-    staff_position = staff_profile.position if staff_profile else "Staff Member"
- 
+
     if data.email:
         background_tasks.add_task(
-            send_patient_appointment_email,
-            recipient_email=data.email,
+            send_patient_appointment_email, 
+            recipient_email=data.email,     
             name=data.firstName,
-            status="Approved",
-            doctor_name=f"Dr. {db.query(Doctor).filter(Doctor.docID == data.doctor_id).first().surname}",
+            status="Approved", 
+            doctor_name=f"Dr. {schedule_template.doctor.surname}", 
             date=parsed_date.strftime("%B %d, %Y"),
-            batch_time=schedule_template.startTime.strftime("%I:%M %p") if schedule_template.startTime else "To be confirmed",
-            approving_staff_name=approving_staff_display,
-            approving_staff_position=staff_position,
-            additional_notes="This is a walk-in appointment booked by hospital staff. Please arrive 15 minutes early for validation."
+            additional_notes="This appointment was booked on your behalf by hospital staff."
         )
- 
-    notifier.broadcast_sync({
-        "title": "Walk-In Appointment Booked",
-        "desc": f"Staff booked appointment for {data.firstName} {data.lastName}",
-        "action": "BOOK",
-        "timestamp": datetime.now().isoformat()
-    })
- 
-    return {
-        "message": "Walk-in appointment successfully booked",
-        "appointmentID": appointment.appointmentID,
-        "status": "approved"
-    }
+
+    return {"message": "Appointment successfully booked."}
 
 @router.post("/appointments/{appointment_id}/notify")
 def notify_patient_reminder(
