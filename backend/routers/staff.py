@@ -386,9 +386,9 @@ def lookup_patient(hospital_no: str, db: Session = Depends(get_db)):
     addr_parts = (patient.address or "").split(" | ")
     
     return {
-        "firstName": patient.firstname,
-        "middleName": patient.middlename or "",
-        "lastName": patient.surname,
+        "firstname": patient.firstname,
+        "middlename": patient.middlename or "",
+        "surname": patient.surname,
         "email": patient.user_account.email if patient.user_account else "",
         "contactNo": patient.contactNumber or "",
         "street": addr_parts[0] if len(addr_parts) > 0 else "",
