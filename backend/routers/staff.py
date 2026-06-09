@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, File, UploadFile
 from sqlalchemy.orm import Session
 from sqlalchemy import func, extract, cast, String
 from db_connection import get_db
-from db_model import Appointment, Department, Schedule, Staff, SystemLogs, actionTypeEnum, User, Patient, Doctor, DailyQueue, queueStatusEnum, AppointmentStatus
+from db_model import Appointment, Department, Schedule, Staff, SystemLogs, actionTypeEnum, User, Patient, Doctor, DailyQueue, queueStatusEnum, AppointmentStatus, weekDayEnum
 from security import get_current_user, verify_token
 from pydantic import BaseModel
 from passlib.context import CryptContext
@@ -414,6 +414,7 @@ def staff_book_appointment(
         raise HTTPException(status_code=400, detail="Invalid date format.")
 
     day_of_week = parsed_date.strftime("%A")
+    day_enum = weekDayEnum[day_of_week]
 
     schedule_template = db.query(Schedule).filter(
         Schedule.docID == data.doctor_id,
@@ -495,7 +496,7 @@ def staff_book_appointment(
     
     notifier.broadcast_sync({
         "title": "Appointment Booked",
-        "desc": f"Staff booked appointment for {data.firstname} {data.lastname}",
+        "desc": f"Staff booked appointment for {data.firstname} {data.surname}",
         "action": "BOOK",
         "timestamp": datetime.now().isoformat()
     })
