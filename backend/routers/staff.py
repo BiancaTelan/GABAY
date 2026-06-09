@@ -427,9 +427,20 @@ def staff_book_appointment(
     
     if not department_record:
         raise HTTPException(status_code=400, detail="Department not found in database.")
-
+    
     patient = db.query(Patient).filter(Patient.hospital_num == data.hospital_num).first()
     if not patient:
+        user = db.query(User).filter(User.email == data.email).first()
+        if not user:
+            user = User(
+                email=data.email,
+                passwordHash="",
+                role="Patient",
+                is_verified=True
+             )
+            db.add(user)
+            db.flush()
+
         patient = Patient(
             hospital_num=data.hospital_num,
             firstname=data.firstname,
@@ -471,15 +482,26 @@ def staff_book_appointment(
         background_tasks.add_task(
             send_patient_appointment_email, 
             recipient_email=data.email,     
-            name=data.firstName,
+            name=data.firstname,
             status="Approved", 
             doctor_name=f"Dr. {schedule_template.doctor.surname}", 
             date=parsed_date.strftime("%B %d, %Y"),
             approving_staff_name=f"{current_staff.firstname} {current_staff.surname}",
             additional_notes="This was booked by hospital staff. Please arrive 15 minutes before your batch time."
         )
+    
+    notifier.broadcast_sync({
+        "title": "Appointment Booked",
+        "desc": f"Staff booked appointment for {data.firstname} {data.lastname}",
+        "action": "BOOK",
+        "timestamp": datetime.now().isoformat()
+    })
 
-    return {"message": "Appointment successfully booked."}
+    return {
+        "message": "Appointment successfully booked",
+        "appointmentID": new_appointment.appointmentID,
+        "status": "approved"
+    }
 
 @router.post("/appointments/{appointment_id}/notify")
 def notify_patient_reminder(
