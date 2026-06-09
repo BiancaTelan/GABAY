@@ -92,11 +92,6 @@ class ScheduleUpdateRequest(BaseModel):
 # ---------------------------------------------------------
 @router.get("/appointments")
 def get_staff_appointments(db: Session = Depends(get_db), current_staff: User = Depends(get_current_user)):
-    staff_profile = db.query(Staff).filter(Staff.userID == current_staff.userID).first()
-    
-    if not staff_profile or not staff_profile.departments:
-        return []
-
     try:
         appointments = (
             db.query(Appointment)
@@ -880,26 +875,18 @@ def get_departments_and_doctors(
 # ---------------------------------------------------------
 @router.get("/doctors/list")
 def get_staff_doctors(db: Session = Depends(get_db), current_staff: User = Depends(get_current_user)):
-    staff_profile = db.query(Staff).filter(Staff.userID == current_staff.userID).first()
-    
-    if not staff_profile or not staff_profile.departments:
-        return []
-
-    dept_ids = [d.deptID for d in staff_profile.departments]
-    doctors = db.query(Doctor).filter(Doctor.deptID.in_(dept_ids)).all()
-    
+    doctors = db.query(Doctor).all()
     results = []
-    
     for doc in doctors:
         schedule_records = db.query(Schedule).filter(Schedule.docID == doc.docID).all()
-        
+
         parsed_schedules = []
         for s in schedule_records:
             safe_day = s.weekDay.value if hasattr(s.weekDay, 'value') else str(s.weekDay)
             
             parsed_schedules.append({
                 "id": s.scheduleID,
-                "day": safe_day if s.weekDay else "TBD", # <-- UPDATED
+                "day": safe_day if s.weekDay else "TBD", 
                 "time": f"{s.startTime.strftime('%I:%M %p')} - {s.endTime.strftime('%I:%M %p')}" if getattr(s, 'startTime', None) else "TBD"
             })
             
@@ -1361,18 +1348,11 @@ def update_queue_status(
 
 @router.get("/no-shows")
 def get_no_shows(db: Session = Depends(get_db), current_staff: User = Depends(get_current_user)):
-    staff_profile = db.query(Staff).filter(Staff.userID == current_staff.userID).first()
-    
-    if not staff_profile or not staff_profile.departments:
-        return []
-        
-    dept_ids = [d.deptID for d in staff_profile.departments]
+
     noshow_id = get_status_id(db, "No Show")
-    
     no_shows = db.query(Appointment).filter(
-        Appointment.deptID.in_(dept_ids), 
         Appointment.statusID == noshow_id
-    ).order_by(Appointment.assignedDate.desc()).all()
+    ).all()
 
     results = []
     for appt in no_shows:
