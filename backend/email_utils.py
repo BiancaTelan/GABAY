@@ -252,7 +252,7 @@ def send_patient_appointment_email(
     <div style="background-color: #f4f6f8; padding: 20px; border-radius: 5px; margin: 30px 0; border-left: 4px solid {color_hex}; text-align: left;">
         <p style="margin: 0 0 10px 0; font-size: 15px; color: #333333;"><strong>Doctor:</strong> {doctor_name}</p>
         <p style="margin: 0 0 10px 0; font-size: 15px; color: #333333;"><strong>Date:</strong> {date}</p>
-        <p style="margin: 0 0 10px 0; font-size: 15px; color: #333333;"><strong>Approved By:</strong> {approving_staff_name} ({approving_staff_position})</p>
+        <p style="margin: 0 0 10px 0; font-size: 15px; color: #333333;"><strong>Approved By:</strong> {approving_staff_name} (Staff)</p>
         {f'<p style="margin: 0; font-size: 15px; color: #555555;"><strong>Notes:</strong> {additional_notes}</p>' if additional_notes else ''}
     </div>
     
