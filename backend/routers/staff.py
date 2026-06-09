@@ -1133,12 +1133,6 @@ def get_status_id(db: Session, status_name: str):
 
 @router.get("/overview")
 def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depends(get_current_user)):
-   
-    staff_profile = db.query(Staff).filter(Staff.userID == current_staff.userID).first()
-    if not staff_profile or not staff_profile.departments:
-        raise HTTPException(status_code=403, detail="Unauthorized: No department assigned.")
-
-    dept_ids = [d.deptID for d in staff_profile.departments]
 
     ph_tz = ZoneInfo("Asia/Manila")
     today = datetime.now(ph_tz)
@@ -1167,21 +1161,18 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
 
     # === MONTHLY OVERVIEW STATS ===
     for_approval = db.query(Appointment).filter(
-        Appointment.deptID.in_(dept_ids), 
         Appointment.statusID == pending_id,
         extract('year', Appointment.preferredStartDate) == current_year,
         extract('month', Appointment.preferredStartDate) == current_month
     ).count()
 
     approved_month = db.query(Appointment).filter(
-        Appointment.deptID.in_(dept_ids), 
         Appointment.statusID.in_(valid_approved_ids), 
         extract('year', Appointment.assignedDate) == current_year,
         extract('month', Appointment.assignedDate) == current_month
     ).count()
 
     cancelled_month = db.query(Appointment).filter(
-        Appointment.deptID.in_(dept_ids), 
         Appointment.statusID == cancelled_id,
         extract('year', Appointment.assignedDate) == current_year,
         extract('month', Appointment.assignedDate) == current_month
@@ -1189,7 +1180,6 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
 
     # === DAILY SLOT CAPACITY ===
     active_doctors = db.query(Doctor).filter(
-        Doctor.deptID.in_(dept_ids), 
         Doctor.isAvailable == True 
     ).all()
 
@@ -1223,7 +1213,7 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
     todays_appointments = db.query(Appointment).outerjoin(
         DailyQueue, Appointment.appointmentID == DailyQueue.appointmentID
     ).filter(
-        Appointment.deptID.in_(dept_ids), 
+        Appointment.deptID, 
         Appointment.assignedDate == today_date,
         Appointment.statusID.in_(valid_approved_ids), 
         DailyQueue.queueID == None  
@@ -1232,7 +1222,7 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
     raw_queue_records = db.query(DailyQueue).join(
         Appointment, DailyQueue.appointmentID == Appointment.appointmentID
     ).filter(
-        Appointment.deptID.in_(dept_ids), 
+        Appointment.deptID, 
         Appointment.assignedDate == today_date,
         Appointment.statusID.in_(valid_approved_ids),
         DailyQueue.queueStatus.in_([
