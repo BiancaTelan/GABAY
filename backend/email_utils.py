@@ -225,15 +225,6 @@ def send_patient_appointment_email(
     approving_staff_position: str = "",
     additional_notes: str = ""
 ):
-    """
-    UPDATED: Send appointment confirmation email to patient
-    
-    New workflow includes:
-    - Staff name and position (for hospital validation)
-    - Batch time information
-    - Clear indication that appointment is finalized
-    - No patient confirmation action needed
-    """
     status_upper = status.upper()
     
     if "APPROVE" in status_upper:
@@ -253,48 +244,19 @@ def send_patient_appointment_email(
         message = f"has been updated to: <strong>{status}</strong>."
         status_indicator = f'<span style="background-color: #f0f0f0; color: #666; padding: 8px 12px; border-radius: 4px; font-weight: bold; display: inline-block; margin: 15px 0;">{status.upper()}</span>'
  
-    # Build appointment details section
-    appointment_details = f"""
-    <div style="background-color: #f4f6f8; padding: 20px; border-radius: 5px; margin: 30px 0; border-left: 4px solid {color_hex}; text-align: left;">
-        <p style="margin: 0 0 10px 0; font-size: 15px; color: #333333;"><strong>Doctor:</strong> {doctor_name}</p>
-        <p style="margin: 0 0 10px 0; font-size: 15px; color: #333333;"><strong>Appointment Date:</strong> {date}</p>
-    """
-    
-    # Add batch time if provided
-    if batch_time:
-        appointment_details += f'<p style="margin: 0 0 10px 0; font-size: 15px; color: #333333;"><strong>Batch Time:</strong> {batch_time}</p>'
-    
-    # Add staff validation info if provided (NEW - for hospital validation)
-    if approving_staff_name:
-        appointment_details += f"""
-        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
-            <p style="margin: 0 0 5px 0; font-size: 14px; color: #555;"><strong>Approved by:</strong></p>
-            <p style="margin: 0; font-size: 15px; color: #333333;"><strong>{approving_staff_name}</strong></p>
-            {f'<p style="margin: 5px 0 0 0; font-size: 13px; color: #666;">Position: {approving_staff_position}</p>' if approving_staff_position else ''}
-            <p style="margin: 8px 0 0 0; font-size: 12px; color: #999;"><em>For validation upon arrival at hospital</em></p>
-        </div>
-        """
-    
-    appointment_details += """
-    </div>
-    """
- 
     content = f"""
     <h2 style="color: {color_hex}; text-align: center; margin-top: 0; font-size: 24px;">Appointment {status.title()}</h2>
     <p style="color: #555555; font-size: 16px; line-height: 1.6; text-align: center;">Hello <strong>{name}</strong>,</p>
     <p style="color: #555555; font-size: 16px; line-height: 1.6; text-align: center;">Your appointment request through the GABAY System {message}</p>
     
-    {status_indicator}
+    <div style="background-color: #f4f6f8; padding: 20px; border-radius: 5px; margin: 30px 0; border-left: 4px solid {color_hex}; text-align: left;">
+        <p style="margin: 0 0 10px 0; font-size: 15px; color: #333333;"><strong>Doctor:</strong> {doctor_name}</p>
+        <p style="margin: 0 0 10px 0; font-size: 15px; color: #333333;"><strong>Date:</strong> {date}</p>
+        <p style="margin: 0 0 10px 0; font-size: 15px; color: #333333;"><strong>Approved By:</strong> {approving_staff_name} ({approving_staff_position})</p>
+        {f'<p style="margin: 0; font-size: 15px; color: #555555;"><strong>Notes:</strong> {additional_notes}</p>' if additional_notes else ''}
+    </div>
     
-    {appointment_details}
-    
-    {f'<div style="background-color: #f0f8f5; padding: 15px; border-radius: 5px; border-left: 4px solid #0f766e; margin: 20px 0;"><p style="margin: 0; color: #0f766e; font-size: 14px;"><strong>📋 Important:</strong> {additional_notes}</p></div>' if additional_notes else ''}
-    
-    <p style="color: #777777; font-size: 14px; text-align: center; margin-top: 25px;">Log in to your GABAY Patient Portal to view your full appointment history and details.</p>
-    
-    <p style="color: #999999; font-size: 13px; text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
-        <em>No further action is required. Your appointment is confirmed and scheduled.</em>
-    </p>
+    <p style="color: #777777; font-size: 14px; text-align: center;">Log in to your GABAY Patient Portal to view your full appointment history and details.</p>
     """
     
     send_brevo_email(recipient_email, f"GABAY System: Appointment {status.title()}", generate_email_html(content))
