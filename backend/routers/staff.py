@@ -431,10 +431,10 @@ def staff_book_appointment(
     patient = db.query(Patient).filter(Patient.hospital_num == data.hospitalNo).first()
     if not patient:
         patient = Patient(
-            hospital_num=data.hospitalNo,
-            firstname=data.firstName,
+            hospital_num=data.hospital_num,
+            firstname=data.firstname,
             middlename=data.middlename,
-            surname=data.lastName,
+            surname=data.surname,
             email=data.email,
             contactNo=data.contactNo,
             address= f"{data.street} | {data.barangay} | {data.city} | {data.province}"
