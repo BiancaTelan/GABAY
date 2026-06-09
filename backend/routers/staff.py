@@ -414,7 +414,6 @@ def staff_book_appointment(
         raise HTTPException(status_code=400, detail="Invalid date format.")
 
     day_of_week = parsed_date.strftime("%A")
-    day_enum = weekDayEnum[day_of_week]
 
     schedule_template = db.query(Schedule).filter(
         Schedule.docID == data.doctor_id,
@@ -428,20 +427,9 @@ def staff_book_appointment(
     
     if not department_record:
         raise HTTPException(status_code=400, detail="Department not found in database.")
-    
+
     patient = db.query(Patient).filter(Patient.hospital_num == data.hospital_num).first()
     if not patient:
-        user = db.query(User).filter(User.email == data.email).first()
-        if not user:
-            user = User(
-                email=data.email,
-                passwordHash="",
-                role="Patient",
-                is_verified=True
-             )
-            db.add(user)
-            db.flush()
-
         patient = Patient(
             hospital_num=data.hospital_num,
             firstname=data.firstname,
@@ -449,7 +437,7 @@ def staff_book_appointment(
             surname=data.surname,
             email=data.email,
             contactNo=data.contactNo,
-            address= f"{data.street} | {data.barangay} | {data.city} | {data.province}"
+            address=f"{data.street} | {data.barangay} | {data.city} | {data.province}"
         )
         db.add(patient)
         db.flush()
@@ -459,7 +447,7 @@ def staff_book_appointment(
         docID=data.doctor_id,
         deptID=data.department_id,
         purposeDetailed=data.reason,
-        statusID=5, 
+        statusID=2, 
         assignedDate=parsed_date,
         assignedScheduleID=schedule_template.scheduleID,
         preferredStartDate=parsed_date, 
@@ -479,9 +467,6 @@ def staff_book_appointment(
     
     db.commit()
 
-    staff_profile = db.query(Staff).filter(Staff.userID == current_staff.userID).first()
-    approving_staff_name = f"{staff_profile.firstname} {staff_profile.surname}" if staff_profile else "Hospital Staff"
-
     if data.email:
         background_tasks.add_task(
             send_patient_appointment_email, 
@@ -490,22 +475,10 @@ def staff_book_appointment(
             status="Approved", 
             doctor_name=f"Dr. {schedule_template.doctor.surname}", 
             date=parsed_date.strftime("%B %d, %Y"),
-            approving_staff_name=approving_staff_name,
-            additional_notes="This was booked by hospital staff. Please arrive 15 minutes before your batch time."
+            additional_notes="This appointment was booked on your behalf by hospital staff."
         )
-    
-    notifier.broadcast_sync({
-        "title": "Appointment Booked",
-        "desc": f"Staff booked appointment for {data.firstname} {data.surname}",
-        "action": "BOOK",
-        "timestamp": datetime.now().isoformat()
-    })
 
-    return {
-        "message": "Appointment successfully booked",
-        "appointmentID": new_appointment.appointmentID,
-        "status": "approved"
-    }
+    return {"message": "Appointment successfully booked."}
 
 @router.post("/appointments/{appointment_id}/notify")
 def notify_patient_reminder(
