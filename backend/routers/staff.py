@@ -95,14 +95,10 @@ def get_staff_appointments(db: Session = Depends(get_db), current_staff: User = 
     
     if not staff_profile or not staff_profile.departments:
         return []
-    
-    dept_ids = [d.deptID for d in staff_profile.departments]
 
     try:
         appointments = (
             db.query(Appointment)
-            .filter(Appointment.deptID.in_(dept_ids))
-            .order_by(Appointment.createdAt.desc())
             .all()
         )
 
@@ -127,6 +123,7 @@ def get_staff_appointments(db: Session = Depends(get_db), current_staff: User = 
             req_end = appt.preferredEndDate.strftime("%m/%d/%Y") if appt.preferredEndDate else req_start
             reason = appt.purposeDetailed if appt.purposeDetailed else "Consultation"
             raw_status = status_mapping.get(appt.statusID, 'pending')
+            department = appt.department.department if appt.department else "General"
 
             appt_date = "Not set"
             if getattr(appt, 'assignedDate', None):
@@ -136,6 +133,12 @@ def get_staff_appointments(db: Session = Depends(get_db), current_staff: User = 
             if appt.assignedSchedule and hasattr(appt.assignedSchedule, 'startTime'):
                 batch_time = appt.assignedSchedule.startTime.strftime("%I:%M %p")
             
+            approving_staff_name = ""
+            if appt.actionBy_userID:
+                approving_staff = db.query(Staff).filter(Staff.userID == appt.actionBy_userID).first()
+                if approving_staff:
+                    approving_staff_name = f"{approving_staff.firstname} {approving_staff.surname}"
+
 
             results.append({
                 "id": appt.appointmentID,
@@ -145,13 +148,15 @@ def get_staff_appointments(db: Session = Depends(get_db), current_staff: User = 
                 "requestedStartDate": req_start,      
                 "requestedEndDate": req_end,          
                 "appointmentDate": appt_date,
+                "department": department,
                 "batch": batch_time,
                 "status": raw_status,
                 "statusID": appt.statusID, 
                 "assignedDoctor": doctor_name,
                 "docID": appt.docID,
                 "email": patient_email,
-                "attachedFile": appt.referral_doc if hasattr(appt, 'referral_doc') else None
+                "approvingStaffName": approving_staff_name,
+                "attachedFile": appt.referral_doc if hasattr(appt, 'referral_doc') else None,
             })
 
         return results
