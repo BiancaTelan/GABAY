@@ -57,7 +57,7 @@ class AppointmentApproveRequest(BaseModel):
     approving_staff_name: str = ""
 
 class StaffBookRequest(BaseModel):
-    hospitalNo: str
+    hospital_num: str
     firstname: str
     middlename: Optional[str] = ""
     surname: str
