@@ -470,7 +470,7 @@ def staff_book_appointment(
         docID=data.doctor_id,
         deptID=data.department_id,
         purposeDetailed=data.reason,
-        statusID=2, 
+        statusID=5, 
         assignedDate=parsed_date,
         assignedScheduleID=schedule_template.scheduleID,
         preferredStartDate=parsed_date, 
