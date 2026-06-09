@@ -65,7 +65,7 @@ export default function AppointmentHistory() {
     
     const s = status.toLowerCase();
     if (s.includes('pending')) return 'bg-gray-100 text-gray-600 font-medium border-gray-200';
-    if (s.includes('approved')) return 'bg-orange-500 text-white font-bold border-orange-600 shadow-sm';
+    if (s.includes('approved')) return 'bg-green-500 text-white font-bold border-green-600 shadow-sm';
     if (s.includes('rescheduled')) return 'bg-yellow-100 text-yellow-800 font-bold border-yellow-300';
     if (s.includes('booked')) return 'bg-blue-100 text-blue-800 font-bold border-blue-300';
     if (s.includes('denied') || s.includes('cancel')) return 'bg-red-100 text-red-800 font-bold border-red-200';
