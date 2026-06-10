@@ -46,7 +46,7 @@ export default function TranslateToggle() {
     <div className="flex items-center gap-1.5">
       <div className="flex items-center p-1 bg-white border border-gray-200 rounded-full shadow-sm w-[115px] select-none h-9">
         
-        <Globe size={16} className="ml-1.5 mr-0.5 text-gray-400 shrink-0 select-none" />
+        <Globe size={16} className="ml-1.5 mr-1.5 text-gray-400 shrink-0 select-none" />
         
         <button
           type="button"
