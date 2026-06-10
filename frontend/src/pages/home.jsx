@@ -18,7 +18,7 @@ export default function Home() {
       <section className="flex flex-col md:flex-row h-[800px] overflow-hidden">
         
         <div className="flex-1 flex flex-col justify-center px-10 lg:px-20 py-8">
-          <h1 className="font-montserrat text-4xl lg:text-6xl font-bold text-gabay-blue leading-tight mb-4">
+          <h1 className="notranslate font-montserrat text-4xl lg:text-6xl font-bold text-gabay-blue leading-tight mb-4">
             General to Specialty <br />
             Appointment & <br />
             Booking Assistant for You
@@ -36,7 +36,7 @@ export default function Home() {
           
           <button 
             onClick={() => navigate('/departments')}
-            className="font-poppins flex items-center text-gabay-blue font-semibold text-lg hover:underline group"
+            className="notranslate font-poppins flex items-center text-gabay-blue font-semibold text-lg hover:underline group"
           >
             Head to Department List 
             <span className="ml-2 p-3 transform group-hover:translate-x-1 transition-transform">
