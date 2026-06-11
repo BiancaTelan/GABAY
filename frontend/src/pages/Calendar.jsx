@@ -26,9 +26,8 @@ const getStatusStyle = (status) => {
   const s = status.toLowerCase();
   
   if (s.includes('pending')) return 'bg-gray-100 text-gray-600 font-medium border-gray-200';
-  if (s.includes('approved')) return 'bg-orange-500 text-white font-bold border-orange-600 shadow-sm';
+  if (s.includes('approved')) return 'bg-green-100 text-green-800 font-bold border-green-300';
   if (s.includes('rescheduled')) return 'bg-yellow-100 text-yellow-800 font-bold border-yellow-300';
-  if (s.includes('confirmed')) return 'bg-green-100 text-green-800 font-bold border-green-300';
   if (s.includes('booked')) return 'bg-blue-100 text-blue-800 font-bold border-blue-300';
   if (s.includes('denied') || s.includes('cancel')) return 'bg-red-100 text-red-800 font-bold border-red-200';
   
@@ -66,7 +65,7 @@ export default function CalendarPage() {
           const transformedEvents = data.appointments.map(appt => {
             const sLower = appt.status.toLowerCase();
             
-            const isAssigned = sLower.includes('approved') || sLower.includes('confirmed') || sLower.includes('rescheduled') || sLower.includes('booked');
+            const isAssigned = sLower.includes('approved') || sLower.includes('rescheduled') || sLower.includes('booked');
             
             let rawDate = isAssigned 
               ? (appt.appointmentDate || appt.assignedDate || appt.date) 
@@ -210,7 +209,6 @@ export default function CalendarPage() {
                   const day = i + 1;
                   const dayEvents = eventsByDate[day] || [];
                   
-                  // Sort events so Confirmed/Approved show at the top of the day box
                   const sortedEvents = [...dayEvents].sort((a, b) => {
                     if (a.status.includes('CONFIRM') || a.status.includes('APPROVE')) return -1;
                     return 1;
