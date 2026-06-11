@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronDown, CalendarDays, AlertCircle, Upload, X, FileText} from 'lucide-react';
 import DatePicker from "react-datepicker";
 import toast from 'react-hot-toast';
+import { showValidationError } from '../utils/apiError';
 import "react-datepicker/dist/react-datepicker.css";
 
 
@@ -142,6 +143,9 @@ export default function SpecialtyForm({ userInfo, onConfirm }) {
     if (!referralImage && !isReadOnly) newErrors.referral = "Medical referral is required.";
 
     setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      showValidationError(newErrors);
+    }
     return Object.keys(newErrors).length === 0;
   };
 

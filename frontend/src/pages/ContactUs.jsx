@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Phone, CheckCircle } from 'lucide-react';
 import Button from '../components/button';
+import toast from 'react-hot-toast';
+import { getApiErrorMessage, parseJsonResponse, showValidationError } from '../utils/apiError';
 
 export default function ContactUs() {
   const [formData, setFormData] = useState({
@@ -31,6 +33,9 @@ export default function ContactUs() {
     if (!formData.subject.trim()) newErrors.subject = 'Subject is required';
     if (!formData.message.trim()) newErrors.message = 'Message is required';
     setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      showValidationError(newErrors);
+    }
     return Object.keys(newErrors).length === 0;
   };
 
@@ -49,10 +54,10 @@ export default function ContactUs() {
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
+      const data = await parseJsonResponse(response);
 
       if (!response.ok) {
-        throw new Error(data.detail || "Failed to send message.");
+        throw new Error(getApiErrorMessage(data.detail, 'Failed to send message.'));
       }
 
       // NEW: Clear the form and show the modal instead of the alert
@@ -61,7 +66,7 @@ export default function ContactUs() {
       
     } catch (error) {
       console.error('Contact form error:', error);
-      alert(error.message); // Keeping error alerts simple, or you can build an error modal next!
+      toast.error(error.message);
     } finally {
       setIsSubmitting(false);
     }

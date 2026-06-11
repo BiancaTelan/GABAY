@@ -4,6 +4,8 @@ import Input from '../components/input';
 import Button from '../components/button';
 import { phonePattern, dobPattern, minAgeRequirement } from '../utils/constants';
 import { AuthContext } from '../authContext';
+import toast from 'react-hot-toast';
+import { getApiErrorMessage, parseJsonResponse, showValidationError } from '../utils/apiError';
 
 export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
   const navigate = useNavigate(); 
@@ -24,7 +26,6 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
   });
 
   const [errors, setErrors] = useState({});
-  const [serverError, setServerError] = useState(''); 
   const [isSubmitting, setIsSubmitting] = useState(false); 
 
   useEffect(() => {
@@ -97,17 +98,20 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
     }
 
     setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      showValidationError(newErrors);
+    }
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setServerError('');
     
-    if (validate()) {
-      setIsSubmitting(true);
-      
-      try {
+    if (!validate()) return;
+
+    setIsSubmitting(true);
+
+    try {
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/patients/update-profile`, {
           method: 'PUT',
           headers: { 
@@ -117,46 +121,27 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
           body: JSON.stringify(formData)
         });
 
-        const data = await response.json();
+        const data = await parseJsonResponse(response);
 
         if (!response.ok) {
-          if (data.detail) {
-            if (Array.isArray(data.detail)) {
-              const errorStrings = data.detail.map(err => {
-                const field = err.loc ? err.loc[err.loc.length - 1] : "Field";
-                return `${field}: ${err.msg}`;
-              });
-              throw new Error(errorStrings.join(" | "));
-            } else if (typeof data.detail === 'object') {
-              throw new Error(JSON.stringify(data.detail));
-            } else {
-              throw new Error(String(data.detail));
-            }
-          }
-          throw new Error("Failed to update profile.");
+          throw new Error(getApiErrorMessage(data.detail, 'Failed to update profile.'));
         }
 
+        toast.success('Profile updated successfully!');
         onFinalSubmit(formData); 
 
       } catch (error) {
         console.error("Profile Update Error:", error);
-        setServerError(error.message);
+        toast.error(error.message);
       } finally {
         setIsSubmitting(false);
       }
-    }
   };
 
   return (
     <div id="register-form" className="max-w-4xl mx-auto p-10 font-poppins text-left animate-in fade-in duration-500">
       <h1 className="text-3xl font-bold text-gabay-teal mb-2 font-montserrat">Complete Your Profile</h1>
       <p className="text-gray-500 mb-10 text-sm">Please provide your hospital details to access GABAY services.</p>
-
-      {serverError && (
-        <div className="mb-6 p-4 bg-red-100 text-red-700 text-sm text-center rounded-lg font-poppins font-semibold">
-          {serverError}
-        </div>
-      )}
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-5">
         <Input label="Full Name" value={`${formData.firstname} ${formData.surname}`.trim()} readOnly noHover />

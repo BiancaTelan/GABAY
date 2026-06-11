@@ -8,6 +8,7 @@ import { AuthContext } from '../authContext';
 import { emailPattern, namePattern } from '../utils/constants';
 import LegalModal from '../components/legalModal';
 import toast from 'react-hot-toast';
+import { getApiErrorMessage, parseJsonResponse, showValidationError } from '../utils/apiError';
 
 export default function SignUp({ onCompleteSignUp }) {
   const navigate = useNavigate();
@@ -68,6 +69,7 @@ export default function SignUp({ onCompleteSignUp }) {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      showValidationError(newErrors);
       return;
     }
 
@@ -96,13 +98,16 @@ export default function SignUp({ onCompleteSignUp }) {
         body: JSON.stringify(payload)
       });
 
-      const data = await response.json();
+      const data = await parseJsonResponse(response);
 
       if (!response.ok) {
-        throw new Error(data.detail || "Failed to create account.");
+        throw new Error(getApiErrorMessage(data.detail, 'Failed to create account.'));
       }
 
       const accessToken = data.access_token;
+      if (!accessToken) {
+        throw new Error('Account was created but login failed. Please sign in manually.');
+      }
       const userRole = data.role ? data.role.toLowerCase() : 'patient';
         
       const userData = {

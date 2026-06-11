@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import gabayLogo from '../assets/gabayLogo.png'; 
 import Button from '../components/button';
+import toast from 'react-hot-toast';
+import { getApiErrorMessage, parseJsonResponse } from '../utils/apiError';
 
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
@@ -14,7 +16,9 @@ export default function VerifyEmail() {
   useEffect(() => {
     if (!token) {
       setStatus('error');
-      setMessage('No verification token found in the URL.');
+      const message = 'No verification token found in the URL.';
+      setMessage(message);
+      toast.error(message);
       return;
     }
     
@@ -27,19 +31,23 @@ export default function VerifyEmail() {
           },
         });
 
-        const data = await response.json();
+        const data = await parseJsonResponse(response);
 
         if (response.ok) {
           setStatus('success');
           setMessage(data.message || 'Email verified successfully! You can now log in.');
         } else {
+          const errorMessage = getApiErrorMessage(data.detail, 'Verification failed. The link may have expired.');
           setStatus('error');
-          setMessage(data.detail || 'Verification failed. The link may have expired.');
+          setMessage(errorMessage);
+          toast.error(errorMessage);
         }
       } catch (error) {
         console.error('Verification error:', error);
+        const message = 'An error occurred while communicating with the server. Please try again later.';
         setStatus('error');
-        setMessage('An error occurred while communicating with the server. Please try again later.');
+        setMessage(message);
+        toast.error(message);
       }
     };
     verifyUserEmail();

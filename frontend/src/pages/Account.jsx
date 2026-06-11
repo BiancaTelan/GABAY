@@ -6,6 +6,8 @@ import { emailPattern, namePattern, phonePattern, dobPattern, minAgeRequirement 
 import ConfirmationModal from '../components/confirmModal';
 import ChangeModal from '../components/changeModal';
 import { AuthContext } from '../authContext';
+import toast from 'react-hot-toast';
+import { getApiErrorMessage, parseJsonResponse, showValidationError } from '../utils/apiError';
 
 export default function Account({ userInfo, onLogout, onUpdateProfile }) {
   const navigate = useNavigate();
@@ -121,7 +123,7 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
           onLogout(); 
           navigate('/'); 
         } catch (error) {
-          alert(error.message);
+          toast.error(error.message);
         }
       }
     });
@@ -171,6 +173,9 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
     else if (!phonePattern.test(localUserInfo.contactNumber)) newErrors.contactNumber = "Must be a valid 11-digit number";
 
     setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      showValidationError(newErrors);
+    }
     return Object.keys(newErrors).length === 0;
   };
 
@@ -200,10 +205,10 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
           body: JSON.stringify(payload)
         });
 
-        const data = await response.json();
+        const data = await parseJsonResponse(response);
 
         if (!response.ok) {
-          throw new Error(data.detail || "Failed to save changes.");
+          throw new Error(getApiErrorMessage(data.detail, 'Failed to save changes.'));
         }
 
         if (onUpdateProfile) onUpdateProfile(localUserInfo);

@@ -1,5 +1,6 @@
 import React, { useState, useContext } from 'react'; 
 import toast, { Toaster } from 'react-hot-toast';
+import { getApiErrorMessage, parseJsonResponse } from './utils/apiError';
 import { Routes, Route, useNavigate, useLocation, Navigate, Outlet } from 'react-router-dom';
 import { AuthContext } from './authContext';
 import Header from './components/header';
@@ -125,20 +126,10 @@ function App() {
         body: payload
       });
 
-      const textResponse = await response.text();
-      let result;
-      try {
-        result = textResponse ? JSON.parse(textResponse) : {};
-      } catch (err) {
-        throw new Error("Server encountered an error.");
-      }
+      const result = await parseJsonResponse(response);
 
       if (!response.ok) {
-        const errorMessage = Array.isArray(result.detail) 
-          ? JSON.stringify(result.detail, null, 2) 
-          : result.detail || "Failed to submit reservation.";
-          
-        throw new Error(errorMessage);
+        throw new Error(getApiErrorMessage(result.detail, 'Failed to submit reservation.'));
       }
       if (updateUnreadCount) {
         updateUnreadCount(prevCount => prevCount + 1);

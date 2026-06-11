@@ -4,6 +4,8 @@ import DatePicker from "react-datepicker";
 import { CalendarDays, AlertCircle } from 'lucide-react';
 import "react-datepicker/dist/react-datepicker.css";
 import { AuthContext } from '../authContext';
+import toast from 'react-hot-toast';
+import { getApiErrorMessage, parseJsonResponse } from '../utils/apiError';
 
 export default function RescheduleForm({ userInfo }) {
   const { appointmentId } = useParams();
@@ -43,7 +45,6 @@ export default function RescheduleForm({ userInfo }) {
   const [newDateRange, setNewDateRange] = useState([null, null]);
   const [startDate, endDate] = newDateRange;
   const [newReason, setNewReason] = useState("");
-  const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const formatSafeDate = (dateObj) => {
@@ -54,16 +55,15 @@ export default function RescheduleForm({ userInfo }) {
 
   const handleConfirm = async () => {
     if (!startDate) {
-      setError("Please select a new preferred date.");
+      toast.error("Please select a new preferred date.");
       return;
     }
     if (!newReason.trim()) {
-      setError("Please provide a reason for rescheduling.");
+      toast.error("Please provide a reason for rescheduling.");
       return;
     }
 
     setIsSubmitting(true);
-    setError("");
 
     try {
       const sortedDates = [...selectedDates].sort((a, b) => a - b);
@@ -83,18 +83,18 @@ export default function RescheduleForm({ userInfo }) {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Failed to reschedule appointment.");
+        const errorData = await parseJsonResponse(response);
+        throw new Error(getApiErrorMessage(errorData.detail, 'Failed to reschedule appointment.'));
       }
 
-      alert("Reschedule request submitted successfully! It is now pending approval.");
+      toast.success('Reschedule request submitted successfully! It is now pending approval.');
       if (updateUnreadCount) {
         updateUnreadCount(prevCount => prevCount + 1);
       }
       navigate('/calendar');
       
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -149,9 +149,7 @@ export default function RescheduleForm({ userInfo }) {
               minDate={new Date()}
               value={selectedDates.map(d => d.toLocaleDateString()).join(", ")}
               placeholderText="Select up to 5 preferred dates..."
-              className={`w-full p-3 border rounded-xl outline-none transition-all ${
-                error && selectedDates.length === 0 ? 'border-red-500 ring-1 ring-red-500' : 'border-gabay-teal focus:ring-2 focus:ring-teal-200'
-              }`}
+              className="w-full p-3 border rounded-xl outline-none transition-all border-gabay-teal focus:ring-2 focus:ring-teal-200"
             />
           </div>
 
@@ -160,22 +158,11 @@ export default function RescheduleForm({ userInfo }) {
             <textarea 
               rows="4"
               value={newReason}
-              onChange={(e) => {
-                setNewReason(e.target.value);
-                setError("");
-              }}
+              onChange={(e) => setNewReason(e.target.value)}
               placeholder="e.g., Personal emergency, schedule conflict..."
-              className={`p-3 border rounded-xl outline-none resize-none transition-all ${
-                error && !newReason ? 'border-red-500 ring-1 ring-red-500' : 'border-gabay-teal focus:ring-2 focus:ring-teal-200'
-              }`}
+              className="p-3 border rounded-xl outline-none resize-none transition-all border-gabay-teal focus:ring-2 focus:ring-teal-200"
             />
           </div>
-
-          {error && (
-            <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-200 font-medium">
-              {error}
-            </div>
-          )}
 
           <div className="flex gap-4 pt-4">
             <button 

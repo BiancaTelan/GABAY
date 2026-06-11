@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronDown, CalendarDays, AlertCircle } from 'lucide-react';
 import DatePicker from "react-datepicker";
 import toast from 'react-hot-toast';
+import { showValidationError } from '../utils/apiError';
 import "react-datepicker/dist/react-datepicker.css";
 
 const DateDisplayInput = React.forwardRef(({ value, onClick, className }, ref) => (
@@ -123,6 +124,9 @@ export default function GeneralForm({ userInfo, onConfirm }) {
     if (selectedDates.length === 0) newErrors.appointmentDate = "Please select at least 1 date.";
 
     setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      showValidationError(newErrors);
+    }
     return Object.keys(newErrors).length === 0;
   };
 

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, CheckCircle } from 'lucide-react'; 
-import { useNavigate } from 'react-router-dom'; 
+import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import { getApiErrorMessage, parseJsonResponse, showValidationError } from '../utils/apiError';
 
 const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast, currentEmail }) => {
   const navigate = useNavigate();
@@ -59,6 +61,9 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast, current
     }
 
     setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      showValidationError(newErrors);
+    }
     return Object.keys(newErrors).length === 0;
   };
 
@@ -87,16 +92,16 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast, current
           };
         }
 
-        const response = await fetch(endpoint, {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${endpoint}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
 
-        const data = await response.json();
+        const data = await parseJsonResponse(response);
 
         if (!response.ok) {
-          throw new Error(data.detail || "Failed to update account.");
+          throw new Error(getApiErrorMessage(data.detail, 'Failed to update account.'));
         }
 
         if (isEmailType) {
@@ -107,7 +112,7 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast, current
         }
 
       } catch (err) {
-        setErrors({ server: err.message });
+        toast.error(err.message);
       } finally {
         setIsLoading(false);
       }
@@ -161,8 +166,6 @@ const ChangeModal = ({ isOpen, onClose, type = "password", setShowToast, current
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
-          {errors.server && <p className="text-red-500 text-sm mb-4 text-center bg-red-50 p-2 rounded">{errors.server}</p>}
-
           {isEmailType ? (
             <>
               <div className="mb-5">

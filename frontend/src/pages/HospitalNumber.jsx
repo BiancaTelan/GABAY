@@ -4,17 +4,17 @@ import YesIcon from '../assets/personCheck.png';
 import NoIcon from '../assets/personCancel.png';
 import { useContext, useState } from 'react';
 import { AuthContext } from '../authContext';
+import toast from 'react-hot-toast';
+import { getApiErrorMessage, parseJsonResponse } from '../utils/apiError';
 
 export default function HospitalNumber({ onNavigate }) {
   const { token } = useContext(AuthContext);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [serverError, setServerError] = useState('');
   
   const navigate = useNavigate();
 
   const handleGet = async () => {
     setIsGenerating(true);
-    setServerError('');
 
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
@@ -26,16 +26,10 @@ export default function HospitalNumber({ onNavigate }) {
         body: JSON.stringify({ email: userEmail })
       });
 
-      const rawText = await response.text();
-      let data = {};
-      try {
-          data = rawText ? JSON.parse(rawText) : {};
-      } catch (e) {
-          throw new Error("Backend server is offline or returned an invalid response.");
-      }
+      const data = await parseJsonResponse(response);
 
       if (!response.ok) {
-        throw new Error(data.detail || 'Failed to generate hospital number');
+        throw new Error(getApiErrorMessage(data.detail, 'Failed to generate hospital number.'));
       }
 
       onNavigate('generatedNumber', { 
@@ -45,7 +39,7 @@ export default function HospitalNumber({ onNavigate }) {
 
     } catch (error) {
       console.error('Generation failed:', error);
-      setServerError(error.message); // This saves the error...
+      toast.error(error.message);
     } finally {
       setIsGenerating(false);
     }
@@ -67,12 +61,6 @@ export default function HospitalNumber({ onNavigate }) {
           </p>
         </div>
       </div>
-
-      {serverError && (
-        <div className="mb-6 w-full max-w-4xl p-4 bg-red-100 text-red-700 text-center rounded-lg font-poppins font-semibold">
-          {serverError}
-        </div>
-      )}
 
       <div className="flex flex-col md:flex-row gap-6 w-full max-w-4xl">
         <div className="flex-1 bg-white rounded-xl shadow-md p-8 text-center">

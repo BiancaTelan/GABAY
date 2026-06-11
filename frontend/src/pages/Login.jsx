@@ -8,6 +8,7 @@ import { emailPattern } from '../utils/constants';
 import { AuthContext } from '../authContext';
 import toast from 'react-hot-toast';
 import ReCAPTCHA from "react-google-recaptcha";
+import { getApiErrorMessage, parseJsonResponse, showValidationError } from '../utils/apiError';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -47,6 +48,7 @@ export default function Login() {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      showValidationError(newErrors);
       return; 
     }
 
@@ -70,26 +72,27 @@ export default function Login() {
         body: JSON.stringify(loginpayload),
       });
       
-      const textResponse = await response.text();
-      let data;
-      
-      try {
-        data = textResponse ? JSON.parse(textResponse) : {};
-      } catch (parseError) {
-        throw new Error("The server encountered an unexpected format. Please try again later.");
-      }
+      const data = await parseJsonResponse(response);
       
       if (!response.ok) {
         toast.dismiss(loadingToast);
-        const errorMessage = data.detail || 'The email or password provided is incorrect.';
-        toast.error(errorMessage);
+        toast.error(getApiErrorMessage(data.detail, 'The email or password provided is incorrect.'));
         if (recaptchaRef.current) recaptchaRef.current.reset(); 
         setRecaptchaToken(null);
         return; 
       }
 
       const accessToken = data.access_token;
-      const decodedpayload = JSON.parse(atob(accessToken.split('.')[1]));
+      if (!accessToken) {
+        throw new Error('Authentication Failed. Please try again.');
+      }
+
+      let decodedpayload;
+      try {
+        decodedpayload = JSON.parse(atob(accessToken.split('.')[1]));
+      } catch {
+        throw new Error('Authentication Failed. Please try again.');
+      }
       const userRole = decodedpayload.role?.toLowerCase() || '';
 
       if (['staff', 'admin'].includes(userRole)) {
