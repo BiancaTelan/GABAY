@@ -106,7 +106,7 @@ export default function SignUp({ onCompleteSignUp }) {
 
       const accessToken = data.access_token;
       if (!accessToken) {
-        throw new Error('Account was created but login failed. Please sign in manually.');
+        throw new Error('Account was created but login failed. Please log in manually.');
       }
       const userRole = data.role ? data.role.toLowerCase() : 'patient';
         

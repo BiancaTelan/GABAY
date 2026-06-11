@@ -3,7 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import gabayLogo from '../assets/gabayLogo.png';
 import Button from '../components/button';
 import { AuthContext } from '../authContext';
-import { Calendar, Mail, User, ClipboardClock, Menu, X } from 'lucide-react';
+import { Calendar, Mail, User, ClipboardClock, Menu, X, Globe } from 'lucide-react';
+import TranslateToggle from '../components/TranslateToggle';
 
 export default function Header({ isLoggedIn }) {
   const { unreadCount } = useContext(AuthContext);
@@ -49,6 +50,9 @@ export default function Header({ isLoggedIn }) {
 
         {/* MENU ICONS AND BURGER */}
         <div className="flex items-center gap-3">
+          <div className="flex items-center font-poppins text-sm shrink-0">
+            <TranslateToggle />
+          </div>
           <div className="hidden md:flex items-center gap-3">
             {isLoggedIn ? (
               <div className="flex items-center gap-3">
