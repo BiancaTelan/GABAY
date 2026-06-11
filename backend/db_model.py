@@ -151,6 +151,7 @@ class Appointment(Base):
     statusID: Mapped[int] = mapped_column(ForeignKey("appointmentStatusTable.statusID", ondelete="RESTRICT"), nullable=False)
     purposeDetailed: Mapped[Optional[str]] = mapped_column(Text)
     type: Mapped[Optional[str]] = mapped_column(String(50))
+    batch: Mapped[Optional[str]] = mapped_column(String(50))
     referral_doc: Mapped[Optional[str]] = mapped_column(String(255)) 
     hasPreviousRecord: Mapped[bool] = mapped_column(Boolean, default=False)
     preferredStartDate: Mapped[date] = mapped_column(Date, nullable=False)

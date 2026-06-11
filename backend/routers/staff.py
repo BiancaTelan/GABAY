@@ -72,7 +72,8 @@ class StaffBookRequest(BaseModel):
     barangay: str
     department_id: int
     doctor_id: int  
-    date: str      
+    date: str  
+    batch: str    
     reason: str
 
 class RescheduleRequest(BaseModel):
@@ -129,7 +130,9 @@ def get_staff_appointments(db: Session = Depends(get_db), current_staff: User = 
                 appt_date = appt.assignedDate.strftime("%m/%d/%Y")
             
             batch_time = "TBD"
-            if appt.assignedSchedule and hasattr(appt.assignedSchedule, 'startTime'):
+            if getattr(appt, 'batch', None):
+                batch_time = appt.batch
+            elif appt.assignedSchedule and hasattr(appt.assignedSchedule, 'startTime'):
                 batch_time = appt.assignedSchedule.startTime.strftime("%I:%M %p")
             
             approving_staff_name = ""
@@ -198,7 +201,9 @@ def approve_appointment(
             detail=f"The assigned doctor (ID: {data.assigned_doctor_id}) does not have a schedule template for {day_of_week}s."
         )
 
+    
     appointment.docID = data.assigned_doctor_id
+    appointment.batch = data.batch
 
     appointment.assignedScheduleID = schedule_template.scheduleID
     appointment.assignedDate = parsed_date  
@@ -284,6 +289,7 @@ def reschedule_appointment(
         raise HTTPException(status_code=400, detail="Doctor is not available on this newly selected date.")
 
     appointment.assignedDate = parsed_date
+    appointment.batch = data.batch
     appointment.assignedScheduleID = schedule_template.scheduleID
     appointment.statusID = 6 
 
@@ -474,6 +480,7 @@ def staff_book_appointment(
         purposeDetailed=data.reason,
         statusID=5, 
         assignedDate=parsed_date,
+        batch=data.batch,
         assignedScheduleID=schedule_template.scheduleID,
         preferredStartDate=parsed_date, 
         preferredEndDate=parsed_date,
@@ -1239,7 +1246,12 @@ def get_dashboard_data(
             status_obj = db.query(AppointmentStatus).filter(AppointmentStatus.statusID == appt.statusID).first()
             display_status = status_obj.statusName if status_obj else "Unknown"
 
-        appt_time = appt.assignedSchedule.startTime.strftime('%I:%M %p') if appt.assignedSchedule else "TBD"
+        if getattr(appt, 'batch', None):
+            appt_time = appt.batch
+        elif appt.assignedSchedule and getattr(appt.assignedSchedule, 'startTime', None):
+            appt_time = appt.assignedSchedule.startTime.strftime('%I:%M %p')
+        else:
+            appt_time = "TBD"
 
         return {
             "id": appt.appointmentID,
