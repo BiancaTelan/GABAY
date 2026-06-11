@@ -6,7 +6,7 @@ from db_model import Appointment, Department, Schedule, Staff, SystemLogs, actio
 from security import get_current_user, verify_token
 from pydantic import BaseModel
 from passlib.context import CryptContext
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from typing import Optional
 from email_utils import send_patient_appointment_email
 from zoneinfo import ZoneInfo
@@ -1132,8 +1132,11 @@ def get_status_id(db: Session, status_name: str):
     return status.statusID
 
 @router.get("/overview")
-def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depends(get_current_user)):
-
+def get_dashboard_data(
+    filter_time: str = Query("month"),
+    db: Session = Depends(get_db), 
+    current_staff: User = Depends(get_current_user)
+):
     ph_tz = ZoneInfo("Asia/Manila")
     today = datetime.now(ph_tz)
     today_date = today.date()
@@ -1142,6 +1145,18 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
     current_month = today.month
     today_name = today.strftime('%A') 
 
+    start_date = today_date
+    end_date = today_date
+    
+    if filter_time == "week":
+        start_date = today_date - timedelta(days=today.weekday())
+        end_date = start_date + timedelta(days=6)
+    elif filter_time == "month":
+        start_date = today_date.replace(day=1)
+        next_month = start_date.replace(day=28) + timedelta(days=4)
+        end_date = next_month - timedelta(days=next_month.day)
+
+    # Status Identifiers
     active_statuses = db.query(AppointmentStatus).filter(
         AppointmentStatus.statusName.ilike("%Approved%") |
         AppointmentStatus.statusName.ilike("%Confirmed%") |
@@ -1156,44 +1171,31 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
     cancelled_obj = db.query(AppointmentStatus).filter(AppointmentStatus.statusName.ilike("%Cancelled%")).first()
     cancelled_id = cancelled_obj.statusID if cancelled_obj else 3
 
-    noshow_obj = db.query(AppointmentStatus).filter(AppointmentStatus.statusName.ilike("%No Show%")).first()
-    noshow_id = noshow_obj.statusID if noshow_obj else 8
+    # Base Queries
+    approval_q = db.query(Appointment).filter(Appointment.statusID == pending_id)
+    approved_q = db.query(Appointment).filter(Appointment.statusID.in_(valid_approved_ids))
+    cancelled_q = db.query(Appointment).filter(Appointment.statusID == cancelled_id)
 
-    # === MONTHLY OVERVIEW STATS ===
-    for_approval = db.query(Appointment).filter(
-        Appointment.statusID == pending_id,
-        extract('year', Appointment.preferredStartDate) == current_year,
-        extract('month', Appointment.preferredStartDate) == current_month
-    ).count()
+    if filter_time == "month":
+        for_approval = approval_q.filter(extract('year', Appointment.preferredStartDate) == current_year, extract('month', Appointment.preferredStartDate) == current_month).count()
+        approved_count = approved_q.filter(extract('year', Appointment.assignedDate) == current_year, extract('month', Appointment.assignedDate) == current_month).count()
+        cancelled_count = cancelled_q.filter(extract('year', Appointment.assignedDate) == current_year, extract('month', Appointment.assignedDate) == current_month).count()
+    else: 
+        for_approval = approval_q.filter(Appointment.preferredStartDate >= start_date, Appointment.preferredStartDate <= end_date).count()
+        approved_count = approved_q.filter(Appointment.assignedDate >= start_date, Appointment.assignedDate <= end_date).count()
+        cancelled_count = cancelled_q.filter(Appointment.assignedDate >= start_date, Appointment.assignedDate <= end_date).count()
 
-    approved_month = db.query(Appointment).filter(
-        Appointment.statusID.in_(valid_approved_ids), 
-        extract('year', Appointment.assignedDate) == current_year,
-        extract('month', Appointment.assignedDate) == current_month
-    ).count()
-
-    cancelled_month = db.query(Appointment).filter(
-        Appointment.statusID == cancelled_id,
-        extract('year', Appointment.assignedDate) == current_year,
-        extract('month', Appointment.assignedDate) == current_month
-    ).count()
-
-    # === DAILY SLOT CAPACITY ===
-    active_doctors = db.query(Doctor).filter(
-        Doctor.isAvailable == True 
-    ).all()
-
+    # === DAILY SLOT CAPACITY (Remains daily regardless of filter) ===
+    active_doctors = db.query(Doctor).filter(Doctor.isAvailable == True).all()
     total_available_slots = 0
 
     for doctor in active_doctors:
         doctor_schedules = db.query(Schedule).filter(Schedule.docID == doctor.docID).all()
-        
         works_today = False
         daily_max = 0
 
         for sched in doctor_schedules:
             sched_day = sched.weekDay.value if hasattr(sched.weekDay, 'value') else str(sched.weekDay)
-            
             if sched_day.strip().lower() == today_name.lower():
                 works_today = True
                 daily_max += int(getattr(sched, 'maxPatients', 20) or 20)
@@ -1204,16 +1206,12 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
                 Appointment.assignedDate == today_date,
                 Appointment.statusID.in_(valid_approved_ids)
             ).count()
-            
             total_available_slots += max(0, daily_max - doctor_booked)
-            
-    available_slots = total_available_slots
 
-    # === DAILY QUEUE FETCHING ===
+    # === DAILY QUEUE FETCHING (Remains daily regardless of filter) ===
     todays_appointments = db.query(Appointment).outerjoin(
         DailyQueue, Appointment.appointmentID == DailyQueue.appointmentID
     ).filter(
-        Appointment.deptID, 
         Appointment.assignedDate == today_date,
         Appointment.statusID.in_(valid_approved_ids), 
         DailyQueue.queueID == None  
@@ -1222,22 +1220,12 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
     raw_queue_records = db.query(DailyQueue).join(
         Appointment, DailyQueue.appointmentID == Appointment.appointmentID
     ).filter(
-        Appointment.deptID, 
         Appointment.assignedDate == today_date,
         Appointment.statusID.in_(valid_approved_ids),
-        DailyQueue.queueStatus.in_([
-            queueStatusEnum.Waiting, 
-            queueStatusEnum.inProgress, 
-            queueStatusEnum.Completed
-        ])
+        DailyQueue.queueStatus.in_([queueStatusEnum.Waiting, queueStatusEnum.inProgress, queueStatusEnum.Completed])
     ).all()
 
-    active_queue_records = []
-    for q in raw_queue_records:
-        if getattr(q, 'checkInTime', None) and q.checkInTime.date() < today_date:
-            continue
-            
-        active_queue_records.append(q)
+    active_queue_records = [q for q in raw_queue_records if not (getattr(q, 'checkInTime', None) and q.checkInTime.date() < today_date)]
 
     def format_appt(appt, queue_record=None):
         patient = db.query(Patient).filter(Patient.patientID == appt.patientID).first()
@@ -1264,15 +1252,12 @@ def get_dashboard_data(db: Session = Depends(get_db), current_staff: User = Depe
     return {
         "stats": { 
             "forApproval": for_approval, 
-            "approved": approved_month, 
-            "cancelled": cancelled_month, 
-            "slot": available_slots 
+            "approved": approved_count, 
+            "cancelled": cancelled_count, 
+            "slot": total_available_slots 
         },
         "scheduledList": [format_appt(a) for a in todays_appointments],
-        "queueList": [
-            format_appt(db.query(Appointment).filter(Appointment.appointmentID == q.appointmentID).first(), q) 
-            for q in active_queue_records
-        ]
+        "queueList": [format_appt(db.query(Appointment).filter(Appointment.appointmentID == q.appointmentID).first(), q) for q in active_queue_records]
     }
 
 @router.put("/queue/{appointment_id}")
