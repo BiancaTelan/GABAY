@@ -28,7 +28,9 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
     province: "",
     emergencyContact: "",
     emergencyContactNum: "",
-    emergencyEmail: ""
+    emergencyEmail: "",
+    age: "",
+    civilStatus: ""
   });
 
   const [tempUserInfo, setTempUserInfo] = useState(null);
@@ -347,6 +349,43 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
                 maxLength={10}
                 error={errors.dob}
               />
+
+              <Input
+                label="Age"
+                name="age"
+                value={localUserInfo.age}
+                onChange={handleInputChange}
+                readOnly={!isEditing}
+                noHover={!isEditing}
+                isEditing={isEditing}
+              />
+
+              <div className="flex flex-col">
+                <label className="text-sm font-medium text-gabay-navy mb-1">
+                  Civil Status
+                </label>
+
+                {isEditing ? (
+                  <select
+                    name="civilStatus"
+                    value={localUserInfo.civilStatus}
+                    onChange={handleInputChange}
+                    className="h-[40px] border rounded-lg px-3"
+                  >
+                    <option value="">Select</option>
+                    <option value="Single">Single</option>
+                    <option value="Married">Married</option>
+                    <option value="Widowed">Widowed</option>
+                    <option value="Separated">Separated</option>
+                  </select>
+                ) : (
+                  <Input 
+                    value={localUserInfo.civilStatus || ""}
+                    readOnly
+                    noHover
+                  />
+                )}
+              </div>
               
               <Input label="Contact Number" name="contactNumber" value={localUserInfo.contactNumber} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} required error={errors.contactNumber} />
             </div>

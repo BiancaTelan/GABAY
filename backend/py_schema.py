@@ -48,6 +48,8 @@ class PatientProfileUpdate(BaseModel):
     middlename: Optional[str] = ""
     contactNumber: str
     dob: str
+    age: Optional[int] = None
+    civilStatus: Optional[str] = None
     gender: str
     street: Optional[str] = ""
     barangay: Optional[str] = ""

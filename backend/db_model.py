@@ -97,6 +97,8 @@ class Patient(Base):
     surname: Mapped[str] = mapped_column(String(100), nullable=False)
     suffix: Mapped[Optional[str]] = mapped_column(String(10))
     dob: Mapped[date] = mapped_column(Date, nullable=True)
+    age: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    civilStatus: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
     address: Mapped[Optional[str]] = mapped_column(Text)
     contactNumber: Mapped[Optional[str]] = mapped_column(String(15), nullable=True)
     gender: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)

@@ -87,6 +87,8 @@ def get_patient_profile(email: str, db: Session = Depends(get_db)):
         "is_verified": user.is_verified,
         "hospital_num": patient.hospital_num or "",
         "dob": formatted_dob,
+        "age": patient.age or "",
+        "civilStatus": patient.civilStatus or "",
         "gender": patient.gender or "Female",
         "contactNumber": patient.contactNumber or "",
         "address": patient.address or "",
@@ -117,6 +119,7 @@ def update_patient_profile(
             raise HTTPException(status_code=400, detail="You must be at least 18 years old to register or update a profile.")
             
         patient.dob = dob_date
+        patient.age = age
     except ValueError:
         raise HTTPException(status_code=400, detail="Date format must be YYYY-MM-DD.")
 
@@ -125,7 +128,7 @@ def update_patient_profile(
     patient.middlename = data.middlename 
     patient.contactNumber = data.contactNumber
     patient.gender = data.gender
-    
+    patient.civilStatus = data.civilStatus
     safe_address = f"{data.street} | {data.barangay} | {data.city} | {data.province}"
     patient.address = safe_address
 
