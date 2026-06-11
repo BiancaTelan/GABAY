@@ -4,6 +4,7 @@ import cloudinary.uploader
 from sqlalchemy import func, or_
 from pydantic import BaseModel
 from datetime import datetime, date
+from zoneinfo import ZoneInfo
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks
 from sqlalchemy.orm import Session
@@ -15,6 +16,16 @@ from db_model import User, Patient, Appointment, Department, Doctor, Appointment
 from email_utils import send_notification_email, send_appointment_received_email
 
 router = APIRouter(prefix="/api/appointments", tags=["Appointments"])
+
+PH_TIMEZONE = ZoneInfo("Asia/Manila")
+
+def to_ph_time(dt):
+    if not dt:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=ZoneInfo("UTC"))
+
+    return dt.astimezone(PH_TIMEZONE)
 
 allow_admin_and_staff = RoleChecker([roleEnum.Admin, roleEnum.Staff])
 allow_medical_team = RoleChecker([roleEnum.Admin, roleEnum.Staff])
@@ -205,6 +216,7 @@ async def book_appointment(
 # ---------------------------------------------------------
 @router.get("/history/{email}")
 def get_appointment_history(email: str, db: Session = Depends(get_db)):
+    
     try:
         user = db.query(User).filter(User.email == email).first()
         if not user:
@@ -244,6 +256,8 @@ def get_appointment_history(email: str, db: Session = Depends(get_db)):
 
             action_date = getattr(appt, 'actionDate', None) or appt.createdAt
 
+            ph_action_date = to_ph_time(action_date)
+
             history.append({
                 "id": appt.appointmentID,
                 "date": display_date, 
@@ -253,8 +267,8 @@ def get_appointment_history(email: str, db: Session = Depends(get_db)):
                 "type": appt.type,
                 "reason": appt.purposeDetailed or "No reason provided.",
                 "createdAt": appt.createdAt.strftime("%m/%d/%Y") if appt.createdAt else "Recently",
-                "updatedAt": action_date.strftime("%B %d, %Y at %I:%M %p") if action_date else "Recently",
-                "rawTimestamp": action_date.isoformat() if action_date else "" # Hidden sorting key
+                "updatedAt": ph_action_date.strftime("%B %d, %Y at %I:%M %p") if ph_action_date else "Recently",
+                "rawTimestamp": ph_action_date.isoformat() if ph_action_date else ""
             })
 
         return {
