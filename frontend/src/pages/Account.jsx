@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Input from '../components/input';
-import { LogOut, Trash2, CheckCircle } from 'lucide-react';
+import { LogOut, Trash2, CheckCircle, Download } from 'lucide-react';
 import { emailPattern, namePattern, phonePattern, dobPattern, minAgeRequirement } from '../utils/constants';
 import ConfirmationModal from '../components/confirmModal';
 import ChangeModal from '../components/changeModal';
 import { AuthContext } from '../authContext';
 import toast from 'react-hot-toast';
+import { jsPDF } from 'jspdf';
 import { getApiErrorMessage, parseJsonResponse, showValidationError } from '../utils/apiError';
 
 export default function Account({ userInfo, onLogout, onUpdateProfile }) {
@@ -223,11 +224,104 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
     }
   };
 
-
   const formatDisplayDate = (dateStr) => {
     if (!dateStr || dateStr.includes('/')) return dateStr;
     const [y, m, d] = dateStr.split('-');
     return `${m}/${d}/${y}`;
+  };
+
+  const handleDownloadCard = () => {
+    if (!localUserInfo.hospital_num) {
+      toast.error("No hospital number available to download.");
+      return;
+    }
+
+    try {
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "in",
+        format: "letter"
+      });
+
+      const cardWidth = 4;
+      const cardHeight = 4;
+      const startX = (8.5 - cardWidth) / 2;
+      const startY = 2.0; 
+
+      // Outer border for the card
+      doc.setLineWidth(0.01);
+      doc.rect(startX, startY, cardWidth, cardHeight);
+
+      // POpulate the card with user info
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+
+      doc.text("CAINTA MUNICIPAL HOSPITAL", startX + 0.7, startY + 0.45); 
+
+      // Reset to normal font for fields
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+
+      // Consolidate variables
+      const fullName = `${localUserInfo.firstname} ${localUserInfo.middlename ? localUserInfo.middlename + ' ' : ''}${localUserInfo.surname}`;
+      const address = [localUserInfo.street, localUserInfo.barangay, localUserInfo.city, localUserInfo.province].filter(Boolean).join(', ');
+      
+      const leftCol = startX + 0.2;
+      let currentY = startY + 0.9;
+      const lineSpacing = 0.4;
+      const maxFieldWidth = 3.6;
+
+      // Helper to cleanly draw fields and their underlines
+      const drawField = (label, value, x, y, underlineWidth) => {
+        doc.text(label, x, y);
+        const labelWidth = doc.getTextWidth(label);
+        const valueX = x + labelWidth + 0.05;
+        if (value) doc.text(value.toString(), valueX, y);
+        doc.line(valueX, y + 0.05, x + underlineWidth, y + 0.05); // Underline
+      };
+
+      // Draw Fields
+      drawField("Hospital #:", localUserInfo.hospital_num, leftCol, currentY, maxFieldWidth);
+      currentY += lineSpacing;
+
+      drawField("Name:", fullName, leftCol, currentY, maxFieldWidth);
+      currentY += lineSpacing;
+
+      // Row for Age, Sex, Civil Status
+      drawField("Age:", localUserInfo.age?.toString(), leftCol, currentY, 0.8);
+      drawField("Sex:", localUserInfo.gender, leftCol + 0.9, currentY, 0.8);
+      drawField("Civil Status:", localUserInfo.civilStatus, leftCol + 1.8, currentY, 1.8);
+      currentY += lineSpacing;
+
+      drawField("Birthday:", formatDisplayDate(localUserInfo.dob), leftCol, currentY, maxFieldWidth);
+      currentY += lineSpacing;
+
+      drawField("Address:", address, leftCol, currentY, maxFieldWidth);
+
+      // Inner 'Paalala' Box from the reference image
+      currentY += 0.35;
+      doc.rect(leftCol, currentY, maxFieldWidth, 0.65);
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bolditalic");
+      doc.text("Paalala: Ito po ang inyong permanenteng numero dito sa BCMH.", leftCol + 0.05, currentY + 0.2);
+      doc.setFont("helvetica", "italic");
+      doc.text("Kailangan po na ito ay Lagi ninyong dala sa tuwina ninyong", leftCol + 0.05, currentY + 0.35);
+      doc.text("pagpapakonsulta o pagpunta dito sa ospital.", leftCol + 0.05, currentY + 0.5);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      const footerNote = "This is a digital copy of your Hospital Number (Generated through the GABAY System). Please print this and bring it during your hospital visit to Cainta Municipal Hospital.";
+      
+      const splitNote = doc.splitTextToSize(footerNote, 6.5);
+      doc.text(splitNote, 1.0, startY + cardHeight + 0.5);
+
+      doc.save(`CMH_Hospital_Card_${localUserInfo.hospital_num}.pdf`);
+      toast.success("Digital copy downloaded securely!");
+
+    } catch (error) {
+      console.error("PDF Generation Error:", error);
+      toast.error("An error occurred while generating the document.");
+    }
   };
 
   return (
@@ -290,7 +384,28 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
               )}
             </div>
               
-              <Input label="Hospital Number" value={localUserInfo.hospital_num || 'Unregistered'} readOnly noHover />
+              {/* Hospital Number */}
+              <Input 
+                label={
+                  <div className="flex items-center justify-between w-full pr-2">
+                    <span>Hospital Number</span>
+                    {localUserInfo.hospital_num && (
+                      <button 
+                        onClick={handleDownloadCard}
+                        className="flex items-center gap-1.5 text-[10px] font-bold text-gabay-teal hover:text-teal-700 bg-teal-50 hover:bg-teal-100 px-2 py-1 rounded-full uppercase tracking-widest transition-all"
+                        title="Download Digital Copy"
+                        type="button"
+                      >
+                        <Download size={12} strokeWidth={2.5} /> Download Card
+                      </button>
+                    )}
+                  </div>
+                }
+                value={localUserInfo.hospital_num || 'Unregistered'} 
+                readOnly 
+                noHover 
+              />
+
               <div className="relative">
                 <Input 
                   label={
