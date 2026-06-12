@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, X, Calendar, User as UserIcon, Building2, FileText, Activity } from 'lucide-react';
 import { AuthContext } from '../authContext'; 
+import toast from 'react-hot-toast';
 
 export default function AppointmentHistory() {
   const navigate = useNavigate();
@@ -10,7 +11,12 @@ export default function AppointmentHistory() {
   const [appointments, setAppointments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
+  // Modal States
   const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [appointmentToCancel, setAppointmentToCancel] = useState(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [isCanceling, setIsCanceling] = useState(false);
   
   // --- PAGINATION LOGIC ---
   const [currentPage, setCurrentPage] = useState(1);
@@ -23,41 +29,81 @@ export default function AppointmentHistory() {
     currentPage * itemsPerPage
   );
 
-  useEffect(() => {
-    const fetchHistory = async () => {
-      if (!token) return;
-      
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const userEmail = payload.sub;
+  // --- DATA FETCHING ---
+  const fetchHistory = async () => {
+    if (!token) return;
+    setIsLoading(true);
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const userEmail = payload.sub;
 
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/history/${userEmail}`);
-        if (response.ok) {
-          const data = await response.json();
-          setAppointments(data.appointments || []);
-        }
-      } catch (error) {
-        console.error("Failed to fetch history:", error);
-      } finally {
-        setIsLoading(false);
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/history/${userEmail}`);
+      if (response.ok) {
+        const data = await response.json();
+        setAppointments(data.appointments || []);
       }
-    };
+    } catch (error) {
+      console.error("Failed to fetch appointment data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchHistory();
   }, [token]);
 
-  const handleViewDetails = (appointment) => {
-    setSelectedAppointment(appointment);
+  // --- MODAL HANDLERS ---
+  const handleViewDetails = (appointment) => setSelectedAppointment(appointment);
+  const closeModal = () => setSelectedAppointment(null);
+
+  const openCancelModal = (appointment) => {
+    setAppointmentToCancel(appointment);
+    setCancelModalOpen(true);
   };
 
-  const closeModal = () => {
-    setSelectedAppointment(null);
+  const closeCancelModal = () => {
+    setAppointmentToCancel(null);
+    setCancelReason("");
+    setCancelModalOpen(false);
+  };
+
+  // --- CANCELLATION SUBMISSION ---
+  const handleCancelSubmit = async () => {
+    if (!cancelReason.trim()) {
+      toast.error("Please provide a reason for cancellation.");
+      return;
+    }
+    
+    setIsCanceling(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/${appointmentToCancel.id}/cancel`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ reason: cancelReason })
+      });
+      
+      if (response.ok) {
+        toast.success("Appointment successfully canceled.");
+        closeCancelModal();
+        fetchHistory(); 
+      } else {
+        const data = await response.json();
+        toast.error(data.detail || "Failed to cancel appointment.");
+      }
+    } catch (error) {
+      console.error("Cancel error:", error);
+      toast.error("An error occurred while canceling.");
+    } finally {
+      setIsCanceling(false);
+    }
   };
 
   const goToPage = (page) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
 
   const getStatusStyle = (status) => {
@@ -76,10 +122,10 @@ export default function AppointmentHistory() {
   return (
     <main className="flex flex-col items-center justify-start min-h-[calc(100vh-64px)] px-4 py-12 bg-gray-50 animate-in fade-in duration-500 relative">
       
+      {/* --- DETAILS MODAL --- */}
       {selectedAppointment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
           <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in duration-200">
-            {/* Modal Header */}
             <div className="bg-gabay-blue p-5 flex items-center justify-between">
               <h2 className="text-white font-montserrat font-bold text-xl">Reservation Details</h2>
               <button onClick={closeModal} className="text-white/80 hover:text-white transition-colors">
@@ -87,7 +133,6 @@ export default function AppointmentHistory() {
               </button>
             </div>
             
-            {/* Modal Body */}
             <div className="p-8 font-poppins space-y-6">
               <div className="flex items-center justify-between border-b border-gray-100 pb-4">
                 <div className="flex items-center gap-3 text-gray-600">
@@ -104,7 +149,6 @@ export default function AppointmentHistory() {
                 </div>
                 <div className="text-right">
                   <span className="font-medium block">{selectedAppointment.department}</span>
-                  
                   {selectedAppointment.type && (
                     <span className="text-xs text-gray-400 font-bold uppercase">{selectedAppointment.type} OPD</span>
                   )}
@@ -136,7 +180,6 @@ export default function AppointmentHistory() {
                 </div>
               </div>
 
-              {/* Checked for both referral variations */}
               {(selectedAppointment.referral || selectedAppointment.referral_doc) && (
                 <div className="bg-teal-50 p-4 rounded-lg flex items-center justify-between border border-teal-100">
                   <div className="flex items-center gap-2 text-gabay-teal">
@@ -147,7 +190,6 @@ export default function AppointmentHistory() {
               )}
             </div>
 
-            {/* Modal Footer */}
             <div className="p-5 bg-gray-50 border-t border-gray-100 flex justify-end">
               <button 
                 onClick={closeModal}
@@ -160,12 +202,61 @@ export default function AppointmentHistory() {
         </div>
       )}
 
+      {/* --- CANCELLATION MODAL --- */}
+      {cancelModalOpen && appointmentToCancel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in duration-200">
+            <div className="bg-red-500 p-5 flex items-center justify-between">
+              <h2 className="text-white font-montserrat font-bold text-lg">Cancel Appointment</h2>
+              <button onClick={closeCancelModal} className="text-white/80 hover:text-white transition-colors">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="p-6 font-poppins space-y-4">
+              <p className="text-sm text-gray-600">
+                Are you sure you want to cancel your appointment with <strong>{appointmentToCancel.doctor}</strong> on <strong>{appointmentToCancel.date}</strong>?
+              </p>
+              <div>
+                <label className="block text-sm font-semibold text-gabay-navy mb-2">Reason for Cancellation</label>
+                <textarea
+                  rows="3"
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="Please tell us why you are canceling..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="p-5 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+              <button 
+                onClick={closeCancelModal}
+                disabled={isCanceling}
+                className="px-5 py-2 text-gray-600 font-semibold text-sm hover:bg-gray-200 rounded-full transition-colors"
+              >
+                Keep Appointment
+              </button>
+              <button 
+                onClick={handleCancelSubmit}
+                disabled={isCanceling}
+                className="px-5 py-2 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white font-bold rounded-full transition-colors text-sm shadow-md"
+              >
+                {isCanceling ? "Canceling..." : "Confirm Cancellation"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- MAIN CONTENT --- */}
       <div className="w-full max-w-5xl">
         <h1 className="font-montserrat font-bold text-[40px] text-gabay-teal text-left mb-2">
-          Appointment History
+          Appointment Management
         </h1>
         <p className="font-poppins text-gray-600 text-left text-lg mb-12">
-          See your previous appointments from GABAY here
+          Manage your upcoming and past appointments with GABAY here
         </p>
 
         <div className="bg-white shadow-lg overflow-hidden border border-gabay-blue rounded-t-xl">
@@ -186,7 +277,7 @@ export default function AppointmentHistory() {
                     <th className="px-6 py-4 font-poppins font-semibold text-white">Doctor</th>
                     <th className="px-6 py-4 font-poppins font-semibold text-white">Department</th>
                     <th className="px-6 py-4 font-poppins font-semibold text-white">Status</th>
-                    <th className="px-6 py-4 font-poppins text-white"></th>
+                    <th className="px-6 py-4 font-poppins font-semibold text-white text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -207,13 +298,22 @@ export default function AppointmentHistory() {
                           {appt.status}
                         </span>
                       </td>
-                      <td className="px-6 py-5 text-right">
+                      <td className="px-6 py-5 text-right space-x-4">
                         <button
                           onClick={() => handleViewDetails(appt)}
                           className="font-poppins text-gabay-blue hover:text-gabay-teal hover:underline font-semibold text-sm transition-colors"
                         >
-                          View Details
+                          View
                         </button>
+                        
+                        {(appt.status?.toLowerCase().includes('approved') || appt.status?.toLowerCase().includes('pending')) && (
+                          <button
+                            onClick={() => openCancelModal(appt)}
+                            className="font-poppins text-red-500 hover:text-red-700 hover:underline font-semibold text-sm transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}

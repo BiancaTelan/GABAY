@@ -47,6 +47,9 @@ class RescheduleRequest(BaseModel):
     preferredEndDate: Optional[str] = None
     reason: str
 
+class CancelRequest(BaseModel):
+    reason: str
+
 # ---------------------------------------------------------
 # 1. Strict Access (Only Admins, Staff, and Doctors)
 # ---------------------------------------------------------
@@ -392,4 +395,33 @@ def get_doctor_availability(doctor_name: str, db: Session = Depends(get_db)):
     except Exception as e:
         print(f"Availability fetch error: {e}")
         return {"working_days": [], "fully_booked_dates": []}
-    
+
+# ---------------------------------------------------------
+# 8. Patient Cancellation Endpoint
+# ---------------------------------------------------------
+@router.put("/{appointment_id}/cancel")
+def cancel_appointment(appointment_id: int, request: CancelRequest, db: Session = Depends(get_db)):
+    try:
+        appointment = db.query(Appointment).filter(Appointment.appointmentID == appointment_id).first()
+        if not appointment:
+            raise HTTPException(status_code=404, detail="Appointment not found.")
+
+        cancel_status = db.query(AppointmentStatus).filter(AppointmentStatus.statusName.ilike("%Cancel%")).first()
+        if not cancel_status:
+            raise HTTPException(status_code=500, detail="Canceled status not found in the database.")
+
+        appointment.statusID = cancel_status.statusID
+        appointment.actionDate = func.now()
+        original_reason = appointment.purposeDetailed or "No original reason provided."
+        appointment.purposeDetailed = f"[CANCELED BY PATIENT] Reason: {request.reason} | Original: {original_reason}"
+        
+        appointment.assignedDate = None
+        appointment.assignedScheduleID = None
+        
+        db.commit()
+
+        return {"message": "Appointment successfully canceled."}
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
