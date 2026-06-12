@@ -224,25 +224,25 @@ def approve_appointment(
     patient_email = appointment.patient.user_account.email if (appointment.patient and appointment.patient.user_account) else "N/A"
     doctor_full_name = f"Dr. {getattr(schedule_template.doctor, 'surname', 'Assigned Doctor')}"
     formatted_date = parsed_date.strftime("%B %d, %Y")
-    approving_staff_name = ""
-    if appointment.actionBy_userID:
-        approving_staff = db.query(Staff).filter(Staff.userID == appointment.actionBy_userID).first()
-        if approving_staff:
-            approving_staff_name = f"{approving_staff.firstname} {approving_staff.surname}"
-
-
+    approving_staff_name = "Hospital Staff"
+    if current_staff.userID:
+        staff_record = db.query(Staff).filter(Staff.userID == current_staff.userID).first()
+        if staff_record:
+            approving_staff_name = f"{staff_record.firstname} {staff_record.surname}"
 
     if patient_email:
         background_tasks.add_task(
             send_patient_appointment_email, 
             recipient_email=patient_email, 
-            name=patient_first, 
-            status="Approved",
-            doctor_name=doctor_full_name, 
-            date=formatted_date,
+            name=appointment.patient.firstname, 
+            status="Rescheduled", 
+            doctor_name=f"Dr. {schedule_template.doctor.surname}", 
+            date=parsed_date.strftime("%B %d, %Y"),
             approving_staff_name=approving_staff_name,
-            additional_notes="Please arrive 15 minutes before your batch time."
+            additional_notes=f"Reason for schedule change: {data.reason}"
         )
+
+    return {"message": "Appointment successfully rescheduled."}
     
     db.add(SystemLogs(
         userID=current_staff.userID,
