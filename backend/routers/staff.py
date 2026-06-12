@@ -1414,6 +1414,7 @@ def get_dashboard_data(
             "name": f"{patient.firstname} {patient.surname}" if patient else "Unknown",
             "reason": appt.purposeDetailed or appt.type,
             "assignedDoctor": f"Dr. {doctor.surname}" if doctor else "Unassigned",
+            "department": appt.department.department if appt.department else "General", 
             "status": display_status,
             "time": appt_time,
             "batch": appt.batch or "TBD", 
