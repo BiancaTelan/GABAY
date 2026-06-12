@@ -1,6 +1,17 @@
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, X, Calendar, User as UserIcon, Building2, FileText, Activity } from 'lucide-react';
+import { 
+  ChevronLeft, 
+  ChevronRight, 
+  X, 
+  Calendar, 
+  User as UserIcon, 
+  Building2, 
+  FileText, 
+  Activity, 
+  Eye, 
+  XCircle 
+} from 'lucide-react';
 import { AuthContext } from '../authContext'; 
 import toast from 'react-hot-toast';
 
@@ -174,7 +185,7 @@ export default function AppointmentHistory() {
               </div>
 
               <div>
-                <span className="font-semibold text-gabay-navy mb-2 block">Reason for Booking</span>
+                <span className="font-semibold text-gabay-navy mb-2 block">Additional Details</span>
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-gray-700 text-sm leading-relaxed">
                   {selectedAppointment.reason || "No reason provided."}
                 </div>
@@ -298,20 +309,28 @@ export default function AppointmentHistory() {
                           {appt.status}
                         </span>
                       </td>
-                      <td className="px-6 py-5 text-right space-x-4">
+                      <td className="px-6 py-5 flex justify-end gap-2">
+                        {/* VIEW BUTTON */}
                         <button
                           onClick={() => handleViewDetails(appt)}
-                          className="font-poppins text-gabay-blue hover:text-gabay-teal hover:underline font-semibold text-sm transition-colors"
+                          className="text-gabay-blue hover:text-gabay-teal bg-blue-50 hover:bg-blue-100 p-2 rounded-md transition-colors"
+                          title="View Details"
                         >
-                          View
+                          <Eye size={18} />
                         </button>
                         
-                        {(appt.status?.toLowerCase().includes('approved') || appt.status?.toLowerCase().includes('reschedule')) || appt.status?.toLowerCase().includes('pending') && (
+                        {/* CANCEL BUTTON (Visible for Approved, Rescheduled, or Pending) */}
+                        {(
+                          appt.status?.toLowerCase().includes('approved') || 
+                          appt.status?.toLowerCase().includes('rescheduled') || 
+                          appt.status?.toLowerCase().includes('pending')
+                        ) && (
                           <button
                             onClick={() => openCancelModal(appt)}
-                            className="font-poppins text-red-500 hover:text-red-700 hover:underline font-semibold text-sm transition-colors"
+                            className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-md transition-colors"
+                            title="Cancel Appointment"
                           >
-                            Cancel
+                            <XCircle size={18} />
                           </button>
                         )}
                       </td>
