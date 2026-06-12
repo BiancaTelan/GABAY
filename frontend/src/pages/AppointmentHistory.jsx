@@ -306,7 +306,7 @@ export default function AppointmentHistory() {
                           View
                         </button>
                         
-                        {(appt.status?.toLowerCase().includes('approved') || appt.status?.toLowerCase().includes('rescheduled')) || appt.status?.toLowerCase().includes('pending') && (
+                        {(appt.status?.toLowerCase().includes('approved') || appt.status?.toLowerCase().includes('reschedule')) || appt.status?.toLowerCase().includes('pending') && (
                           <button
                             onClick={() => openCancelModal(appt)}
                             className="font-poppins text-red-500 hover:text-red-700 hover:underline font-semibold text-sm transition-colors"
