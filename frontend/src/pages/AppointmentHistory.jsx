@@ -10,7 +10,8 @@ import {
   FileText, 
   Activity, 
   Eye, 
-  XCircle 
+  XCircle,
+  MessageSquare
 } from 'lucide-react';
 import { AuthContext } from '../authContext'; 
 import toast from 'react-hot-toast';
@@ -184,11 +185,14 @@ export default function AppointmentHistory() {
                 </span>
               </div>
 
-              <div>
-                <span className="font-semibold text-gabay-navy mb-2 block">Additional Details</span>
-                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-gray-700 text-sm leading-relaxed">
-                  {selectedAppointment.reason || "No reason provided."}
+              <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <MessageSquare size={18} className="text-gabay-teal" />
+                  <span className="font-semibold text-gabay-navy text-sm uppercase tracking-wider">Additional Details</span>
                 </div>
+                <p className="text-gray-600 text-sm leading-relaxed italic border-l-2 border-gabay-teal/50 pl-4 ml-2">
+                  {selectedAppointment.reason ? `"${selectedAppointment.reason}"` : "No additional details provided."}
+                </p>
               </div>
 
               {(selectedAppointment.referral || selectedAppointment.referral_doc) && (
