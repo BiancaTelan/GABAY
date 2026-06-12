@@ -342,7 +342,7 @@ def reschedule_appointment(
             doctor_name=f"Dr. {schedule_template.doctor.surname}", 
             date=parsed_date.strftime("%B %d, %Y"),
             approving_staff_name=approving_staff_name,
-            additional_notes=f"Reason for schedule change: {data.reason}"
+            additional_notes=f"{data.reason}"
         )
 
     return {"message": "Appointment successfully rescheduled."}
