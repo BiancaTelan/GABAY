@@ -1310,6 +1310,9 @@ def get_dashboard_data(
     total_available_slots = 0
 
     for doctor in active_doctors:
+        if getattr(doctor, 'onLeaveDate', None) == today_date:
+            continue
+            
         doctor_schedules = db.query(Schedule).filter(Schedule.docID == doctor.docID).all()
         works_today = False
         daily_max = 0
