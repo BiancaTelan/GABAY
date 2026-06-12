@@ -145,6 +145,27 @@ def get_staff_appointments(db: Session = Depends(get_db), current_staff: User = 
                 if approving_staff:
                     approving_staff_name = f"{approving_staff.firstname} {approving_staff.surname}"
 
+            needs_rescheduling = False
+            conflict_reason = None
+
+            if appt.statusID in [5, 6, 7] and appt.assignedDate and appt.doctor:
+                if not getattr(appt.doctor, 'isAvailable', True):
+                    needs_rescheduling = True
+                    conflict_reason = "Doctor is globally inactive."
+                elif getattr(appt.doctor, 'onLeaveDate', None) == appt.assignedDate:
+                    needs_rescheduling = True
+                    conflict_reason = "Doctor is marked Unavailable for this date."
+                else:
+                    day_of_week = appt.assignedDate.strftime("%A")
+                    doc_schedules = appt.doctor.schedule
+                    has_valid_schedule = any(
+                        (s.weekDay.value if hasattr(s.weekDay, 'value') else str(s.weekDay)).lower() == day_of_week.lower() 
+                        for s in doc_schedules
+                    )
+                    
+                    if not has_valid_schedule:
+                        needs_rescheduling = True
+                        conflict_reason = f"Doctor no longer has a schedule on {day_of_week}s."
 
             results.append({
                 "id": appt.appointmentID,
@@ -163,6 +184,8 @@ def get_staff_appointments(db: Session = Depends(get_db), current_staff: User = 
                 "email": patient_email,
                 "approvingStaffName": approving_staff_name,
                 "attachedFile": appt.referral_doc if hasattr(appt, 'referral_doc') else None,
+                "needsRescheduling": needs_rescheduling, 
+                "conflictReason": conflict_reason
             })
 
         return results
