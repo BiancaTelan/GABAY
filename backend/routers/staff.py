@@ -969,12 +969,9 @@ def get_staff_doctors(db: Session = Depends(get_db), current_staff: User = Depen
                 "time": time_str,
                 "maxPatients": int(getattr(s, 'maxPatients', 20))
             })
-            
-            # Check if this schedule block matches today
             if safe_day.strip().lower() == today_name.lower():
                 today_schedule = s
 
-        # Calculate Today's Status and Available Slots
         available_slot = 0
         today_status = "Not Scheduled Today"
         
@@ -1009,10 +1006,11 @@ def get_staff_doctors(db: Session = Depends(get_db), current_staff: User = Depen
             "schedules": parsed_schedules,
             "schedule": schedule_display, 
             "timePeriod": time_display,
-            "contactNumber": getattr(doc, 'contactNumber', 'N/A'), # Uses getattr to prevent crashing if column missing
+            "contactNumber": getattr(doc, 'contactNumber', 'N/A'),
             "email": getattr(doc, 'email', 'N/A'),
             "todayStatus": today_status,
-            "availableSlot": available_slot
+            "availableSlot": available_slot,
+            "onLeaveDate": str(doc.onLeaveDate) if getattr(doc, 'onLeaveDate', None) else None
         })
         
     return results
