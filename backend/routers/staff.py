@@ -90,6 +90,10 @@ class StatusUpdateRequest(BaseModel):
 class ScheduleUpdateRequest(BaseModel):
     schedule: str  
     timePeriod: str
+    maxPatients: int = 20
+
+class DailyStatusRequest(BaseModel):
+    status: str
 
 # ---------------------------------------------------------
 # 1. STAFF ACTION: APPOINTMENT MANAGEMENT 
@@ -803,7 +807,6 @@ async def stream_notifications(request: Request, token: str = Query(...), db: Se
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
-
 # ---------------------------------------------------------
 # 4. CHECK SLOT AND DOCTOR AVAILABILITY
 # ---------------------------------------------------------
@@ -933,29 +936,83 @@ def get_departments_and_doctors(
 # ---------------------------------------------------------
 @router.get("/doctors/list")
 def get_staff_doctors(db: Session = Depends(get_db), current_staff: User = Depends(get_current_user)):
+    ph_tz = ZoneInfo("Asia/Manila")
+    today = datetime.now(ph_tz)
+    today_date = today.date()
+    today_name = today.strftime('%A')
+
     doctors = db.query(Doctor).all()
+    
+    # Fetch active statuses to accurately count booked slots
+    active_statuses = db.query(AppointmentStatus).filter(
+        AppointmentStatus.statusName.ilike("%Approved%") |
+        AppointmentStatus.statusName.ilike("%Confirmed%") |
+        AppointmentStatus.statusName.ilike("%Rescheduled%") |
+        AppointmentStatus.statusName.ilike("%Book%")
+    ).all()
+    valid_ids = [s.statusID for s in active_statuses] if active_statuses else [2, 5, 6, 7]
+
     results = []
     for doc in doctors:
         schedule_records = db.query(Schedule).filter(Schedule.docID == doc.docID).all()
 
         parsed_schedules = []
+        today_schedule = None
+
         for s in schedule_records:
             safe_day = s.weekDay.value if hasattr(s.weekDay, 'value') else str(s.weekDay)
+            time_str = f"{s.startTime.strftime('%I:%M %p')} - {s.endTime.strftime('%I:%M %p')}" if getattr(s, 'startTime', None) else "TBD"
             
             parsed_schedules.append({
                 "id": s.scheduleID,
-                "day": safe_day if s.weekDay else "TBD", 
-                "time": f"{s.startTime.strftime('%I:%M %p')} - {s.endTime.strftime('%I:%M %p')}" if getattr(s, 'startTime', None) else "TBD"
+                "day": safe_day, 
+                "time": time_str,
+                "maxPatients": int(getattr(s, 'maxPatients', 20))
             })
             
+            # Check if this schedule block matches today
+            if safe_day.strip().lower() == today_name.lower():
+                today_schedule = s
+
+        # Calculate Today's Status and Available Slots
+        available_slot = 0
+        today_status = "Not Scheduled Today"
+        
+        if today_schedule:
+            if not getattr(doc, 'isAvailable', True):
+                today_status = "Inactive"
+            elif getattr(doc, 'onLeaveDate', None) == today_date:
+                today_status = "On Leave / Unavailable"
+            else:
+                today_status = "Available"
+                booked_count = db.query(Appointment).filter(
+                    Appointment.docID == doc.docID,
+                    Appointment.assignedDate == today_date,
+                    Appointment.statusID.in_(valid_ids)
+                ).count()
+                available_slot = max(0, int(getattr(today_schedule, 'maxPatients', 20)) - booked_count)
+
+        schedule_display = "TBD"
+        time_display = "TBD"
+        if parsed_schedules:
+            schedule_display = ", ".join([s['day'][:3] for s in parsed_schedules])
+            time_display = parsed_schedules[0]['time']
+
         results.append({
             "id": doc.docID,
             "name": f"Dr. {doc.firstname} {doc.surname}",
             "role": "Attending Physician",
             "department": doc.department.department if doc.department else "General",
             "availability": "Available" if getattr(doc, 'isAvailable', True) else "Not Available",
-            
-            "schedules": parsed_schedules 
+            "isActive": getattr(doc, 'isAvailable', True),
+            "isAvailable": getattr(doc, 'isAvailable', True),
+            "schedules": parsed_schedules,
+            "schedule": schedule_display, 
+            "timePeriod": time_display,
+            "contactNumber": getattr(doc, 'contactNumber', 'N/A'), # Uses getattr to prevent crashing if column missing
+            "email": getattr(doc, 'email', 'N/A'),
+            "todayStatus": today_status,
+            "availableSlot": available_slot
         })
         
     return results
@@ -1060,7 +1117,7 @@ def add_doctor_schedule(
             weekDay=full_day_name, 
             startTime=parsed_start,
             endTime=parsed_end,
-            maxPatients=20 
+            maxPatients=data.maxPatients 
         )
         db.add(new_schedule)
     
@@ -1105,6 +1162,9 @@ def edit_specific_schedule(
     
     short_day = data.schedule.split(',')[0].strip()
     schedule.weekDay = day_mapping.get(short_day, short_day)
+    schedule.startTime = parsed_start    
+    schedule.endTime = parsed_end          
+    schedule.maxPatients = data.maxPatients
 
     db.add(SystemLogs(
         userID=current_staff.userID, actionType=actionTypeEnum.UPDATE, tableAffected="scheduleTable",
@@ -1145,6 +1205,41 @@ def delete_specific_schedule(
         "timestamp": datetime.now().isoformat()
     })
     return {"message": "Schedule deleted successfully"}
+
+@router.put("/doctors/{doctor_id}/daily-status")
+def update_daily_status(
+    doctor_id: int, 
+    data: DailyStatusRequest, 
+    request: Request,
+    db: Session = Depends(get_db), 
+    current_staff: User = Depends(get_current_user)
+):
+    doctor = db.query(Doctor).filter(Doctor.docID == doctor_id).first()
+    if not doctor:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+        
+    ph_tz = ZoneInfo("Asia/Manila")
+    today_date = datetime.now(ph_tz).date()
+
+    if data.status == "Unavailable":
+        doctor.onLeaveDate = today_date
+    else:
+        if doctor.onLeaveDate == today_date:
+            doctor.onLeaveDate = None
+            
+    db.add(SystemLogs(
+        userID=current_staff.userID, actionType=actionTypeEnum.UPDATE, tableAffected="doctorTable",
+        details=f"Staff updated Dr. {doctor.surname} daily status to {data.status}", ipAddress=request.client.host
+    ))
+    db.commit()
+
+    notifier.broadcast_sync({
+        "title": "Daily Status Updated",
+        "desc": f"Updated daily status for Dr. {doctor.surname}",
+        "action": "UPDATE",
+        "timestamp": datetime.now(ph_tz).isoformat()
+    })
+    return {"message": "Daily status updated"}
 
 # ---------------------------------------------------------
 # 7. DASHBOARD DATA ENDPOINTS

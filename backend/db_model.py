@@ -117,10 +117,12 @@ class Doctor(Base):
 
     docID: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     deptID: Mapped[Optional[int]] = mapped_column(ForeignKey("departmentTable.deptID", ondelete="SET NULL"))
-    
     firstname: Mapped[str] = mapped_column(String(100), nullable=False)
     surname: Mapped[str] = mapped_column(String(100), nullable=False)
     isAvailable: Mapped[bool] = mapped_column(Boolean, default=True)
+    contactNumber: Mapped[Optional[str]] = mapped_column(String(15), nullable=True)
+    email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    onLeaveDate: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
 
     # === Relationships ===
     department: Mapped[Optional["Department"]] = relationship(back_populates="doctors")
