@@ -327,6 +327,12 @@ def reschedule_appointment(
     if appointment.patient and appointment.patient.user_account:
         patient_email = appointment.patient.user_account.email 
 
+    approving_staff_name = "Hospital Staff"
+    if current_staff.userID:
+        staff_record = db.query(Staff).filter(Staff.userID == current_staff.userID).first()
+        if staff_record:
+            approving_staff_name = f"{staff_record.firstname} {staff_record.surname}"
+
     if patient_email:
         background_tasks.add_task(
             send_patient_appointment_email, 
@@ -335,7 +341,7 @@ def reschedule_appointment(
             status="Rescheduled", 
             doctor_name=f"Dr. {schedule_template.doctor.surname}", 
             date=parsed_date.strftime("%B %d, %Y"),
-            approving_staff_name=f"{current_staff.staff_profile[0].firstname} {current_staff.staff_profile[0].surname}" if current_staff.staff_profile else "Hospital Staff",
+            approving_staff_name=approving_staff_name,
             additional_notes=f"Reason for schedule change: {data.reason}"
         )
 
