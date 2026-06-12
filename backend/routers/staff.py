@@ -889,6 +889,8 @@ def get_doctor_working_days(
     }
     
     working_days = []
+    schedule_details = {} 
+    
     for t in templates:
         raw_day_string = str(t.weekDay).lower() 
         
@@ -898,10 +900,23 @@ def get_doctor_working_days(
             clean_day = raw_day_string.strip()
             
         if clean_day in day_map:
-            working_days.append(day_map[clean_day])
+            day_idx = day_map[clean_day]
+            working_days.append(day_idx)
             
-    return {"working_days": list(set(working_days))}
-
+            if day_idx not in schedule_details:
+                schedule_details[day_idx] = []
+                
+            if t.startTime.hour < 12:
+                if "Morning" not in schedule_details[day_idx]:
+                    schedule_details[day_idx].append("Morning")
+            else:
+                if "Afternoon" not in schedule_details[day_idx]:
+                    schedule_details[day_idx].append("Afternoon")
+            
+    return {
+        "working_days": list(set(working_days)),
+        "schedule_details": schedule_details 
+    }
 # ---------------------------------------------------------
 # 5. DEPARTMENTS AND DOCTORS FEED
 # ---------------------------------------------------------
