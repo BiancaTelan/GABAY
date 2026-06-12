@@ -20,7 +20,10 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
     contactNumber: "",
     dob: "",
     gender: "Female",
-    address: ""
+    houseNumber: "",  
+    barangay: "",
+    city: "",
+    province: ""
   });
 
   const [errors, setErrors] = useState({});
@@ -78,8 +81,12 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
     } else if (formData.hospital_num.length < 9) {
       newErrors.hospital_num  = "Must be a valid hospital number format";
     }
+
+    if (!formData.houseNumber.trim()) newErrors.houseNumber = "House/Street is required";
+    if (!formData.barangay.trim()) newErrors.barangay = "Barangay is required";
+    if (!formData.city.trim()) newErrors.city = "City/Municipality is required";
+    if (!formData.province.trim()) newErrors.province = "Province is required";
     
-    if (!formData.address.trim()) newErrors.address = "Home address is required";
     if (!phonePattern.test(formData.contactNumber)) newErrors.contactNumber = "Must be a valid 11-digit number";
     
     if (!formData.dob.trim() || formData.dob === "MM/DD/YYYY") {
@@ -107,6 +114,11 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
     if (validate()) {
       setIsSubmitting(true);
       
+      const fullAddress = `${formData.houseNumber}, ${formData.barangay}, ${formData.city}, ${formData.province}`;
+      const payload = {
+        ...formData
+      };
+      
       try {
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/patients/update-profile`, {
           method: 'PUT',
@@ -114,7 +126,7 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           },
-          body: JSON.stringify(formData)
+          body: JSON.stringify(payload)
         });
 
         const data = await response.json();
@@ -217,16 +229,46 @@ export default function RegisterHospitalNumber({ initialData, onFinalSubmit }) {
           isEditing={true} 
         />
 
-        <div className="md:col-span-2">
-          <Input 
-            label="Home Address" 
-            name="address" 
-            value={formData.address} 
-            onChange={handleInputChange} 
-            error={errors.address} 
-            required 
-            isEditing={true} 
-          />
+        <div className="md:col-span-2 space-y-3">
+          <label className="block text-sm font-medium text-gabay-navy mb-1">Address</label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input 
+              label="House No. / Street / Subdivision" 
+              name="houseNumber" 
+              value={formData.houseNumber} 
+              onChange={handleInputChange} 
+              error={errors.houseNumber} 
+              required 
+              isEditing={true} 
+            />
+            <Input 
+              label="Barangay" 
+              name="barangay" 
+              value={formData.barangay} 
+              onChange={handleInputChange} 
+              error={errors.barangay} 
+              required 
+              isEditing={true} 
+            />
+            <Input 
+              label="City / Municipality" 
+              name="city" 
+              value={formData.city} 
+              onChange={handleInputChange} 
+              error={errors.city} 
+              required 
+              isEditing={true} 
+            />
+            <Input 
+              label="Province" 
+              name="province" 
+              value={formData.province} 
+              onChange={handleInputChange} 
+              error={errors.province} 
+              required 
+              isEditing={true} 
+            />
+          </div>
         </div>
 
         <div className="md:col-span-2 flex justify-end items-center mt-6">
