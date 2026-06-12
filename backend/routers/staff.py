@@ -1402,6 +1402,11 @@ def get_dashboard_data(
             appt_time = appt.assignedSchedule.startTime.strftime('%I:%M %p')
         else:
             appt_time = "TBD"
+        
+        doctor_unavailable = False
+        if doctor:
+            if not getattr(doctor, 'isAvailable', True) or getattr(doctor, 'onLeaveDate', None) == today_date:
+                doctor_unavailable = True
 
         return {
             "id": appt.appointmentID,
@@ -1410,7 +1415,11 @@ def get_dashboard_data(
             "reason": appt.purposeDetailed or appt.type,
             "assignedDoctor": f"Dr. {doctor.surname}" if doctor else "Unassigned",
             "status": display_status,
-            "time": appt_time
+            "time": appt_time,
+            "batch": appt.batch or "TBD", 
+            "docID": appt.docID, 
+            "email": patient.user_account.email if (patient and patient.user_account) else "N/A", 
+            "doctorUnavailable": doctor_unavailable 
         }
     
     return {
