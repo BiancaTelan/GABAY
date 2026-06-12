@@ -8,11 +8,12 @@ from db_model import User, Patient
 from py_schema import HospitalNumberRequest, PatientProfileUpdate, ContactFormRequest
 from email_utils import send_contact_us_email
 from datetime import datetime, date
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/patients", tags=["Patient Management"])
 
 # ---------------------------------------------------------
-# 1. HOSPITAL NUMBER GENERATION
+# 1. HOSPITAL NUMBER REGISTRATION AND GENERATION
 # ---------------------------------------------------------
 @router.post("/generate-hospital-number")
 def generate_hospital_number(request: HospitalNumberRequest, db: Session = Depends(get_db)):
@@ -63,6 +64,29 @@ def generate_hospital_number(request: HospitalNumberRequest, db: Session = Depen
         print(f"\n❌ ERROR GENERATING ID: {str(e)}\n")
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Server Error: {str(e)}")
+
+class LinkHospitalNumberRequest(BaseModel):
+    hospital_num: str
+
+@router.put("/link-hospital-number")
+def link_hospital_number(
+    data: LinkHospitalNumberRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    patient = db.query(Patient).filter(Patient.userID == current_user.userID).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient profile not found.")
+    
+    # Check if the hospital number is already claimed by another account
+    existing = db.query(Patient).filter(Patient.hospital_num == data.hospital_num).first()
+    if existing and existing.patientID != patient.patientID:
+        raise HTTPException(status_code=400, detail="This hospital number is already registered to another account.")
+        
+    patient.hospital_num = data.hospital_num
+    db.commit()
+    
+    return {"message": "Hospital number linked successfully!"}
 
 # ---------------------------------------------------------
 # 2. PATIENT PROFILE MANAGEMENT

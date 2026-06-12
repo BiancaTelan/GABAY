@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import caintaLanding from '../assets/caintaLanding.png';
 import introimage1 from '../assets/intro1.png'; 
 import introimage2 from '../assets/intro2.png';
-import lists from '../assets/lists.png';
+import personCheck from '../assets/personCheck.png';
 import send from '../assets/send.png';
 import checkCircle from '../assets/checkCircle.png';
 import plus from '../assets/plus.png';
@@ -117,11 +117,11 @@ export default function Home() {
                 Step One
               </h3>
               <p className="font-montserrat text-2xl text-gabay-navy font-bold mb-2 text-left">
-                Choose a Department
+                Account and Hospital Number
               </p>
-              <img src={lists} alt="Lists icon" className="w-20 h-20 mb-4 mt-12 mx-auto object-contain" />
+              <img src={personCheck} alt="Person Check icon" className="w-20 h-20 mb-4 mt-4 mx-auto object-contain" />
               <p className="font-poppins text-gabay-navy text-left">
-                Head to the Departments link in the navigation bar and select your designated choice
+                Log in or sign up, then register your existing hospital number or request a new one.
               </p>
             </div>
 
@@ -129,12 +129,12 @@ export default function Home() {
               <h3 className="font-poppins text-xl font-semibold text-gabay-teal mb-3 text-left">
                 Step Two
               </h3>
-              <p className="font-montserrat text-2xl text-gabay-navy font-bold mb-2 text-left">
-                Submit the Required Forms
+              <p className="font-montserrat text-2xl text-gabay-navy font-bold mb-10 text-left">
+                Choose and Submit
               </p>
-              <img src={send} alt="Send icon" className="w-20 h-20 mb-4 mt-4 mx-auto object-contain" />
+              <img src={send} alt="Send icon" className="w-20 h-20 mb-4 mt-12 mx-auto object-contain" />
               <p className="font-poppins text-gabay-navy text-left">
-                Complete updating your account with valid details and fill up the reservation form
+                Select your department, fill out the required forms, and submit your reservation.
               </p>
             </div>
 
@@ -147,7 +147,7 @@ export default function Home() {
               </p>
               <img src={checkCircle} alt="Check Circle icon" className="w-20 h-20 mb-4 mt-12 mx-auto object-contain" />
               <p className="font-poppins text-gabay-navy text-left">
-                Ensure your contact information is correct and wait for the updates regarding your reservation
+                Ensure your contact information is correct and wait for updates regarding your reservation.
               </p>
             </div>
           </div>
