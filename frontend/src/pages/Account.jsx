@@ -20,20 +20,35 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
     email: "",
     contactNumber: "",
     dob: "",
+    age: "",
     gender: "Female",
     houseNumber: "",
     barangay: "",
     city: "",
+    postalCode: "",
     province: "",
+    guardianFirstName: "",
+    guardianMiddleName: "",
+    guardianSurname: "",
+    guardianExtension: "",
+    guardianContactNum: "",
+    relationship: "",
     emergencyContact: "",
     emergencyContactNum: "",
     emergencyEmail: ""
   });
 
+  const [isMinor, setIsMinor] = useState(false);
   const [tempUserInfo, setTempUserInfo] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [errors, setErrors] = useState({});
   const [showToast, setShowToast] = useState(false);
+
+  useEffect(() => {
+    if (localUserInfo.age && Number(localUserInfo.age) < 18) {
+      setIsMinor(true);
+    }
+  }, [localUserInfo.age]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -62,6 +77,23 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
     }
   }, [showToast]);
 
+  const calculateAge = (dobString) => {
+    if (!dobString || dobString.includes('M')) return "";
+    const parts = dobString.split('/');
+    if (parts.length !== 3) return "";
+    const [m, d, y] = parts.map(Number);
+    if (!m || !d || !y || y.toString().length !== 4) return "";
+    
+    const today = new Date();
+    const birthDate = new Date(y, m - 1, d);
+    let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      calculatedAge--;
+    }
+    return calculatedAge >= 0 ? calculatedAge.toString() : "0";
+  };
+
   const handleInputChange = (e) => {
     let { name, value } = e.target;
     if (name === 'dob' && isEditing) {
@@ -70,7 +102,15 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
       else if (cleanValue.length <= 4) value = `${cleanValue.slice(0, 2)}/${cleanValue.slice(2)}`;
       else value = `${cleanValue.slice(0, 2)}/${cleanValue.slice(2, 4)}/${cleanValue.slice(4, 8)}`;
     }
-    setLocalUserInfo(prev => ({ ...prev, [name]: value }));
+    
+    setLocalUserInfo(prev => {
+      const updated = { ...prev, [name]: value };
+      if (name === 'dob' && value.length === 10) {
+        updated.age = calculateAge(value);
+      }
+      return updated;
+    });
+
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }));
   };
 
@@ -78,7 +118,14 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
     const dateValue = e.target.value; 
     if (!dateValue) return;
     const [y, m, d] = dateValue.split('-');
-    setLocalUserInfo(prev => ({ ...prev, dob: `${m}/${d}/${y}` }));
+    const formattedDob = `${m}/${d}/${y}`;
+    
+    setLocalUserInfo(prev => ({ 
+      ...prev, 
+      dob: formattedDob,
+      age: calculateAge(formattedDob)
+    }));
+
     if (errors.dob) setErrors(prev => ({ ...prev, dob: null }));
   };
 
@@ -144,8 +191,7 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
     if (!localUserInfo.firstname.trim()) newErrors.firstname = "First name is required";
     else if (!namePattern.test(localUserInfo.firstname)) newErrors.firstname = "Name cannot contain numbers";
     
-    if (!localUserInfo.middlename.trim()) newErrors.middlename = "Middle Name is required";
-    else if (!namePattern.test(localUserInfo.middlename)) newErrors.middlename = "Name cannot contain numbers";
+    if (!namePattern.test(localUserInfo.middlename)) newErrors.middlename = "Name cannot contain numbers";
 
     if (!localUserInfo.surname.trim()) newErrors.surname = "Last name is required";
     else if (!namePattern.test(localUserInfo.surname)) newErrors.surname = "Name cannot contain numbers";
@@ -162,11 +208,26 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
         let age = today.getFullYear() - birthDate.getFullYear();
         const monthDiff = today.getMonth() - birthDate.getMonth();
         if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) age--;
-        if (age < minAgeRequirement) newErrors.dob = `USER MUST BE ATLEAST ${minAgeRequirement} YEARS OLD`;
+        
+        if (!isMinor && age < minAgeRequirement) {
+          newErrors.dob = `USER MUST BE ATLEAST ${minAgeRequirement} YEARS OLD`;
+        }
       }
     }
 
-    if (!localUserInfo.address.trim()) newErrors.address = "Home address is required";
+    if (isMinor) {
+      if (!localUserInfo.guardianFirstName.trim()) newErrors.guardianFirstName = "Guardian first name is required";
+      else if (!namePattern.test(localUserInfo.guardianFirstName)) newErrors.guardianFirstName = "Name must contain letters only";
+
+      if (!localUserInfo.guardianSurname.trim()) newErrors.guardianSurname = "Guardian last name is required";
+      else if (!namePattern.test(localUserInfo.guardianSurname)) newErrors.guardianSurname = "Name must contain letters only";
+
+      if (!localUserInfo.guardianContactNum.trim()) newErrors.guardianContactNum = "Guardian contact number is required";
+      else if (!phonePattern.test(localUserInfo.guardianContactNum)) newErrors.guardianContactNum = "Must be an 11-digit mobile number";
+
+      if (!localUserInfo.relationship) newErrors.relationship = "Relationship specification is required";
+    }
+
     if (!localUserInfo.contactNumber.trim()) newErrors.contactNumber = "Contact number is required";
     else if (!phonePattern.test(localUserInfo.contactNumber)) newErrors.contactNumber = "Must be a valid 11-digit number";
 
@@ -221,7 +282,6 @@ const handleSave = async () => {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-10 font-poppins relative text-left animate-in fade-in duration-500">
-      {/* TOAST NOTIF */}
       {showToast && (
         <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[100] pointer-events-none">
           <div className="bg-green-500 text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-white/20">
@@ -257,12 +317,24 @@ const handleSave = async () => {
       <div className="flex flex-col md:flex-row gap-12">
         <div className="flex-1 space-y-10">
           <section>
-            <h2 className="text-lg font-semibold text-gabay-blue mb-6 tracking-wider uppercase">Personal Information</h2>
+            <h2 className="text-lg font-semibold text-gabay-blue mb-1 tracking-wider uppercase">Patient Information</h2>
+             <label className="flex items-center cursor-pointer group mb-6 tracking-wide uppercase">
+                <input 
+                  type="checkbox" 
+                  checked={isMinor}
+                  disabled={!isEditing}
+                  onChange={(e) => setIsMinor(e.target.checked)}
+                  className="w-4 h-4 border-gray-300 rounded bg-gabay-blue focus:ring-gabay-blue cursor-pointer disabled:cursor-not-allowed"
+                />
+                <span className="ml-2 text-xs font-poppins text-gray-600 group-hover:text-gabay-blue transition-colors">
+                  Is Patient under 18 years old?
+                </span>
+              </label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
               {isEditing ? (
                 <>
                   <Input label="First Name" name="firstname" value={localUserInfo.firstname} onChange={handleInputChange} error={errors.firstname} isEditing={isEditing} required />
-                  <Input label="Middle Name" name="middlename" value={localUserInfo.middlename} onChange={handleInputChange} error={errors.middlename} isEditing={isEditing} required /> 
+                  <Input label="Middle Name" name="middlename" value={localUserInfo.middlename} onChange={handleInputChange} error={errors.middlename} isEditing={isEditing} /> 
                   <Input label="Last Name" name="surname" value={localUserInfo.surname} onChange={handleInputChange} error={errors.surname} isEditing={isEditing} required />
                   <div className="flex flex-col gap-1 w-full">
                   <label className="text-sm font-poppins font-medium text-gray-700">Name Extension</label>
@@ -272,8 +344,8 @@ const handleSave = async () => {
                     <option value="Jr.">Jr.</option>
                     <option value="Sr.">Sr.</option>
                     <option value="III">III</option>
-                    <option value="III">IV</option>
-                    <option value="III">V</option>
+                    <option value="IV">IV</option>
+                    <option value="V">V</option>
                   </select>
                   </div>
                 </>
@@ -283,7 +355,7 @@ const handleSave = async () => {
                   localUserInfo.middlename,
                   localUserInfo.surname,
                   localUserInfo.extension
-                  ].filter(Boolean).join('')} readOnly noHover />
+                  ].filter(Boolean).join(' ')} readOnly noHover />
               )}
               
               <Input label="Hospital Number" value={localUserInfo.hospital_num} readOnly noHover />
@@ -339,13 +411,12 @@ const handleSave = async () => {
                 maxLength={10}
                 error={errors.dob}
               />
-
+              
+              <Input label="Age" name="age" value={localUserInfo.age} readOnly noHover />
               <Input label="Contact Number" name="contactNumber" value={localUserInfo.contactNumber} onChange={handleInputChange} readOnly={!isEditing} noHover={!isEditing} isEditing={isEditing} required error={errors.contactNumber} />
 
               <div className="md:col-span-2">
-
                 {isEditing ? (
-                  /* Grid block that scales to 2 columns on tablets/desktops */
                   <div className="grid col-span-1 md:grid-cols-2 gap-4">
                     <Input 
                       label="House No. / Street / Subdivision" 
@@ -386,16 +457,26 @@ const handleSave = async () => {
                       isEditing={isEditing} 
                       required 
                     />
+
+                    <Input 
+                      label="Postal Code" 
+                      name="postalCode" 
+                      value={localUserInfo.postalCode || ""} 
+                      onChange={handleInputChange} 
+                      error={errors.postalCode} 
+                      isEditing={isEditing} 
+                      required 
+                    />
                   </div>
                 ) : (
-                  /* Concatenates the fields cleanly with commas when in read-only mode */
                   <Input 
                     label="Home Address" 
                     value={[
                       localUserInfo.houseNumber,
                       localUserInfo.barangay,
                       localUserInfo.city,
-                      localUserInfo.province
+                      localUserInfo.province,
+                      localUserInfo.postalCode
                     ].filter(Boolean).join(', ')} 
                     readOnly 
                     noHover 
@@ -405,6 +486,64 @@ const handleSave = async () => {
 
             </div>
           </section>
+
+
+          {isMinor && isEditing && (
+            <section className="animate-in slide-in-from-top-4 duration-300">
+              <h2 className="text-lg font-semibold text-gabay-blue mb-6 tracking-wider uppercase">Guardian Information</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 items-start">
+                <Input label="First Name" name="guardianFirstName" value={localUserInfo.guardianFirstName} onChange={handleInputChange} error={errors.guardianFirstName} isEditing={isEditing} required />
+                <Input label="Middle Name" name="guardianMiddleName" value={localUserInfo.guardianMiddleName} onChange={handleInputChange} error={errors.guardianMiddleName} isEditing={isEditing} /> 
+                <Input label="Last Name" name="guardianSurname" value={localUserInfo.guardianSurname} onChange={handleInputChange} error={errors.guardianSurname} isEditing={isEditing} required />
+                
+                <div className="flex flex-col gap-1 w-full">
+                  <label className="text-sm font-poppins font-medium text-gray-700">Name Extension</label>
+                  <select value={localUserInfo.guardianExtension || ""} onChange={(e) => setLocalUserInfo({ ...localUserInfo, guardianExtension: e.target.value })}
+                    className="w-full p-2 border border-gray-300 rounded-md font-poppins text-sm bg-white outline-none focus:ring-1 focus:ring-gabay-teal text-gray-700 cursor-pointer">
+                    <option value="">None (N/A)</option>
+                    <option value="Jr.">Jr.</option>
+                    <option value="Sr.">Sr.</option>
+                    <option value="III">III</option>
+                    <option value="IV">IV</option>
+                    <option value="V">V</option>
+                  </select>
+                </div>
+
+                <Input label="Contact Number" name="guardianContactNum" value={localUserInfo.guardianContactNum} onChange={handleInputChange} isEditing={isEditing} error={errors.guardianContactNum} required />
+                
+                <div className="flex flex-col gap-1 w-full">
+                  <label className="text-sm font-poppins font-medium text-gray-700">Relationship to Patient</label>
+                  <select value={localUserInfo.relationship || ""} onChange={(e) => setLocalUserInfo({ ...localUserInfo, relationship: e.target.value })}
+                    className={`w-full p-2 border rounded-md font-poppins text-sm bg-white outline-none transition-all h-[38px] text-gray-700 cursor-pointer ${
+                    errors.relationship ? 'border-red-500 focus:ring-1 focus:ring-red-500 ring-1 ring-red-500/20' : 'border-gray-300 focus:ring-1 focus:ring-gabay-teal'}`} required>
+                    <option value="">Select Relationship</option>
+                    <option value="Parent">Parent</option>
+                    <option value="Sibling">Sibling</option>
+                    <option value="Grandparent">Grandparent</option>
+                    <option value="Extended Relative">Extended Relative</option>
+                  </select>
+                  {errors.relationship && <p className="text-[10px] text-red-500 font-poppins font-bold uppercase">{errors.relationship}</p>}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {isMinor && !isEditing && (
+            <section className="animate-in fade-in duration-300">
+              <h2 className="text-lg font-semibold text-gabay-blue mb-6 tracking-wider uppercase">Guardian Information</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                <Input label="Guardian Full Name" value={[
+                  localUserInfo.guardianFirstName,
+                  localUserInfo.guardianMiddleName,
+                  localUserInfo.guardianSurname,
+                  localUserInfo.guardianExtension
+                ].filter(Boolean).join(' ')} readOnly noHover />
+
+                <Input label="Guardian Contact Number" value={localUserInfo.guardianContactNum} readOnly noHover />
+                <Input label="Relationship to Patient" value={localUserInfo.relationship} readOnly noHover />
+              </div>
+            </section>
+          )}
 
           <section>
             <h2 className="text-lg font-semibold text-gabay-blue mb-6 tracking-wider uppercase">Emergency Contact Information</h2>
@@ -433,7 +572,6 @@ const handleSave = async () => {
           </button>
           {isEditing && (
             <>
-            
               <button onClick={() => { setModalType('email'); setIsModalOpen(true); }}
               className="text-gabay-blue hover:text-gabay-navy transition-colors hover:underline text-sm font-medium text-left">
               Change Email
