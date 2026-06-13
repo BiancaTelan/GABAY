@@ -210,10 +210,24 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
         if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) age--;
         
         if (!isMinor && age < minAgeRequirement) {
-          newErrors.dob = `USER MUST BE ATLEAST ${minAgeRequirement} YEARS OLD`;
-        }
+          newErrors.dob = `USER MUST BE ATLEAST ${minAgeRequirement} YEARS OLD`;}
+          
+        else if (age > 110) {
+          newErrors.dob = "Age cannot exceed 110 years old";}
       }
     }
+
+
+    if (!localUserInfo.houseNumber.trim()) {
+      newErrors.houseNumber = "House No. / Street / Subdivision field cannot be empty";}
+    if (!localUserInfo.barangay.trim()) {
+      newErrors.barangay = "Barangay field cannot be empty";}
+    if (!localUserInfo.city.trim()) {
+      newErrors.city = "City / Municipality field cannot be empty";}
+    if (!localUserInfo.province.trim()) {
+      newErrors.province = "Province field cannot be empty";}
+    if (!localUserInfo.postalCode.trim()) {
+      newErrors.postalCode = "Postal Code field cannot be empty";}
 
     if (isMinor) {
       if (!localUserInfo.guardianFirstName.trim()) newErrors.guardianFirstName = "Guardian first name is required";
