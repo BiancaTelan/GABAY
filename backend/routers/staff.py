@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, extract, cast, String, or_
 from db_connection import get_db
 from db_model import Appointment, Department, Schedule, Staff, SystemLogs, actionTypeEnum, User, Patient, Doctor, DailyQueue, queueStatusEnum, AppointmentStatus, weekDayEnum
-from security import get_current_user, verify_token
+from security import get_current_user, verify_token, verify_system_operational
 from pydantic import BaseModel
 from passlib.context import CryptContext
 from datetime import datetime, date, timedelta
@@ -44,6 +44,7 @@ class ProfileUpdate(BaseModel):
     barangay: str = ""
     city: str = ""
     province: str = ""
+    postalCode: Optional[str] = ""
 
 class EmailChangeRequest(BaseModel):
     current_password: str
@@ -232,53 +233,46 @@ def approve_appointment(
             status_code=400, 
             detail=f"The assigned doctor (ID: {data.assigned_doctor_id}) does not have a schedule template for {day_of_week}s."
         )
-
     
     appointment.docID = data.assigned_doctor_id
     appointment.batch = data.batch
-
     appointment.assignedScheduleID = schedule_template.scheduleID
     appointment.assignedDate = parsed_date  
-    appointment.statusID =  5
-
+    appointment.statusID = 5
     appointment.actionBy_userID = current_staff.userID
     appointment.actionDate = func.now()
     appointment.actionReason = "Approved schedule"
 
     db.commit()
 
-    patient_first = getattr(appointment.patient, 'firstname', 'Patient')
     patient_email = appointment.patient.user_account.email if (appointment.patient and appointment.patient.user_account) else "N/A"
-    doctor_full_name = f"Dr. {getattr(schedule_template.doctor, 'surname', 'Assigned Doctor')}"
-    formatted_date = parsed_date.strftime("%B %d, %Y")
+    
     approving_staff_name = "Hospital Staff"
     if current_staff.userID:
         staff_record = db.query(Staff).filter(Staff.userID == current_staff.userID).first()
         if staff_record:
             approving_staff_name = f"{staff_record.firstname} {staff_record.surname}"
 
-    if patient_email:
+    if patient_email and patient_email != "N/A":
         background_tasks.add_task(
             send_patient_appointment_email, 
             recipient_email=patient_email, 
             name=appointment.patient.firstname, 
-            status="Rescheduled", 
+            status="Approved",
             doctor_name=f"Dr. {schedule_template.doctor.surname}", 
             date=parsed_date.strftime("%B %d, %Y"),
             approving_staff_name=approving_staff_name,
-            additional_notes=f"Reason for schedule change: {data.reason}"
+            additional_notes="Please arrive 15 minutes prior to your batch time."
         )
 
-    return {"message": "Appointment successfully rescheduled."}
-    
     db.add(SystemLogs(
         userID=current_staff.userID,
         actionType=actionTypeEnum.APPROVE,
         tableAffected="appointmentTable",
+        target=f"Appointment #{appointment.appointmentID}", 
         details=f"Approved appointment #{appointment.appointmentID} for {parsed_date} (Template: {day_of_week})",
         ipAddress=request.client.host
     ))
-    
     db.commit()
 
     notifier.broadcast_sync({
@@ -338,6 +332,7 @@ def reschedule_appointment(
         userID=current_staff.userID,
         actionType=actionTypeEnum.UPDATE, 
         tableAffected="appointmentTable",
+        target=f"Appointment #{appointment_id}", 
         details=f"Staff rescheduled appointment {appointment_id} to {parsed_date}. Reason: {data.reason}"
     ))
 
@@ -397,6 +392,7 @@ def deny_appointment(
         userID=current_staff.userID,
         actionType=actionTypeEnum.DENY,
         tableAffected="appointmentTable",
+        target=f"Appointment #{appointment.appointmentID}", 
         details=f"Denied appointment #{appointment.appointmentID}. Reason: {data.reason}",
         ipAddress=request.client.host
     )
@@ -456,7 +452,8 @@ def staff_book_appointment(
     data: StaffBookRequest, 
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    current_staff: User = Depends(get_current_user)
+    current_staff: User = Depends(get_current_user),
+    sys_check: bool = Depends(verify_system_operational)
 ):
     
     try:
@@ -537,6 +534,7 @@ def staff_book_appointment(
         userID=current_staff.userID,
         actionType=actionTypeEnum.BOOK,
         tableAffected="appointmentTable",
+        target=f"Patient {data.hospital_num}", 
         details=f"Staff booked appointment for Patient {data.hospital_num} on {parsed_date}"
     ))
     
@@ -596,11 +594,11 @@ def notify_patient_reminder(
         additional_notes="ACTION REQUIRED: Please log into your portal to officially confirm your appointment. Unconfirmed appointments will be automatically released to other patients."
     )
 
-    # 5. Log the action
     db.add(SystemLogs(
         userID=current_staff.userID,
         actionType=actionTypeEnum.UPDATE, 
         tableAffected="appointmentTable",
+        target=f"Appointment #{appointment_id}",
         details=f"Staff manually pushed a confirmation reminder to patient for appointment #{appointment_id}",
         ipAddress=request.client.host
     ))
@@ -632,7 +630,9 @@ def get_staff_profile(current_user: User = Depends(get_current_user)):
             return {
                 "email": current_user.email, "role": user_role,
                 "firstname": "System", "middlename": "", "surname": "Staff", "mi": "", "suffix": "",
-                "contactNumber": "", "dob": "", "gender": "Male", "address": "", "profilePhoto": None
+                "contactNumber": "", "dob": "", "gender": "Male", "address": "",
+                "street": "", "barangay": "", "city": "", "province": "",
+                "profilePhoto": None
             }
 
         fname = getattr(prof, 'firstname', "System")
@@ -657,18 +657,38 @@ def get_staff_profile(current_user: User = Depends(get_current_user)):
                 except Exception:
                     dob_str = str(raw_dob)
 
+        street, barangay, city, province, postalCode = "", "", "", "", ""
+        if address:
+            if " | " in address:
+                addr_parts = address.split(" | ")
+            elif "," in address: 
+                addr_parts = [p.strip() for p in address.split(",")]
+            else:
+                addr_parts = [address]
+                
+            street = addr_parts[0] if len(addr_parts) > 0 else ""
+            barangay = addr_parts[1] if len(addr_parts) > 1 else ""
+            city = addr_parts[2] if len(addr_parts) > 2 else ""
+            province = addr_parts[3] if len(addr_parts) > 3 else ""
+            postalCode = addr_parts[4] if len(addr_parts) > 4 else "" 
+
         return {
-            "email": current_user.email,
-            "role": user_role,
-            "firstname": fname or "System",
+            "email": current_user.email, 
+            "role": user_role, 
+            "firstname": fname or "System", 
+            "surname": lname or "Admin",
             "middlename": middlename or "",
-            "surname": lname or "Staff",
             "mi": mi or "",
-            "suffix": suffix or "",
-            "contactNumber": contact or "",
-            "dob": dob_str,
+            "suffix": suffix or "", 
+            "contactNumber": contact or "", 
+            "dob": dob_str, 
             "gender": gender or "Male",
-            "address": address or "",
+            "address": address or "", 
+            "street": street,
+            "barangay": barangay,
+            "city": city,
+            "province": province,
+            "postalCode": postalCode, 
             "profilePhoto": photo
         }
     except Exception as e:
@@ -697,7 +717,7 @@ def update_staff_profile(
     prof.suffix = data.suffix
     prof.contactNumber = data.contactNumber
     prof.gender = data.gender
-    prof.address = f'{data.street} | {data.barangay} | {data.city} | {data.province}'
+    prof.address = f"{data.street} | {data.barangay} | {data.city} | {data.province} | {data.postalCode}"
     
     try:
         if data.dob:
@@ -710,11 +730,15 @@ def update_staff_profile(
         raise HTTPException(status_code=400, detail="Invalid date format.")
 
     new_log = SystemLogs(
-        userID=current_user.userID, actionType=actionTypeEnum.UPDATE, tableAffected="staffTable",
+        userID=current_user.userID, 
+        actionType=actionTypeEnum.UPDATE, 
+        tableAffected="staffTable",
+        target="Personal Account", 
         details="Updated personal account profile", ipAddress=request.client.host
     )
     db.add(new_log)
     db.commit()
+
     return {"message": "Profile updated successfully"}
 
 @router.post("/upload-photo")
@@ -758,8 +782,11 @@ def change_staff_email(
 
     current_user.email = data.new_email
     db.add(SystemLogs(
-        userID=current_user.userID, actionType=actionTypeEnum.UPDATE, tableAffected="userTable", 
-        details="Staff updated their login email", ipAddress=request.client.host
+        userID=current_user.userID, actionType=actionTypeEnum.UPDATE, 
+        tableAffected="userTable", 
+        target="Personal Account",
+        details="Staff updated their login email", 
+        ipAddress=request.client.host
     ))
     db.commit()
     return {"message": "Email updated successfully!", "new_email": data.new_email}
@@ -773,8 +800,12 @@ def change_staff_password(
 
     current_user.passwordHash = pwd_context.hash(data.new_password)
     db.add(SystemLogs(
-        userID=current_user.userID, actionType=actionTypeEnum.UPDATE, tableAffected="userTable", 
-        details="Staff updated their login password", ipAddress=request.client.host
+        userID=current_user.userID, 
+        actionType=actionTypeEnum.UPDATE, 
+        tableAffected="userTable", 
+        target="Personal Account",
+        details="Staff updated their login password", 
+        ipAddress=request.client.host
     ))
     db.commit()
     return {"message": "Password updated successfully!"}
@@ -1068,8 +1099,12 @@ def update_doctor_availability(
     doctor.isAvailable = (data.availability == "Available")
     
     db.add(SystemLogs(
-        userID=current_staff.userID, actionType=actionTypeEnum.UPDATE, tableAffected="doctorTable",
-        details=f"Staff updated Dr. {doctor.surname} availability to {data.availability}", ipAddress=request.client.host
+        userID=current_staff.userID, 
+        actionType=actionTypeEnum.UPDATE, 
+        tableAffected="doctorTable",
+        target=f"Dr. {doctor.firstname} {doctor.surname}",
+        details=f"Staff updated Dr. {doctor.surname} availability to {data.availability}", 
+        ipAddress=request.client.host
     ))
     db.commit()
 
@@ -1098,8 +1133,12 @@ def update_doctor_schedule(
     schedule.weekDay = data.schedule
     
     db.add(SystemLogs(
-        userID=current_staff.userID, actionType=actionTypeEnum.UPDATE, tableAffected="scheduleTable",
-        details=f"Staff updated schedule for Dr. {doctor_id}", ipAddress=request.client.host
+        userID=current_staff.userID, 
+        actionType=actionTypeEnum.UPDATE, 
+        tableAffected="scheduleTable",
+        target=f"Doctor ID: {doctor_id}", 
+        details=f"Staff updated schedule for Dr. {doctor_id}", 
+        ipAddress=request.client.host
     ))
     db.commit()
 
@@ -1159,8 +1198,11 @@ def add_doctor_schedule(
     
     db.add(SystemLogs(
         userID=current_staff.userID, actionType=actionTypeEnum.INSERT, tableAffected="scheduleTable",
+        target=f"Dr. {doctor.firstname} {doctor.surname}", 
         details=f"Staff added new schedule blocks for Dr. {doctor.surname}", ipAddress=request.client.host
     ))
+    
+    db.commit()
     
     db.commit()
 
@@ -1204,6 +1246,7 @@ def edit_specific_schedule(
 
     db.add(SystemLogs(
         userID=current_staff.userID, actionType=actionTypeEnum.UPDATE, tableAffected="scheduleTable",
+        target=f"Schedule #{schedule_id}", 
         details=f"Staff updated schedule #{schedule_id}", ipAddress=request.client.host
     ))
     db.commit()
@@ -1230,6 +1273,7 @@ def delete_specific_schedule(
     db.delete(schedule)
     db.add(SystemLogs(
         userID=current_staff.userID, actionType=actionTypeEnum.DELETE, tableAffected="scheduleTable",
+        target=f"Schedule #{schedule_id}",
         details=f"Staff deleted schedule #{schedule_id}", ipAddress=request.client.host
     ))
     db.commit()
@@ -1265,6 +1309,7 @@ def update_daily_status(
             
     db.add(SystemLogs(
         userID=current_staff.userID, actionType=actionTypeEnum.UPDATE, tableAffected="doctorTable",
+        target=f"Dr. {doctor.firstname} {doctor.surname}", # NEW TARGET
         details=f"Staff updated Dr. {doctor.surname} daily status to {data.status}", ipAddress=request.client.host
     ))
     db.commit()
@@ -1514,6 +1559,7 @@ def update_queue_status(
         userID=current_staff.userID,
         actionType=actionTypeEnum.UPDATE, 
         tableAffected="dailyQueueTable",
+        target=f"Appointment #{appointment_id}", 
         details=f"Updated queue status for Appointment #{appointment_id} to '{action.upper()}'",
         ipAddress=request.client.host
     ))

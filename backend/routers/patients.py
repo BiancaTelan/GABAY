@@ -9,6 +9,7 @@ from py_schema import HospitalNumberRequest, PatientProfileUpdate, ContactFormRe
 from email_utils import send_contact_us_email
 from datetime import datetime, date
 from pydantic import BaseModel
+from security import verify_system_operational
 
 router = APIRouter(prefix="/patients", tags=["Patient Management"])
 
@@ -128,7 +129,8 @@ def get_patient_profile(email: str, db: Session = Depends(get_db)):
 def update_patient_profile(
     data: PatientProfileUpdate, 
     db: Session = Depends(get_db), 
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    sys_check: bool = Depends(verify_system_operational)
 ):
     patient = db.query(Patient).filter(Patient.userID == current_user.userID).first()
     if not patient:
@@ -169,7 +171,8 @@ def update_patient_profile(
 @router.delete("/delete-account")
 def delete_user_account(
     db: Session = Depends(get_db), 
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    sys_check: bool = Depends(verify_system_operational)
 ):
     try:
         user_to_delete = db.query(User).filter(User.userID == current_user.userID).first()
@@ -197,7 +200,8 @@ def delete_user_account(
 @router.post("/contact-us")
 async def submit_contact_form(
     request: ContactFormRequest, 
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    sys_check: bool = Depends(verify_system_operational)
 ):
     try:
         full_name = f"{request.firstname} {request.surname}"

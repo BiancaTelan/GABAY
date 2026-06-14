@@ -10,6 +10,138 @@ import toast from 'react-hot-toast';
 import { jsPDF } from 'jspdf';
 import { getApiErrorMessage, parseJsonResponse, showValidationError } from '../utils/apiError';
 
+export default function AddressDropdowns({ tempUserInfo, setTempUserInfo, isEditing }) {
+  const [provinces, setProvinces] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [barangays, setBarangays] = useState([])
+
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        const provRes = await fetch('https://psgc.gitlab.io/api/provinces/');
+        const provData = await provRes.json();
+
+        const ncr = { code: '130000000', name: 'METRO MANILA', isRegion: true };
+        const allProvinces = [...provData, ncr].sort((a, b) => a.name.localeCompare(b.name));
+        setProvinces(allProvinces);
+
+        if (localUserInfo.province) {
+          const selectedProv = allProvinces.find(p => p.name === localUserInfo.province);
+          if (selectedProv) {
+            const cityUrl = selectedProv.isRegion 
+              ? `https://psgc.gitlab.io/api/regions/${selectedProv.code}/cities-municipalities/`
+              : `https://psgc.gitlab.io/api/provinces/${selectedProv.code}/cities-municipalities/`;
+            
+            const cityRes = await fetch(cityUrl);
+            const cityData = await cityRes.json();
+            setCities(cityData.sort((a, b) => a.name.localeCompare(b.name)));
+
+            if (localUserInfo.city) {
+              const selectedCity = cityData.find(c => c.name === localUserInfo.city);
+              if (selectedCity) {
+                const brgyRes = await fetch(`https://psgc.gitlab.io/api/cities-municipalities/${selectedCity.code}/barangays/`);
+                const brgyData = await brgyRes.json();
+                setBarangays(brgyData.sort((a, b) => a.name.localeCompare(b.name)));
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load PSGC data", error);
+      }
+    };
+
+    if (localUserInfo.province !== undefined) {
+      loadInitialData();
+    }
+  }, [localUserInfo.province, localUserInfo.city]);
+
+  const handleProvinceChange = async (e) => {
+    const provinceName = e.target.value;
+    const selectedProv = provinces.find(p => p.name === provinceName);
+    
+    setTempUserInfo(prev => ({ ...prev, province: provinceName, city: '', barangay: '' }));
+    setCities([]);
+    setBarangays([]); 
+
+    if (selectedProv) {
+      const url = selectedProv.isRegion 
+        ? `https://psgc.gitlab.io/api/regions/${selectedProv.code}/cities-municipalities/`
+        : `https://psgc.gitlab.io/api/provinces/${selectedProv.code}/cities-municipalities/`;
+
+      const res = await fetch(url);
+      const data = await res.json();
+      setCities(data.sort((a, b) => a.name.localeCompare(b.name)));
+    }
+  };
+
+  const handleCityChange = async (e) => {
+    const cityName = e.target.value;
+    const selectedCity = cities.find(c => c.name === cityName);
+    
+    setTempUserInfo(prev => ({ ...prev, city: cityName, barangay: '' }));
+    setBarangays([]);
+
+    if (selectedCity) {
+      const res = await fetch(`https://psgc.gitlab.io/api/cities-municipalities/${selectedCity.code}/barangays/`);
+      const data = await res.json();
+      setBarangays(data.sort((a, b) => a.name.localeCompare(b.name)));
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Province Dropdown */}
+      <div className="md:col-span-2">
+        <label className="block text-xs font-semibold text-gray-600 mb-1">Province</label>
+        <select 
+          disabled={!isEditing}
+          value={tempUserInfo.province} 
+          onChange={handleProvinceChange}
+          className="w-full border p-2 rounded-lg text-sm outline-none bg-white"
+        >
+          <option value="" disabled>Select Province</option>
+          {provinces.map(prov => (
+            <option key={prov.code} value={prov.name}>{prov.name}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* City Dropdown */}
+      <div className="md:col-span-2">
+        <label className="block text-xs font-semibold text-gray-600 mb-1">City / Municipality</label>
+        <select 
+          disabled={!isEditing || !tempUserInfo.province}
+          value={tempUserInfo.city} 
+          onChange={handleCityChange}
+          className="w-full border p-2 rounded-lg text-sm outline-none bg-white disabled:bg-gray-50"
+        >
+          <option value="" disabled>Select City</option>
+          {cities.map(city => (
+            <option key={city.code} value={city.name}>{city.name}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Barangay Dropdown */}
+      <div className="md:col-span-2">
+        <label className="block text-xs font-semibold text-gray-600 mb-1">Barangay</label>
+        <select 
+          disabled={!isEditing || !tempUserInfo.city}
+          value={tempUserInfo.barangay} 
+          onChange={(e) => setTempUserInfo(prev => ({ ...prev, barangay: e.target.value }))}
+          className="w-full border p-2 rounded-lg text-sm outline-none bg-white disabled:bg-gray-50"
+        >
+          <option value="" disabled>Select Barangay</option>
+          {barangays.map(brgy => (
+            <option key={brgy.code} value={brgy.name}>{brgy.name}</option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+}
+
 export default function Account({ userInfo, onLogout, onUpdateProfile }) {
   const navigate = useNavigate();
   const { token } = useContext(AuthContext);

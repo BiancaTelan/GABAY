@@ -9,7 +9,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from jwt.exceptions import InvalidTokenError
 from db_connection import get_db
-from db_model import User
+from db_model import User, SystemSettings
 
 load_dotenv()
 
@@ -100,4 +100,36 @@ def verify_token(token: str, db: Session):
         
     except InvalidTokenError:
         return None
+
+# ---------------------------------------------------------
+# 6. Maintenance Check
+# ---------------------------------------------------------
+def verify_system_operational(db: Session = Depends(get_db)):
+    """Middleware to enforce Maintenance Mode and Operational Hours"""
+    settings = db.query(SystemSettings).first()
+    if not settings:
+        return True
+
+    if settings.maintenanceMode:
+        raise HTTPException(
+            status_code=503, 
+            detail=f"System is currently under maintenance. Reason: {settings.downtimeReason}"
+        )
+
+    try:
+        now = datetime.now().time()
+        start_time = datetime.strptime(settings.startTime, "%I:%M %p").time()
+        end_time = datetime.strptime(settings.endTime, "%I:%M %p").time()
+
+        if not (start_time <= now <= end_time):
+            raise HTTPException(
+                status_code=403, 
+                detail=f"The system is currently closed. Operating hours are from {settings.startTime} to {settings.endTime}."
+            )
+    except Exception as e:
+        print(f"Time parsing error in system guard: {e}")
+        pass 
+
+    return True
+
     

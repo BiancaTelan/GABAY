@@ -6,14 +6,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from db_connection import Base
 
-# === ASSOCIATION TABLES ===
-staff_department_assoc = Table(
-    "staff_department_assoc",
-    Base.metadata,
-    Column("staffID", Integer, ForeignKey("staffTable.staffID", ondelete="CASCADE"), primary_key=True),
-    Column("deptID", Integer, ForeignKey("departmentTable.deptID", ondelete="CASCADE"), primary_key=True)
-)
-
 # === ENUMS OPTIONS ===
 class EventTypeEnum(enum.Enum):
     EVENT = "EVENT"
@@ -53,7 +45,6 @@ class weekDayEnum(enum.Enum):
     Sunday = "Sunday"
 
 # === TABLE MODELS ===
-
 class User(Base):
     __tablename__ = "userTable"
 
@@ -84,7 +75,6 @@ class Department(Base):
     # === Relationship ===
     appointments: Mapped[list["Appointment"]] = relationship(back_populates="department")
     doctors: Mapped[list["Doctor"]] = relationship(back_populates="department")
-    staff: Mapped[List["Staff"]] = relationship(secondary=staff_department_assoc, back_populates="departments")
 
 class Patient(Base):
     __tablename__ = "patientTable"
@@ -116,9 +106,12 @@ class Doctor(Base):
     __tablename__ = "doctorTable"
 
     docID: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    employeeID: Mapped[Optional[str]] = mapped_column(String(50), unique=True, nullable=True) 
     deptID: Mapped[Optional[int]] = mapped_column(ForeignKey("departmentTable.deptID", ondelete="SET NULL"))
     firstname: Mapped[str] = mapped_column(String(100), nullable=False)
+    middlename: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     surname: Mapped[str] = mapped_column(String(100), nullable=False)
+    licenseNumber: Mapped[Optional[str]] = mapped_column(String(50), nullable=True) 
     isAvailable: Mapped[bool] = mapped_column(Boolean, default=True)
     contactNumber: Mapped[Optional[str]] = mapped_column(String(15), nullable=True)
     email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
@@ -169,7 +162,6 @@ class Appointment(Base):
     assignedSchedule: Mapped[Optional["Schedule"]] = relationship(back_populates="appointments")
     department: Mapped["Department"] = relationship(back_populates="appointments")
     status: Mapped["AppointmentStatus"] = relationship(back_populates="appointments")
-    department: Mapped["Department"] = relationship(back_populates="appointments")
     action_by_user: Mapped[Optional["User"]] = relationship(foreign_keys=[actionBy_userID])
 
 
@@ -178,6 +170,7 @@ class Staff(Base):
 
     staffID: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     userID: Mapped[Optional[int]] = mapped_column(ForeignKey("userTable.userID", ondelete="RESTRICT"), unique=True)
+    employeeID: Mapped[Optional[str]] = mapped_column(String(50), unique=True, nullable=True)
     firstname: Mapped[str] = mapped_column(String(100), nullable=False)
     middlename: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     surname: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -193,7 +186,6 @@ class Staff(Base):
 
     # === Relationships ===
     user_account: Mapped[Optional["User"]] = relationship(back_populates="staff_profile")
-    departments: Mapped[List["Department"]] = relationship(secondary=staff_department_assoc, back_populates="staff")
 
 
 class Schedule(Base): 
@@ -219,6 +211,7 @@ class SystemLogs(Base):
     userID: Mapped[Optional[int]] = mapped_column(ForeignKey("userTable.userID", ondelete="SET NULL")) 
     tableAffected: Mapped[str] = mapped_column(String(50), nullable=False) 
     actionType: Mapped[actionTypeEnum] = mapped_column(SQLEnum(actionTypeEnum), nullable=False)
+    target: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     timestamp: Mapped[datetime] = mapped_column(DateTime, default=func.convert_tz(func.now(), '+00:00', '+08:00'))
     details: Mapped[Optional[str]] = mapped_column(Text)
     ipAddress: Mapped[Optional[str]] = mapped_column(String(45), nullable=True)

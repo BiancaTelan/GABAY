@@ -301,3 +301,28 @@ def send_appointment_received_email(
     """
     
     send_brevo_email(recipient_email, "GABAY: Appointment Request Received", generate_email_html(content))
+
+# ==========================================
+# PERSONNEL PROFILE UPDATE EMAIL FUNCTION
+# ==========================================
+def send_personnel_update_email(recipient_email: str, name: str, changes: dict):
+    changes_html = "".join([f"<li style='margin-bottom: 8px;'><strong>{k}:</strong> {v}</li>" for k, v in changes.items()])
+    
+    content = f"""
+    <h2 style="color: #0b3b60; text-align: center; margin-top: 0; font-size: 24px;">Account Details Updated</h2>
+    <p style="color: #555555; font-size: 16px; line-height: 1.6; text-align: center;">Hello <strong>{name}</strong>,</p>
+    <p style="color: #555555; font-size: 16px; line-height: 1.6; text-align: center;">An administrator has updated your GABAY system account details. Below is a summary of your updated information:</p>
+    
+    <div style="background-color: #f4f6f8; padding: 20px; border-radius: 5px; margin: 30px 0; border-left: 4px solid #0b3b60; text-align: left;">
+        <ul style="color: #333333; font-size: 15px; padding-left: 20px; margin: 0;">
+            {changes_html}
+        </ul>
+    </div>
+    
+    <p style="color: #d9534f; font-size: 14px; text-align: center; margin-top: 20px; padding: 10px; background-color: #fdf2f2; border-radius: 4px;">
+        <em><strong>Security Notice:</strong> If you did not authorize these changes or suspect unauthorized access to your account, please contact the IT Administrator immediately.</em>
+    </p>
+    """
+    send_brevo_email(recipient_email, "GABAY System: Account Details Updated", generate_email_html(content))
+
+    

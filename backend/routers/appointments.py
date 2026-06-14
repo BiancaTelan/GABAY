@@ -14,6 +14,7 @@ from py_schema import PatientResponse
 from db_connection import get_db
 from db_model import User, Patient, Appointment, Department, Doctor, AppointmentStatus, roleEnum, Schedule
 from email_utils import send_notification_email, send_appointment_received_email
+from security import verify_system_operational
 
 router = APIRouter(prefix="/api/appointments", tags=["Appointments"])
 
@@ -116,7 +117,8 @@ async def book_appointment(
     hasPreviousRecord: str = Form(...), 
     appointment_type: str = Form(...),  
     referral_file: Optional[UploadFile] = File(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    sys_check: bool = Depends(verify_system_operational)
 ):
     try:
         
@@ -316,7 +318,8 @@ def get_appointment_history(email: str, db: Session = Depends(get_db)):
 # 6. Main Reservation Endpoint (Patient Reschedule)
 # ---------------------------------------------------------
 @router.put("/{appointment_id}/reschedule")
-def reschedule_appointment(appointment_id: int, request: RescheduleRequest, db: Session = Depends(get_db)):
+def reschedule_appointment(appointment_id: int, request: RescheduleRequest, db: Session = Depends(get_db),
+    sys_check: bool = Depends(verify_system_operational)):
     try:
         appointment = db.query(Appointment).filter(Appointment.appointmentID == appointment_id).first()
         if not appointment:
@@ -400,7 +403,12 @@ def get_doctor_availability(doctor_name: str, db: Session = Depends(get_db)):
 # 8. Patient Cancellation Endpoint
 # ---------------------------------------------------------
 @router.put("/{appointment_id}/cancel")
-def cancel_appointment(appointment_id: int, request: CancelRequest, db: Session = Depends(get_db)):
+def cancel_appointment(
+    appointment_id: int, 
+    request: CancelRequest, 
+    db: Session = Depends(get_db),
+    sys_check: bool = Depends(verify_system_operational)
+    ):
     try:
         appointment = db.query(Appointment).filter(Appointment.appointmentID == appointment_id).first()
         if not appointment:
