@@ -943,7 +943,7 @@ def get_my_profile(db: Session = Depends(get_db), current_user: User = Depends(g
     if not prof:
         raise HTTPException(status_code=404, detail="Profile not found")
         
-    address_parts = (prof.address or "").split(" , ")
+    address_parts = (prof.address or "").split(" | ")
     street = address_parts[0] if len(address_parts) > 0 else ""
     barangay = address_parts[1] if len(address_parts) > 1 else ""
     city = address_parts[2] if len(address_parts) > 2 else ""
@@ -987,7 +987,7 @@ def update_profile(payload: ProfileUpdate, db: Session = Depends(get_db), curren
         except ValueError:
             pass 
         
-    prof.address = f"{payload.street}, {payload.barangay}, {payload.city}, {payload.province}, {payload.postalCode}"
+    prof.address = f"{payload.street} | {payload.barangay} | {payload.city} | {payload.province} | {payload.postalCode}"
     
     db.commit()
     return {"message": "Profile updated successfully"}
