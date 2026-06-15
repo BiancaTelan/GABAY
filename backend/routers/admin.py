@@ -1437,16 +1437,22 @@ def get_analytics_data(
             spec_count = next((r.count for r in monthly_counts if r.month == month and r.type == 'Specialty'), 0)
             graph_data.append({"name": calendar.month_abbr[month], "General": gen_count, "Specialty": spec_count})
 
-    else:
+    else: 
         week_buckets = {
             "Week 1": {"General": 0, "Specialty": 0}, "Week 2": {"General": 0, "Specialty": 0},
             "Week 3": {"General": 0, "Specialty": 0}, "Week 4": {"General": 0, "Specialty": 0}
         }
         month_appts = appts_query.join(Department).all()
         for a in month_appts:
-            day = a.createdAt.day
+            target_date = a.createdAt or a.assignedDate or now
+            day = target_date.day
+            
             w_key = "Week 1" if day <= 7 else "Week 2" if day <= 14 else "Week 3" if day <= 21 else "Week 4"
-            week_buckets[w_key][a.department.type] += 1
+            
+            raw_type = getattr(a.department, 'type', 'General') or 'General'
+            safe_type = "Specialty" if "specialty" in str(raw_type).lower() else "General"
+            
+            week_buckets[w_key][safe_type] += 1
         
         for w, counts in week_buckets.items():
             graph_data.append({"name": w, "General": counts["General"], "Specialty": counts["Specialty"]})
