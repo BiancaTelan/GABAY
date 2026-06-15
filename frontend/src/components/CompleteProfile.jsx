@@ -20,7 +20,7 @@ export default function CompleteProfile() {
   const [cities, setCities] = useState([]);
   const [barangays, setBarangays] = useState([]);
   const [formData, setFormData] = useState({
-    firstname: '', middlename: '', surname: '',
+    firstname: '', middlename: '', surname: '', suffix: '',
     dob: '', age: '', gender: 'Female', civilStatus: '',
     contactNumber: '', street: '', barangay: '', city: '', province: '', postalCode: '',
     emergencyContact: '', emergencyContactNum: '', emergencyEmail: '',
@@ -37,7 +37,7 @@ export default function CompleteProfile() {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/patients/profile/${payload.sub}`);
         const data = await response.json();
-        setFormData(prev => ({ ...prev, firstname: data.firstname, middlename: data.middlename, surname: data.surname }));
+        setFormData(prev => ({ ...prev, firstname: data.firstname, middlename: data.middlename, surname: data.surname, suffix: data.suffix || '' }));
       } catch (err) {
         console.error("Failed to fetch initial profile");
       }
@@ -400,17 +400,86 @@ export default function CompleteProfile() {
             <div className="space-y-6 animate-in slide-in-from-right duration-300">
                 <h2 className="text-xl font-bold text-gabay-navy font-montserrat border-b pb-2">Review Your Information</h2>
                 
-                <div className="bg-gray-50 rounded-xl p-6 space-y-4">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div><span className="font-semibold text-gray-500 block">Name</span>{formData.firstname} {formData.surname}</div>
-                        <div><span className="font-semibold text-gray-500 block">Date of Birth</span>{formData.dob}</div>
-                        <div><span className="font-semibold text-gray-500 block">Contact</span>{formData.contactNumber}</div>
-                        <div><span className="font-semibold text-gray-500 block">Gender</span>{formData.gender}</div>
-                        <div className="col-span-2"><span className="font-semibold text-gray-500 block">Address</span>{`${formData.street}, ${formData.barangay}, ${formData.city}, ${formData.province}`}</div>
+                <div className="bg-gray-50 rounded-xl p-6 space-y-6 shadow-sm border border-gray-100">
+                    
+                    {/* Personal Details */}
+                    <div>
+                        <h4 className="font-bold text-gabay-teal mb-3 text-xs uppercase tracking-wider border-b border-gray-200 pb-1">Personal Details</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                            <div className="sm:col-span-2">
+                                <span className="font-semibold text-gray-500 block">Full Name</span>
+                                {[formData.firstname, formData.middlename, formData.surname, formData.suffix].filter(Boolean).join(' ')}
+                            </div>
+                            <div>
+                                <span className="font-semibold text-gray-500 block">Date of Birth</span>
+                                {formData.dob} ({formData.age} years old)
+                            </div>
+                            <div>
+                                <span className="font-semibold text-gray-500 block">Gender</span>
+                                {formData.gender}
+                            </div>
+                            <div>
+                                <span className="font-semibold text-gray-500 block">Civil Status</span>
+                                {formData.civilStatus}
+                            </div>
+                            <div>
+                                <span className="font-semibold text-gray-500 block">Contact Number</span>
+                                {formData.contactNumber}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Address Details */}
+                    <div>
+                        <h4 className="font-bold text-gabay-teal mb-3 text-xs uppercase tracking-wider border-b border-gray-200 pb-1">Address Details</h4>
+                        <div className="text-sm">
+                            <span className="font-semibold text-gray-500 block">Complete Address</span>
+                            {[formData.street, formData.barangay, formData.city, formData.province, formData.postalCode].filter(Boolean).join(', ')}
+                        </div>
+                    </div>
+
+                    {/* Emergency & Guardian Blocks */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Emergency Contact */}
+                        <div>
+                            <h4 className="font-bold text-gabay-teal mb-3 text-xs uppercase tracking-wider border-b border-gray-200 pb-1">Emergency Contact</h4>
+                            <div className="space-y-3 text-sm">
+                                <div>
+                                    <span className="font-semibold text-gray-500 block">Name</span>
+                                    {formData.emergencyContact || <span className="text-gray-400 italic">Not provided</span>}
+                                </div>
+                                <div>
+                                    <span className="font-semibold text-gray-500 block">Contact Number</span>
+                                    {formData.emergencyContactNum || <span className="text-gray-400 italic">Not provided</span>}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Conditionally Rendered Guardian Info */}
+                        {isMinor && (
+                            <div>
+                                <h4 className="font-bold text-gabay-teal mb-3 text-xs uppercase tracking-wider border-b border-gray-200 pb-1">Guardian Information</h4>
+                                <div className="space-y-3 text-sm">
+                                    <div>
+                                        <span className="font-semibold text-gray-500 block">Name</span>
+                                        {[formData.guardianFirstName, formData.guardianSurname].filter(Boolean).join(' ')}
+                                    </div>
+                                    <div>
+                                        <span className="font-semibold text-gray-500 block">Relationship</span>
+                                        {formData.guardianRelationship}
+                                    </div>
+                                    <div>
+                                        <span className="font-semibold text-gray-500 block">Contact Number</span>
+                                        {formData.guardianContactNum}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                <div className="bg-teal-50 border border-teal-100 rounded-xl p-6 flex flex-col items-center justify-center text-center">
+                {/* Hospital Number Allocation Box */}
+                <div className="bg-teal-50 border border-teal-100 rounded-xl p-6 flex flex-col items-center justify-center text-center shadow-sm">
                     <h3 className="font-bold text-gabay-teal font-montserrat mb-2">Hospital Number Allocation</h3>
                     {formData.hospitalChoice === 'link' ? (
                         <p className="text-gray-700">You are registering the existing number: <span className="font-bold text-lg text-gabay-navy">{formData.hospitalNumInput}</span></p>
@@ -419,7 +488,8 @@ export default function CompleteProfile() {
                     )}
                 </div>
 
-                <div className="flex justify-between pt-6">
+                {/* Navigation Buttons */}
+                <div className="flex justify-between pt-4">
                     <button onClick={() => setStep(2)} className="font-semibold text-gray-500 hover:text-gray-800 transition" disabled={isSubmitting}>← Back</button>
                     <Button variant="teal" onClick={handleSubmit} className="w-48" disabled={isSubmitting}>
                         {isSubmitting ? 'SAVING...' : 'FINISH REGISTRATION'}

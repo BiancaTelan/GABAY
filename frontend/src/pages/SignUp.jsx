@@ -18,6 +18,7 @@ export default function SignUp({ onCompleteSignUp }) {
     firstname: '',
     middlename: '',
     surname: '',
+    suffix: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -85,6 +86,7 @@ export default function SignUp({ onCompleteSignUp }) {
         firstname: formData.firstname.trim(),
         middlename: formData.middlename.trim(),
         surname: formData.surname.trim(),
+        suffix: formData.suffix.trim(),
         email: formData.email.trim(),
         password: formData.password,
         confirm_password: formData.confirmPassword
@@ -153,8 +155,25 @@ export default function SignUp({ onCompleteSignUp }) {
               <Input label="First Name" name="firstname" placeholder="Juan" value={formData.firstname} error={errors.firstname} onChange={(e) => setFormData({...formData, firstname: e.target.value})} required isEditing={true} />
               <Input label="Middle Name" name="middlename" placeholder="Santos" value={formData.middlename} error={errors.middlename} onChange={(e) => setFormData({...formData, middlename: e.target.value})} isEditing={true} />
               <Input label="Last Name" name="surname" placeholder="Dela Cruz" value={formData.surname} error={errors.surname} onChange={(e) => setFormData({...formData, surname: e.target.value})} required isEditing={true} />
+              <div className="flex flex-col">
+                <label className="text-xs font-semibold text-gray-600 mb-1">Suffix</label>
+                <select 
+                  name="suffix" 
+                  value={formData.suffix} 
+                  onChange={(e) => setFormData({...formData, suffix: e.target.value})} 
+                  className="w-full border p-2.5 rounded-xl text-sm outline-none bg-gray-50 focus:ring-2 focus:ring-gabay-teal/20 focus:border-gabay-teal h-[42px]"
+                >
+                  <option value="">None</option>
+                  <option value="Jr.">Jr.</option>
+                  <option value="Sr.">Sr.</option>
+                  <option value="II">II</option>
+                  <option value="III">III</option>
+                  <option value="IV">IV</option>
+                  <option value="V">V</option>
+                </select>
+              </div>
             </div>
-
+          
             <Input label="Email Address" type="email" name="email" placeholder="juan@example.com" value={formData.email} error={errors.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required isEditing={true} />
             
             <div className="grid grid-cols-1 gap-4">

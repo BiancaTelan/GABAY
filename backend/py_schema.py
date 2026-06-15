@@ -46,6 +46,7 @@ class PatientProfileUpdate(BaseModel):
     firstname: str
     middlename: Optional[str] = ""
     surname: str
+    suffix: Optional[str] = ""
     dob: str
     contactNumber: str
     gender: str

@@ -104,6 +104,7 @@ def get_patient_profile(email: str, db: Session = Depends(get_db)):
         "firstname": patient.firstname,
         "middlename": patient.middlename or "",
         "surname": patient.surname,
+        "suffix": patient.suffix or "",
         "email": user.email,
         "is_verified": user.is_verified,
         "hospital_num": patient.hospital_num or "",
@@ -149,6 +150,7 @@ def update_patient_profile(
     patient.firstname = data.firstname
     patient.surname = data.surname
     patient.middlename = data.middlename 
+    patient.suffix = data.suffix
     patient.contactNumber = data.contactNumber
     patient.gender = data.gender
     patient.civilStatus = data.civilStatus

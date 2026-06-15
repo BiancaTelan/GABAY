@@ -135,6 +135,7 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
     firstname: "",
     middlename: "",
     surname: "",
+    suffix: "",
     hospital_num: "",
     email: "",
     contactNumber: "",
@@ -570,7 +571,7 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
                   <Input label="Surname" name="surname" value={localUserInfo.surname} onChange={handleInputChange} error={errors.surname} required />
                   <div className="flex flex-col gap-1 w-full">
                   <label className="text-sm font-poppins font-medium text-gray-700">Name Extension</label>
-                  <select value={localUserInfo.extension || ""} onChange={(e) => setLocalUserInfo({ ...localUserInfo, extension: e.target.value })}
+                  <select value={localUserInfo.suffix || ""} onChange={(e) => setLocalUserInfo({ ...localUserInfo, suffix: e.target.value })}
                   className="w-full p-2 border border-gray-300 rounded-md font-poppins text-sm bg-white outline-none focus:ring-1 focus:ring-gabay-teal text-gray-700 cursor-pointer">
                     <option value="">None (N/A)</option>
                     <option value="Jr.">Jr.</option>
@@ -587,7 +588,7 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
                 <div className="sm:col-span-3">
                   <Input 
                     label="Full Name" 
-                    value={`${localUserInfo.firstname} ${localUserInfo.middlename ? localUserInfo.middlename + ' ' : ''}${localUserInfo.surname} ${localUserInfo.extension}`} 
+                    value={`${localUserInfo.firstname} ${localUserInfo.middlename ? localUserInfo.middlename + ' ' : ''}${localUserInfo.surname} ${localUserInfo.suffix}`} 
                     readOnly 
                     noHover 
                   />
