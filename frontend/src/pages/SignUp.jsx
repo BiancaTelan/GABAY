@@ -121,7 +121,8 @@ export default function SignUp({ onCompleteSignUp }) {
 
       toast.dismiss(processingToast);
       toast.success("Account created! Let's set up your profile.");
-      
+
+      navigate('/complete-profile');
     } catch (error) {
       toast.dismiss(processingToast);
       toast.error(error.message || "A network error occurred. Please try again.");
