@@ -113,9 +113,9 @@ class DoctorUpdate(BaseModel):
     surname: str
     contactNumber: Optional[str] = None
     deptID: Optional[int] = None
-    employeeID: Optional[str] = None
+    employeeID: str     
+    licenseNumber: str
     email: Optional[EmailStr] = None
-    licenseNumber: Optional[str] = None
 
 class ScheduleBlockCreate(BaseModel):
     days: str 
@@ -575,6 +575,8 @@ def update_doctor(doc_id: int, data: DoctorUpdate, request: Request, background_
     doc.surname = data.surname
     doc.contactNumber = data.contactNumber
     if data.deptID: doc.deptID = data.deptID
+    doc.employeeID = data.employeeID 
+    doc.licenseNumber = data.licenseNumber
         
     target_name = f"Dr. {doc.firstname} {doc.surname}"
     if updated_changes and target_email:
@@ -582,7 +584,7 @@ def update_doctor(doc_id: int, data: DoctorUpdate, request: Request, background_
 
     db.add(SystemLogs(
         userID=current_admin.userID, actionType=actionTypeEnum.UPDATE, tableAffected="doctorTable", 
-        target=target_name, # TARGET ADDED
+        target=target_name,
         details=f"Updated details for: {target_name}", ipAddress=request.client.host
     ))
     db.commit()
