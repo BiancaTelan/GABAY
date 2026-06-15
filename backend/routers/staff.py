@@ -628,6 +628,7 @@ def get_staff_profile(db: Session = Depends(get_db), current_user: User = Depend
     barangay = address_parts[1] if len(address_parts) > 1 else ""
     city = address_parts[2] if len(address_parts) > 2 else ""
     province = address_parts[3] if len(address_parts) > 3 else ""
+    postalCode = address_parts[4] if len(address_parts) > 4 else ""
     
     return {
         "firstname": prof.firstname,
@@ -643,7 +644,7 @@ def get_staff_profile(db: Session = Depends(get_db), current_user: User = Depend
         "barangay": barangay,
         "city": city,
         "province": province,
-        "postalCode": getattr(prof, 'postalCode', ""),
+        "postalCode": postalCode,
         "profilePhoto": getattr(prof, 'profilePhoto', None)
     }
 

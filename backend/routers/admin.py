@@ -280,7 +280,7 @@ def update_personnel(user_id: int, data: PersonnelUpdate, request: Request, db: 
 
     db.add(SystemLogs(
         userID=current_admin.userID, actionType=actionTypeEnum.UPDATE, tableAffected="userTable/staffTable",
-        target=f"{data.firstname} {data.surname}", # TARGET ADDED
+        target=f"{data.firstname} {data.surname}", 
         details=f"Updated profile for: {data.firstname} {data.surname} (Status: {data.status})", ipAddress=request.client.host
     ))
     db.commit()
@@ -296,7 +296,7 @@ def deactivate_personnel(user_id: int, request: Request, db: Session = Depends(g
 
     db.add(SystemLogs(
         userID=current_admin.userID, actionType=actionTypeEnum.DELETE, tableAffected="userTable",
-        target=target_name, # TARGET ADDED
+        target=target_name,
         details=f"Deactivated account for: {target_name} (Email: {user.email})", ipAddress=request.client.host
     ))
     db.commit()
@@ -950,6 +950,7 @@ def get_my_profile(db: Session = Depends(get_db), current_user: User = Depends(g
     barangay = address_parts[1] if len(address_parts) > 1 else ""
     city = address_parts[2] if len(address_parts) > 2 else ""
     province = address_parts[3] if len(address_parts) > 3 else ""
+    postalCode = address_parts[4] if len(address_parts) > 4 else ""
     
     return {
         "firstname": prof.firstname,
@@ -965,7 +966,7 @@ def get_my_profile(db: Session = Depends(get_db), current_user: User = Depends(g
         "barangay": barangay,
         "city": city,
         "province": province,
-        "postalCode": getattr(prof, 'postalCode', ""),
+        "postalCode": postalCode,
         "profilePhoto": getattr(prof, 'profilePhoto', None)
     }
 
@@ -981,7 +982,6 @@ def update_profile(payload: ProfileUpdate, db: Session = Depends(get_db), curren
     prof.suffix = payload.suffix
     prof.contactNumber = payload.contactNumber
     prof.gender = payload.gender
-    prof.postalCode = payload.postalCode
     
     if payload.dob:
         try:
