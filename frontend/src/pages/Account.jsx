@@ -152,7 +152,7 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
     guardianSurname: "",
     guardianExtension: "",
     guardianContactNum: "",
-    relationship: "",
+    guardianRelationship: "",
     emergencyContact: "",
     emergencyContactNum: "",
     emergencyEmail: "",
@@ -358,7 +358,7 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
       if (!localUserInfo.guardianContactNum.trim()) newErrors.guardianContactNum = "Guardian contact number is required";
       else if (!phonePattern.test(localUserInfo.guardianContactNum)) newErrors.guardianContactNum = "Must be an 11-digit mobile number";
 
-      if (!localUserInfo.relationship) newErrors.relationship = "Relationship specification is required";
+      if (!localUserInfo.guardianRelationship) newErrors.guardianRelationship = "Relationship specification is required";
     }
 
     if (!localUserInfo.contactNumber.trim()) newErrors.contactNumber = "Contact number is required";
@@ -763,16 +763,16 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
                 
                 <div className="flex flex-col gap-1 w-full">
                   <label className="text-sm font-poppins font-medium text-gray-700">Relationship to Patient</label>
-                  <select value={localUserInfo.relationship || ""} onChange={(e) => setLocalUserInfo({ ...localUserInfo, relationship: e.target.value })}
+                  <select value={localUserInfo.guardianRelationship || ""} onChange={(e) => setLocalUserInfo({ ...localUserInfo, guardianRelationship: e.target.value })}
                     className={`w-full p-2 border rounded-md font-poppins text-sm bg-white outline-none transition-all h-[38px] text-gray-700 cursor-pointer ${
-                    errors.relationship ? 'border-red-500 focus:ring-1 focus:ring-red-500 ring-1 ring-red-500/20' : 'border-gray-300 focus:ring-1 focus:ring-gabay-teal'}`} required>
+                    errors.guardianRelationship ? 'border-red-500 focus:ring-1 focus:ring-red-500 ring-1 ring-red-500/20' : 'border-gray-300 focus:ring-1 focus:ring-gabay-teal'}`} required>
                     <option value="">Select Relationship</option>
                     <option value="Parent">Parent</option>
                     <option value="Sibling">Sibling</option>
                     <option value="Grandparent">Grandparent</option>
                     <option value="Extended Relative">Extended Relative</option>
                   </select>
-                  {errors.relationship && <p className="text-[10px] text-red-500 font-poppins font-bold uppercase">{errors.relationship}</p>}
+                  {errors.guardianRelationship && <p className="text-[10px] text-red-500 font-poppins font-bold uppercase">{errors.guardianRelationship}</p>}
                 </div>
               </div>
             </section>
@@ -790,7 +790,7 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
                 ].filter(Boolean).join(' ')} readOnly noHover />
 
                 <Input label="Guardian Contact Number" value={localUserInfo.guardianContactNum} readOnly noHover />
-                <Input label="Relationship to Patient" value={localUserInfo.relationship} readOnly noHover />
+                <Input label="Relationship to Patient" value={localUserInfo.guardianRelationship} readOnly noHover />
               </div>
             </section>
           )}
