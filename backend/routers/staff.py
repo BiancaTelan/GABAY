@@ -35,16 +35,16 @@ class ProfileUpdate(BaseModel):
     firstname: str
     surname: str
     middlename: Optional[str] = ""
-    mi: str = ""
-    suffix: str = ""
+    mi: Optional[str]= ""
+    suffix: Optional[str] = ""
     contactNumber: str
-    dob: str
-    gender: str
-    street: str = ""
-    barangay: str = ""
-    city: str = ""
-    province: str = ""
-    postalCode: Optional[str] = ""
+    dob: Optional[str] = None
+    gender: str = "Prefer not to say"
+    street: str
+    barangay: str
+    city: str
+    province: str
+    postalCode: str
 
 class EmailChangeRequest(BaseModel):
     current_password: str
@@ -618,127 +618,59 @@ def notify_patient_reminder(
 # 2. STAFF ACCOUNT PROFILE MANAGEMENT
 # ---------------------------------------------------------
 @router.get("/profile/me")
-def get_staff_profile(current_user: User = Depends(get_current_user)):
-    try:
-        prof = current_user.staff_profile
-        if isinstance(prof, list):
-            prof = prof[0] if len(prof) > 0 else None
-
-        user_role = current_user.role.value.upper() if hasattr(current_user.role, 'value') else str(current_user.role).upper()
-
-        if not prof:
-            return {
-                "email": current_user.email, "role": user_role,
-                "firstname": "System", "middlename": "", "surname": "Staff", "mi": "", "suffix": "",
-                "contactNumber": "", "dob": "", "gender": "Male", "address": "",
-                "street": "", "barangay": "", "city": "", "province": "",
-                "profilePhoto": None
-            }
-
-        fname = getattr(prof, 'firstname', "System")
-        lname = getattr(prof, 'surname', "Staff")
-        middlename = getattr(prof, 'middlename', "")
-        mi = getattr(prof, 'mi', "")
-        suffix = getattr(prof, 'suffix', "")
-        contact = getattr(prof, 'contactNumber', "")
-        gender = getattr(prof, 'gender', "Male")
-        address = getattr(prof, 'address', "")
-        photo = getattr(prof, 'profilePhoto', None)
+def get_staff_profile(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    prof = current_user.staff_profile
+    if not prof:
+        raise HTTPException(status_code=404, detail="Profile not found")
         
-        raw_dob = getattr(prof, 'dob', None) or getattr(prof, 'birthdate', None) or getattr(prof, 'birthDate', None) or getattr(prof, 'birthday', None)
-
-        dob_str = ""
-        if raw_dob:
-            if hasattr(raw_dob, 'strftime'):
-                dob_str = raw_dob.strftime("%m/%d/%Y")
-            else:
-                try:
-                    dob_str = datetime.strptime(str(raw_dob), "%Y-%m-%d").strftime("%m/%d/%Y")
-                except Exception:
-                    dob_str = str(raw_dob)
-
-        street, barangay, city, province, postalCode = "", "", "", "", ""
-        if address:
-            if " | " in address:
-                addr_parts = address.split(" | ")
-            elif "," in address: 
-                addr_parts = [p.strip() for p in address.split(",")]
-            else:
-                addr_parts = [address]
-                
-            street = addr_parts[0] if len(addr_parts) > 0 else ""
-            barangay = addr_parts[1] if len(addr_parts) > 1 else ""
-            city = addr_parts[2] if len(addr_parts) > 2 else ""
-            province = addr_parts[3] if len(addr_parts) > 3 else ""
-            postalCode = addr_parts[4] if len(addr_parts) > 4 else "" 
-
-        return {
-            "email": current_user.email, 
-            "role": user_role, 
-            "firstname": fname or "System", 
-            "surname": lname or "Admin",
-            "middlename": middlename or "",
-            "mi": mi or "",
-            "suffix": suffix or "", 
-            "contactNumber": contact or "", 
-            "dob": dob_str, 
-            "gender": gender or "Male",
-            "address": address or "", 
-            "street": street,
-            "barangay": barangay,
-            "city": city,
-            "province": province,
-            "postalCode": postalCode, 
-            "profilePhoto": photo
-        }
-    except Exception as e:
-        print(f"CRITICAL ERROR in /staff/profile/me: {e}")
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+    address_parts = (prof.address or "").split(" , ")
+    street = address_parts[0] if len(address_parts) > 0 else ""
+    barangay = address_parts[1] if len(address_parts) > 1 else ""
+    city = address_parts[2] if len(address_parts) > 2 else ""
+    province = address_parts[3] if len(address_parts) > 3 else ""
+    
+    return {
+        "firstname": prof.firstname,
+        "middlename": prof.middlename,
+        "surname": prof.surname,
+        "suffix": prof.suffix,
+        "contactNumber": prof.contactNumber,
+        "dob": prof.dob.strftime("%Y-%m-%d") if getattr(prof, 'dob', None) else "",
+        "gender": prof.gender,
+        "email": current_user.email,
+        "role": current_user.role.value,
+        "street": street,
+        "barangay": barangay,
+        "city": city,
+        "province": province,
+        "postalCode": getattr(prof, 'postalCode', ""),
+        "profilePhoto": getattr(prof, 'profilePhoto', None)
+    }
 
 @router.put("/update-profile")
 def update_staff_profile(
-    data: ProfileUpdate, 
-    request: Request,
-    db: Session = Depends(get_db), 
-    current_user: User = Depends(get_current_user)
-):
+    payload: ProfileUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     prof = current_user.staff_profile
-    if isinstance(prof, list):
-        prof = prof[0] if len(prof) > 0 else None
-        
     if not prof:
-        prof = Staff(userID=current_user.userID) 
-        db.add(prof)
+        raise HTTPException(status_code=404, detail="Profile not found")
     
-    prof.firstname = data.firstname
-    prof.surname = data.surname
-    prof.middlename = data.middlename
-    prof.mi = data.mi
-    prof.suffix = data.suffix
-    prof.contactNumber = data.contactNumber
-    prof.gender = data.gender
-    prof.address = f"{data.street} | {data.barangay} | {data.city} | {data.province} | {data.postalCode}"
+    prof.firstname = payload.firstname
+    prof.middlename = payload.middlename
+    prof.surname = payload.surname
+    prof.suffix = payload.suffix
+    prof.contactNumber = payload.contactNumber
+    prof.gender = payload.gender
+    prof.postalCode = payload.postalCode
     
-    try:
-        if data.dob:
-            parsed_date = datetime.strptime(data.dob, "%m/%d/%Y").date()
-            if hasattr(prof, 'birthdate'): prof.dob = parsed_date
-            elif hasattr(prof, 'birthDate'): prof.dob = parsed_date
-            elif hasattr(prof, 'birthday'): prof.dob = parsed_date
-            else: prof.dob = parsed_date
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid date format.")
-
-    new_log = SystemLogs(
-        userID=current_user.userID, 
-        actionType=actionTypeEnum.UPDATE, 
-        tableAffected="staffTable",
-        target="Personal Account", 
-        details="Updated personal account profile", ipAddress=request.client.host
-    )
-    db.add(new_log)
+    if payload.dob:
+        try:
+            prof.dob = datetime.strptime(payload.dob, "%Y-%m-%d").date()
+        except ValueError:
+            pass 
+        
+    prof.address = f"{payload.street}, {payload.barangay}, {payload.city}, {payload.province}, {payload.postalCode}"
+    
     db.commit()
-
     return {"message": "Profile updated successfully"}
 
 @router.post("/upload-photo")
