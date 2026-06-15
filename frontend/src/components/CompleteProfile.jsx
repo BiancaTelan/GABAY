@@ -285,6 +285,26 @@ export default function CompleteProfile() {
                 <Input label="Postal Code" name="postalCode" value={formData.postalCode} onChange={handleInputChange} error={errors.postalCode} isEditing />
               </div>
 
+              <h2 className="text-xl font-bold text-gabay-navy font-montserrat border-b pb-2 pt-4">Emergency Contact</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Input 
+                  label="Emergency Contact Name" 
+                  name="emergencyContact" 
+                  value={formData.emergencyContact} 
+                  onChange={handleInputChange} 
+                  error={errors.emergencyContact} 
+                  isEditing 
+                />
+                <Input 
+                  label="Emergency Contact Number" 
+                  name="emergencyContactNum" 
+                  value={formData.emergencyContactNum} 
+                  onChange={handleInputChange} 
+                  error={errors.emergencyContactNum} 
+                  isEditing 
+                />
+              </div>
+
               {/* Conditional Guardian Section */}
               {isMinor && (
                 <>
