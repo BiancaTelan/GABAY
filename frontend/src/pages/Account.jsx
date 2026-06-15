@@ -10,10 +10,13 @@ import toast from 'react-hot-toast';
 import { jsPDF } from 'jspdf';
 import { getApiErrorMessage, parseJsonResponse, showValidationError } from '../utils/apiError';
 
-export default function AddressDropdowns({ tempUserInfo, setTempUserInfo, isEditing }) {
+// ==========================================
+// HELPER COMPONENT 
+// ==========================================
+function AddressDropdowns({ tempUserInfo, setTempUserInfo, isEditing, localUserInfo }) {
   const [provinces, setProvinces] = useState([]);
   const [cities, setCities] = useState([]);
-  const [barangays, setBarangays] = useState([])
+  const [barangays, setBarangays] = useState([]);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -21,10 +24,12 @@ export default function AddressDropdowns({ tempUserInfo, setTempUserInfo, isEdit
         const provRes = await fetch('https://psgc.gitlab.io/api/provinces/');
         const provData = await provRes.json();
 
+        // Add Metro Manila manually since PSGC classifies it as a Region
         const ncr = { code: '130000000', name: 'METRO MANILA', isRegion: true };
         const allProvinces = [...provData, ncr].sort((a, b) => a.name.localeCompare(b.name));
         setProvinces(allProvinces);
 
+        // Pre-load cities if a province already exists
         if (localUserInfo.province) {
           const selectedProv = allProvinces.find(p => p.name === localUserInfo.province);
           if (selectedProv) {
@@ -36,6 +41,7 @@ export default function AddressDropdowns({ tempUserInfo, setTempUserInfo, isEdit
             const cityData = await cityRes.json();
             setCities(cityData.sort((a, b) => a.name.localeCompare(b.name)));
 
+            // Pre-load barangays if a city already exists
             if (localUserInfo.city) {
               const selectedCity = cityData.find(c => c.name === localUserInfo.city);
               if (selectedCity) {
@@ -61,7 +67,7 @@ export default function AddressDropdowns({ tempUserInfo, setTempUserInfo, isEdit
     const selectedProv = provinces.find(p => p.name === provinceName);
     
     setTempUserInfo(prev => ({ ...prev, province: provinceName, city: '', barangay: '' }));
-    setCities([]);
+    setCities([]); 
     setBarangays([]); 
 
     if (selectedProv) {
@@ -90,58 +96,37 @@ export default function AddressDropdowns({ tempUserInfo, setTempUserInfo, isEdit
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-      {/* Province Dropdown */}
+    <>
       <div className="md:col-span-2">
         <label className="block text-xs font-semibold text-gray-600 mb-1">Province</label>
-        <select 
-          disabled={!isEditing}
-          value={tempUserInfo.province} 
-          onChange={handleProvinceChange}
-          className="w-full border p-2 rounded-lg text-sm outline-none bg-white"
-        >
+        <select disabled={!isEditing} value={tempUserInfo.province} onChange={handleProvinceChange} className="w-full border p-2.5 rounded-xl text-sm outline-none bg-gray-50 focus:ring-2 focus:ring-gabay-teal/20 focus:border-gabay-teal disabled:opacity-60 disabled:bg-gray-100 transition-all">
           <option value="" disabled>Select Province</option>
-          {provinces.map(prov => (
-            <option key={prov.code} value={prov.name}>{prov.name}</option>
-          ))}
+          {provinces.map(prov => <option key={prov.code} value={prov.name}>{prov.name}</option>)}
         </select>
       </div>
 
-      {/* City Dropdown */}
       <div className="md:col-span-2">
         <label className="block text-xs font-semibold text-gray-600 mb-1">City / Municipality</label>
-        <select 
-          disabled={!isEditing || !tempUserInfo.province}
-          value={tempUserInfo.city} 
-          onChange={handleCityChange}
-          className="w-full border p-2 rounded-lg text-sm outline-none bg-white disabled:bg-gray-50"
-        >
+        <select disabled={!isEditing || !tempUserInfo.province} value={tempUserInfo.city} onChange={handleCityChange} className="w-full border p-2.5 rounded-xl text-sm outline-none bg-gray-50 focus:ring-2 focus:ring-gabay-teal/20 focus:border-gabay-teal disabled:opacity-60 disabled:bg-gray-100 transition-all">
           <option value="" disabled>Select City</option>
-          {cities.map(city => (
-            <option key={city.code} value={city.name}>{city.name}</option>
-          ))}
+          {cities.map(city => <option key={city.code} value={city.name}>{city.name}</option>)}
         </select>
       </div>
 
-      {/* Barangay Dropdown */}
       <div className="md:col-span-2">
         <label className="block text-xs font-semibold text-gray-600 mb-1">Barangay</label>
-        <select 
-          disabled={!isEditing || !tempUserInfo.city}
-          value={tempUserInfo.barangay} 
-          onChange={(e) => setTempUserInfo(prev => ({ ...prev, barangay: e.target.value }))}
-          className="w-full border p-2 rounded-lg text-sm outline-none bg-white disabled:bg-gray-50"
-        >
+        <select disabled={!isEditing || !tempUserInfo.city} value={tempUserInfo.barangay} onChange={(e) => setTempUserInfo(prev => ({ ...prev, barangay: e.target.value }))} className="w-full border p-2.5 rounded-xl text-sm outline-none bg-gray-50 focus:ring-2 focus:ring-gabay-teal/20 focus:border-gabay-teal disabled:opacity-60 disabled:bg-gray-100 transition-all">
           <option value="" disabled>Select Barangay</option>
-          {barangays.map(brgy => (
-            <option key={brgy.code} value={brgy.name}>{brgy.name}</option>
-          ))}
+          {barangays.map(brgy => <option key={brgy.code} value={brgy.name}>{brgy.name}</option>)}
         </select>
       </div>
-    </div>
+    </>
   );
 }
 
+// ==========================================
+// MAIN COMPONENT
+// ==========================================
 export default function Account({ userInfo, onLogout, onUpdateProfile }) {
   const navigate = useNavigate();
   const { token } = useContext(AuthContext);
@@ -154,11 +139,19 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
     email: "",
     contactNumber: "",
     dob: "",
+    age: "",
     gender: "Female",
     street: "",
     barangay: "",
     city: "",
     province: "",
+    postalCode: "",
+    guardianFirstName: "",
+    guardianMiddleName: "",
+    guardianSurname: "",
+    guardianExtension: "",
+    guardianContactNum: "",
+    relationship: "",
     emergencyContact: "",
     emergencyContactNum: "",
     emergencyEmail: "",
@@ -166,10 +159,17 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
     civilStatus: ""
   });
 
+  const [isMinor, setIsMinor] = useState(false);
   const [tempUserInfo, setTempUserInfo] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [errors, setErrors] = useState({});
   const [showToast, setShowToast] = useState(false);
+
+  useEffect(() => {
+    if (localUserInfo.age && Number(localUserInfo.age) < 18) {
+      setIsMinor(true);
+    }
+  }, [localUserInfo.age]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -213,6 +213,23 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
     }
   }, [showToast]);
 
+  const calculateAge = (dobString) => {
+    if (!dobString || dobString.includes('M')) return "";
+    const parts = dobString.split('/');
+    if (parts.length !== 3) return "";
+    const [m, d, y] = parts.map(Number);
+    if (!m || !d || !y || y.toString().length !== 4) return "";
+    
+    const today = new Date();
+    const birthDate = new Date(y, m - 1, d);
+    let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      calculatedAge--;
+    }
+    return calculatedAge >= 0 ? calculatedAge.toString() : "0";
+  };
+
   const handleInputChange = (e) => {
     let { name, value } = e.target;
     if (name === 'dob' && isEditing) {
@@ -221,7 +238,14 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
       else if (cleanValue.length <= 4) value = `${cleanValue.slice(0, 2)}/${cleanValue.slice(2)}`;
       else value = `${cleanValue.slice(0, 2)}/${cleanValue.slice(2, 4)}/${cleanValue.slice(4, 8)}`;
     }
-    setLocalUserInfo(prev => ({ ...prev, [name]: value }));
+    setLocalUserInfo(prev => {
+      const updated = { ...prev, [name]: value };
+      if (name === 'dob' && value.length === 10) {
+        updated.age = calculateAge(value);
+      }
+      return updated;
+    });
+
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }));
   };
 
@@ -229,7 +253,13 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
     const dateValue = e.target.value; 
     if (!dateValue) return;
     const [y, m, d] = dateValue.split('-');
-    setLocalUserInfo(prev => ({ ...prev, dob: `${m}/${d}/${y}` }));
+    const formattedDob = `${m}/${d}/${y}`;
+    
+    setLocalUserInfo(prev => ({ 
+      ...prev, 
+      dob: formattedDob,
+      age: calculateAge(formattedDob)
+    }));
     if (errors.dob) setErrors(prev => ({ ...prev, dob: null }));
   };
 
@@ -282,6 +312,8 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
     if (!localUserInfo.email.trim()) newErrors.email = "Email address is required";
     else if (!emailPattern.test(localUserInfo.email)) newErrors.email = "Enter a valid email address";
 
+    if (!namePattern.test(localUserInfo.middlename)) newErrors.middlename = "Name cannot contain numbers";
+
     // Age Validation
     if (!localUserInfo.dob.trim() || localUserInfo.dob === "MM/DD/YYYY") {
       newErrors.dob = "Date of birth is required";
@@ -295,14 +327,38 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
         let age = today.getFullYear() - birthDate.getFullYear();
         const monthDiff = today.getMonth() - birthDate.getMonth();
         if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) age--;
-        if (age < 18) newErrors.dob = "You must be at least 18 years old.";
+        if (!isMinor && age < minAgeRequirement) {
+          newErrors.dob = `USER MUST BE ATLEAST ${minAgeRequirement} YEARS OLD`;}
+          
+        else if (age > 110) {
+          newErrors.dob = "Age cannot exceed 110 years old";}
+        
       }
     }
 
-    if (!localUserInfo.street.trim()) newErrors.street = "Required";
-    if (!localUserInfo.barangay.trim()) newErrors.barangay = "Required";
-    if (!localUserInfo.city.trim()) newErrors.city = "Required";
-    if (!localUserInfo.province.trim()) newErrors.province = "Required";
+    if (!localUserInfo.street.trim()) {
+      newErrors.street = "House No. / Street / Subdivision field cannot be empty";}
+    if (!localUserInfo.barangay.trim()) {
+      newErrors.barangay = "Barangay field cannot be empty";}
+    if (!localUserInfo.city.trim()) {
+      newErrors.city = "City / Municipality field cannot be empty";}
+    if (!localUserInfo.province.trim()) {
+      newErrors.province = "Province field cannot be empty";}
+    if (!localUserInfo.postalCode.trim()) {
+      newErrors.postalCode = "Postal Code field cannot be empty";}
+
+    if (isMinor) {
+      if (!localUserInfo.guardianFirstName.trim()) newErrors.guardianFirstName = "Guardian first name is required";
+      else if (!namePattern.test(localUserInfo.guardianFirstName)) newErrors.guardianFirstName = "Name must contain letters only";
+
+      if (!localUserInfo.guardianSurname.trim()) newErrors.guardianSurname = "Guardian last name is required";
+      else if (!namePattern.test(localUserInfo.guardianSurname)) newErrors.guardianSurname = "Name must contain letters only";
+
+      if (!localUserInfo.guardianContactNum.trim()) newErrors.guardianContactNum = "Guardian contact number is required";
+      else if (!phonePattern.test(localUserInfo.guardianContactNum)) newErrors.guardianContactNum = "Must be an 11-digit mobile number";
+
+      if (!localUserInfo.relationship) newErrors.relationship = "Relationship specification is required";
+    }
 
     if (!localUserInfo.contactNumber.trim()) newErrors.contactNumber = "Contact number is required";
     else if (!phonePattern.test(localUserInfo.contactNumber)) newErrors.contactNumber = "Must be a valid 11-digit number";
@@ -412,14 +468,12 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
         doc.line(valueX, y + 0.05, x + underlineWidth, y + 0.05); // Underline
       };
 
-      // Draw Fields
       drawField("Hospital #:", localUserInfo.hospital_num, leftCol, currentY, maxFieldWidth);
       currentY += lineSpacing;
 
       drawField("Name:", fullName, leftCol, currentY, maxFieldWidth);
       currentY += lineSpacing;
 
-      // Row for Age, Sex, Civil Status
       drawField("Age:", localUserInfo.age?.toString(), leftCol, currentY, 0.8);
       drawField("Sex:", localUserInfo.gender, leftCol + 0.9, currentY, 0.8);
       drawField("Civil Status:", localUserInfo.civilStatus, leftCol + 1.8, currentY, 1.8);
@@ -430,7 +484,6 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
 
       drawField("Address:", address, leftCol, currentY, maxFieldWidth);
 
-      // Inner 'Paalala' Box from the reference image
       currentY += 0.35;
       doc.rect(leftCol, currentY, maxFieldWidth, 0.65);
       doc.setFontSize(8);
@@ -494,7 +547,19 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
       <div className="flex flex-col md:flex-row gap-12">
         <div className="flex-1 space-y-10">
           <section>
-            <h2 className="text-lg font-semibold text-gabay-blue mb-6 tracking-wider uppercase">Personal Information</h2>
+            <h2 className="text-lg font-semibold text-gabay-blue mb-1 tracking-wider uppercase">Patient Information</h2>
+             <label className="flex items-center cursor-pointer group mb-6 tracking-wide uppercase">
+                <input 
+                  type="checkbox" 
+                  checked={isMinor}
+                  disabled={!isEditing}
+                  onChange={(e) => setIsMinor(e.target.checked)}
+                  className="w-4 h-4 border-gray-300 rounded bg-gabay-blue focus:ring-gabay-blue cursor-pointer disabled:cursor-not-allowed"
+                />
+                <span className="ml-2 text-xs font-poppins text-gray-600 group-hover:text-gabay-blue transition-colors">
+                  Is Patient under 18 years old?
+                </span>
+              </label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
               
               <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -503,12 +568,26 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
                   <Input label="First Name" name="firstname" value={localUserInfo.firstname} onChange={handleInputChange} error={errors.firstname} required />
                   <Input label="Middle Name" name="middlename" value={localUserInfo.middlename} onChange={handleInputChange} />
                   <Input label="Surname" name="surname" value={localUserInfo.surname} onChange={handleInputChange} error={errors.surname} required />
+                  <div className="flex flex-col gap-1 w-full">
+                  <label className="text-sm font-poppins font-medium text-gray-700">Name Extension</label>
+                  <select value={localUserInfo.extension || ""} onChange={(e) => setLocalUserInfo({ ...localUserInfo, extension: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded-md font-poppins text-sm bg-white outline-none focus:ring-1 focus:ring-gabay-teal text-gray-700 cursor-pointer">
+                    <option value="">None (N/A)</option>
+                    <option value="Jr.">Jr.</option>
+                    <option value="Sr.">Sr.</option>
+                    <option value="III">III</option>
+                    <option value="III">IV</option>
+                    <option value="III">V</option>
+                    <option value="IV">IV</option>
+                    <option value="V">V</option>
+                  </select>
+                  </div>
                 </>
               ) : (
                 <div className="sm:col-span-3">
                   <Input 
                     label="Full Name" 
-                    value={`${localUserInfo.firstname} ${localUserInfo.middlename ? localUserInfo.middlename + ' ' : ''}${localUserInfo.surname}`} 
+                    value={`${localUserInfo.firstname} ${localUserInfo.middlename ? localUserInfo.middlename + ' ' : ''}${localUserInfo.surname} ${localUserInfo.extension}`} 
                     readOnly 
                     noHover 
                   />
@@ -597,15 +676,7 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
                 error={errors.dob}
               />
 
-              <Input
-                label="Age"
-                name="age"
-                value={localUserInfo.age}
-                onChange={handleInputChange}
-                readOnly={!isEditing}
-                noHover={!isEditing}
-                isEditing={isEditing}
-              />
+              <Input label="Age" name="age" value={localUserInfo.age} readOnly noHover />
 
               <div className="flex flex-col">
                 <label className="text-sm font-medium text-gabay-navy mb-1">
@@ -646,17 +717,83 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
                    <Input label="Barangay" name="barangay" value={localUserInfo.barangay} onChange={handleInputChange} required error={errors.barangay}/>
                    <Input label="City" name="city" value={localUserInfo.city} onChange={handleInputChange} required error={errors.city}/>
                    <Input label="Province" name="province" value={localUserInfo.province} onChange={handleInputChange} required error={errors.province}/>
+                   <Input 
+                      label="Postal Code" 
+                      name="postalCode" 
+                      value={localUserInfo.postalCode || ""} 
+                      onChange={handleInputChange} 
+                      error={errors.postalCode} 
+                      isEditing={isEditing} 
+                      required 
+                    />
                 </div>
               ) : (
                 <Input 
                   label="Address" 
-                  value={[localUserInfo.street, localUserInfo.barangay, localUserInfo.city, localUserInfo.province].filter(Boolean).join(', ')} 
+                  value={[localUserInfo.street, localUserInfo.barangay, localUserInfo.city, localUserInfo.province, localUserInfo.postalCode].filter(Boolean).join(', ')} 
                   readOnly 
                   noHover 
                 />
               )}
             </div>
           </section>
+
+          {isMinor && isEditing && (
+            <section className="animate-in slide-in-from-top-4 duration-300">
+              <h2 className="text-lg font-semibold text-gabay-blue mb-6 tracking-wider uppercase">Guardian Information</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 items-start">
+                <Input label="First Name" name="guardianFirstName" value={localUserInfo.guardianFirstName} onChange={handleInputChange} error={errors.guardianFirstName} isEditing={isEditing} required />
+                <Input label="Middle Name" name="guardianMiddleName" value={localUserInfo.guardianMiddleName} onChange={handleInputChange} error={errors.guardianMiddleName} isEditing={isEditing} /> 
+                <Input label="Last Name" name="guardianSurname" value={localUserInfo.guardianSurname} onChange={handleInputChange} error={errors.guardianSurname} isEditing={isEditing} required />
+                
+                <div className="flex flex-col gap-1 w-full">
+                  <label className="text-sm font-poppins font-medium text-gray-700">Name Extension</label>
+                  <select value={localUserInfo.guardianExtension || ""} onChange={(e) => setLocalUserInfo({ ...localUserInfo, guardianExtension: e.target.value })}
+                    className="w-full p-2 border border-gray-300 rounded-md font-poppins text-sm bg-white outline-none focus:ring-1 focus:ring-gabay-teal text-gray-700 cursor-pointer">
+                    <option value="">None (N/A)</option>
+                    <option value="Jr.">Jr.</option>
+                    <option value="Sr.">Sr.</option>
+                    <option value="III">III</option>
+                    <option value="IV">IV</option>
+                    <option value="V">V</option>
+                  </select>
+                </div>
+
+                <Input label="Contact Number" name="guardianContactNum" value={localUserInfo.guardianContactNum} onChange={handleInputChange} isEditing={isEditing} error={errors.guardianContactNum} required />
+                
+                <div className="flex flex-col gap-1 w-full">
+                  <label className="text-sm font-poppins font-medium text-gray-700">Relationship to Patient</label>
+                  <select value={localUserInfo.relationship || ""} onChange={(e) => setLocalUserInfo({ ...localUserInfo, relationship: e.target.value })}
+                    className={`w-full p-2 border rounded-md font-poppins text-sm bg-white outline-none transition-all h-[38px] text-gray-700 cursor-pointer ${
+                    errors.relationship ? 'border-red-500 focus:ring-1 focus:ring-red-500 ring-1 ring-red-500/20' : 'border-gray-300 focus:ring-1 focus:ring-gabay-teal'}`} required>
+                    <option value="">Select Relationship</option>
+                    <option value="Parent">Parent</option>
+                    <option value="Sibling">Sibling</option>
+                    <option value="Grandparent">Grandparent</option>
+                    <option value="Extended Relative">Extended Relative</option>
+                  </select>
+                  {errors.relationship && <p className="text-[10px] text-red-500 font-poppins font-bold uppercase">{errors.relationship}</p>}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {isMinor && !isEditing && (
+            <section className="animate-in fade-in duration-300">
+              <h2 className="text-lg font-semibold text-gabay-blue mb-6 tracking-wider uppercase">Guardian Information</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                <Input label="Guardian Full Name" value={[
+                  localUserInfo.guardianFirstName,
+                  localUserInfo.guardianMiddleName,
+                  localUserInfo.guardianSurname,
+                  localUserInfo.guardianExtension
+                ].filter(Boolean).join(' ')} readOnly noHover />
+
+                <Input label="Guardian Contact Number" value={localUserInfo.guardianContactNum} readOnly noHover />
+                <Input label="Relationship to Patient" value={localUserInfo.relationship} readOnly noHover />
+              </div>
+            </section>
+          )}
 
           <section>
             <h2 className="text-lg font-semibold text-gabay-blue mb-6 tracking-wider uppercase">Emergency Contact Information</h2>

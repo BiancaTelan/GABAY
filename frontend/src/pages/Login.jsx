@@ -145,7 +145,7 @@ export default function Login() {
         </div>
 
         <div className="flex-1 p-8 md:p-12 bg-white">
-          <h3 className="font-montserrat text-3xl font-bold text-gabay-blue text-center mb-2">Log In</h3>
+          <h3 className="font-montserrat text-3xl font-bold text-gabay-blue text-center mb-2">Welcome Back</h3>
           <p className="font-poppins text-gray-500 text-center text-sm mb-8">Accomplish the form below to access your account</p>
 
           <form onSubmit={handleLogin} className="space-y-6">
