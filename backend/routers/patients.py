@@ -173,7 +173,7 @@ def update_patient_profile(
     patient.guardianSurname = data.guardianSurname
     patient.guardianExtension = data.guardianExtension
     patient.guardianContactNum = data.guardianContactNum
-    patient.guardianRelationship = data.relationship
+    patient.guardianRelationship = data.guardianRelationship
 
     db.commit()
     return {"message": "Profile successfully updated!"}
