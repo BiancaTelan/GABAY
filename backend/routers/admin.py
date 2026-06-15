@@ -361,6 +361,7 @@ def get_personnel_list(db: Session = Depends(get_db)):
         phone_str = "N/A"
         gender_str = "N/A"
         dob_str = "N/A"
+        address_str = "N/A" 
 
         if u.staff_profile:
             middle_init = f" {u.staff_profile.middlename[0]}." if u.staff_profile.middlename else ""
@@ -371,6 +372,7 @@ def get_personnel_list(db: Session = Depends(get_db)):
             time_slot = u.staff_profile.workingHours or "Unassigned"
             phone_str = u.staff_profile.contactNumber or "N/A"
             gender_str = u.staff_profile.gender or "N/A"
+            address_str = u.staff_profile.address or "N/A" 
             if getattr(u.staff_profile, 'dob', None): dob_str = u.staff_profile.dob.strftime("%m/%d/%Y")
 
         formatted_personnel.append({
@@ -379,7 +381,8 @@ def get_personnel_list(db: Session = Depends(get_db)):
             "middlename": u.staff_profile.middlename if u.staff_profile else "",
             "surname": u.staff_profile.surname if u.staff_profile else "Admin",      
             "schedule": schedule, "time": time_slot, "status": "Active" if u.isActive else "Deactivated",
-            "email": email_str, "phone": phone_str, "gender": gender_str, "dob": dob_str
+            "email": email_str, "phone": phone_str, "gender": gender_str, "dob": dob_str,
+            "address": address_str 
         })
 
     day_map_reverse = { "Monday": "M", "Tuesday": "T", "Wednesday": "W", "Thursday": "TH", "Friday": "F", "Saturday": "S", "Sunday": "SU" }
@@ -731,14 +734,35 @@ def get_live_hardware_metrics(db: Session = Depends(get_db)):
 # 11. DASHBOARD SUMMARY
 # ---------------------------------------------------------
 @router.get("/dashboard/summary")
-def get_dashboard_summary(period: str = Query("month", description="Filter period: week, month, year"), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def get_dashboard_summary(period: str = Query("month", description="Filter period: day, week, month, year"), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if current_user.role.value != "Admin": raise HTTPException(status_code=403, detail="Unauthorized")
     
     ph_tz = ZoneInfo("Asia/Manila")
     today = datetime.now(ph_tz)
     timeline_data = []
     
-    if period == "week":
+    if period == "day":
+        start_date = today.date()
+        daily_appts = db.query(Appointment).filter(Appointment.assignedDate == start_date).all()
+        am_count = 0
+        pm_count = 0
+        for a in daily_appts:
+            if getattr(a, 'assignedSchedule', None) and getattr(a.assignedSchedule, 'startTime', None):
+                if a.assignedSchedule.startTime.hour < 12:
+                    am_count += 1
+                else:
+                    pm_count += 1
+            else:
+                pm_count += 1 
+                
+        timeline_data = [
+            {"name": "6 AM", "appointments": 0},
+            {"name": "Morning", "appointments": am_count},
+            {"name": "Afternoon", "appointments": pm_count},
+            {"name": "6 PM", "appointments": 0}
+        ]
+
+    elif period == "week":
         start_date = today - timedelta(days=today.weekday())
         end_date = start_date + timedelta(days=6)
         daily_counts = db.query(func.dayname(Appointment.assignedDate).label('day_name'), func.count(Appointment.appointmentID).label('count')).filter(Appointment.assignedDate >= start_date.date(), Appointment.assignedDate <= end_date.date()).group_by(func.dayname(Appointment.assignedDate)).all()
@@ -760,11 +784,12 @@ def get_dashboard_summary(period: str = Query("month", description="Filter perio
         daily_counts = db.query(Appointment.assignedDate, func.count(Appointment.appointmentID).label('count')).filter(Appointment.assignedDate >= start_date.date(), Appointment.assignedDate <= end_date.date()).group_by(Appointment.assignedDate).all()
         week_buckets = {"Week 1": 0, "Week 2": 0, "Week 3": 0, "Week 4": 0}
         for row in daily_counts:
-            day_num = row.assignedDate.day
-            if day_num <= 7: week_buckets["Week 1"] += row.count
-            elif day_num <= 14: week_buckets["Week 2"] += row.count
-            elif day_num <= 21: week_buckets["Week 3"] += row.count
-            else: week_buckets["Week 4"] += row.count
+            if row.assignedDate:
+                day_num = row.assignedDate.day
+                if day_num <= 7: week_buckets["Week 1"] += row.count
+                elif day_num <= 14: week_buckets["Week 2"] += row.count
+                elif day_num <= 21: week_buckets["Week 3"] += row.count
+                else: week_buckets["Week 4"] += row.count
         for week, count in week_buckets.items():
             timeline_data.append({"name": week, "appointments": count})
 
