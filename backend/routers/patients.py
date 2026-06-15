@@ -1,13 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
-from datetime import datetime
+from datetime import datetime, date
 from dependencies import get_current_user
 from db_connection import get_db
 from db_model import User, Patient
 from py_schema import HospitalNumberRequest, PatientProfileUpdate, ContactFormRequest
 from email_utils import send_contact_us_email
-from datetime import datetime, date
 from pydantic import BaseModel
 from security import verify_system_operational
 
@@ -17,13 +16,12 @@ router = APIRouter(prefix="/patients", tags=["Patient Management"])
 # 1. HOSPITAL NUMBER REGISTRATION AND GENERATION
 # ---------------------------------------------------------
 @router.post("/generate-hospital-number")
-def generate_hospital_number(request: HospitalNumberRequest, db: Session = Depends(get_db)):
+def generate_hospital_number(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user) 
+):
     try:
-        user = db.query(User).filter(User.email == request.email).first()
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found.")
-            
-        patient = db.query(Patient).filter(Patient.userID == user.userID).first()
+        patient = db.query(Patient).filter(Patient.userID == current_user.userID).first()
         if not patient:
             raise HTTPException(status_code=404, detail="Patient profile not found.")
 
@@ -34,7 +32,6 @@ def generate_hospital_number(request: HospitalNumberRequest, db: Session = Depen
             }
 
         # === HOSPITAL NUMBER GENERATION ===
-        
         current_year = datetime.now().strftime("%y") 
         prefix = f"{current_year}-"
 
@@ -62,10 +59,9 @@ def generate_hospital_number(request: HospitalNumberRequest, db: Session = Depen
     except HTTPException:
         raise
     except Exception as e:
-        print(f"\n❌ ERROR GENERATING ID: {str(e)}\n")
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Server Error: {str(e)}")
-
+    
 class LinkHospitalNumberRequest(BaseModel):
     hospital_num: str
 
@@ -141,11 +137,12 @@ def update_patient_profile(
         today = date.today()
         age = today.year - dob_date.year - ((today.month, today.day) < (dob_date.month, dob_date.day))
         
-        if age < 18:
-            raise HTTPException(status_code=400, detail="You must be at least 18 years old to register or update a profile.")
-            
         patient.dob = dob_date
         patient.age = age
+        
+        if age < 18 and not (data.guardianFirstName and data.guardianSurname and data.guardianContactNum):
+            raise HTTPException(status_code=400, detail="Guardian details are strictly required for minors.")
+
     except ValueError:
         raise HTTPException(status_code=400, detail="Date format must be YYYY-MM-DD.")
 
@@ -155,15 +152,30 @@ def update_patient_profile(
     patient.contactNumber = data.contactNumber
     patient.gender = data.gender
     patient.civilStatus = data.civilStatus
-    safe_address = f"{data.street} | {data.barangay} | {data.city} | {data.province}"
+    
+    s_street = data.street.replace("|", "").strip()
+    s_barangay = data.barangay.replace("|", "").strip()
+    s_city = data.city.replace("|", "").strip()
+    s_province = data.province.replace("|", "").strip()
+    s_postal = data.postalCode.replace("|", "").strip()
+
+    safe_address = f"{s_street} | {s_barangay} | {s_city} | {s_province} | {s_postal}"
     patient.address = safe_address
 
     patient.emergencyContact = data.emergencyContact
     patient.emergencyContactNum = data.emergencyContactNum
     patient.emergencyEmail = data.emergencyEmail
 
+    patient.guardianFirstName = data.guardianFirstName
+    patient.guardianMiddleName = data.guardianMiddleName
+    patient.guardianSurname = data.guardianSurname
+    patient.guardianExtension = data.guardianExtension
+    patient.guardianContactNum = data.guardianContactNum
+    patient.relationship = data.relationship
+
     db.commit()
     return {"message": "Profile successfully updated!"}
+
 # ---------------------------------------------------------
 # 4. PATIENT ACCOUNT DELETION
 # ---------------------------------------------------------

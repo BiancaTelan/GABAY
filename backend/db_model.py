@@ -105,6 +105,14 @@ class Patient(Base):
     emergencyContactNum: Mapped[Optional[str]] = mapped_column(String(15), nullable=True)
     emergencyEmail: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     
+    # === Guardian Information (For Minors) ===
+    guardianFirstName: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    guardianMiddleName: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    guardianSurname: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    guardianExtension: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
+    guardianContactNum: Mapped[Optional[str]] = mapped_column(String(15), nullable=True)
+    relationship: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    
     # === Relationships ===
     user_account: Mapped[Optional["User"]] = relationship(back_populates="patient_profile")
     appointments: Mapped[List["Appointment"]] = relationship(back_populates="patient", cascade="all, delete-orphan")

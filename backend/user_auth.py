@@ -62,18 +62,25 @@ def login_for_access_token(
         )
     
     user_photo = None
+    is_profile_complete = False 
     
     if user.role.value.lower() == "staff":
         staff_profile = db.query(Staff).filter(Staff.userID == user.userID).first()
         if staff_profile:
             user_photo = staff_profile.profilePhoto
+            is_profile_complete = True 
+    elif user.role.value.lower() == "patient":
+        patient_profile = db.query(Patient).filter(Patient.userID == user.userID).first()
+        if patient_profile and patient_profile.hospital_num and patient_profile.contactNumber:
+            is_profile_complete = True
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     
     token_payload = {
         "sub": user.email, 
         "role": user.role.value,
-        "profilePhoto": user_photo
+        "profilePhoto": user_photo,
+        "isProfileComplete": is_profile_complete
     }
     
     access_token = create_access_token(
@@ -84,7 +91,8 @@ def login_for_access_token(
     return {
         "access_token": access_token, 
         "token_type": "bearer",
-        "role": user.role.value
+        "role": user.role.value,
+        "isProfileComplete": is_profile_complete
     }
 
 # ---------------------------------------------------------
@@ -163,19 +171,11 @@ def forgot_password(
     db: Session = Depends(get_db)
 ):
     user = db.query(User).filter(User.email == request.email).first()
-    
     if user:
         otp = str(random.randint(100000, 999999))
-        
         OTP_STORE[request.email] = otp
-
-        background_tasks.add_task(
-            send_otp_email,
-            recipient_email=request.email,
-            otp=otp
-        )
+        background_tasks.add_task(send_otp_email, recipient_email=request.email, otp=otp)
     return {"message": "If that email is registered, an OTP has been sent."}
-
 
 @router.post("/verify-otp")
 def verify_otp(request: VerifyOTPRequest):
@@ -184,20 +184,20 @@ def verify_otp(request: VerifyOTPRequest):
     if not stored_otp or stored_otp != request.otp:
         raise HTTPException(status_code=400, detail="Invalid or expired verification code.")
         
+    OTP_STORE[request.email] = "VERIFIED"
     return {"message": "OTP verified successfully."}
-
 
 @router.post("/reset-password")
 def reset_password(request: ResetPasswordOTPRequest, db: Session = Depends(get_db)):
     
-    if request.email not in OTP_STORE:
+    # FIX: Ensure the user actually passed the verify_otp step
+    if OTP_STORE.get(request.email) != "VERIFIED":
         raise HTTPException(status_code=400, detail="Please verify your OTP first.")
         
     user = db.query(User).filter(User.email == request.email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found.")
         
-    
     hashed_password = get_password_hash(request.newPassword)
     user.passwordHash = hashed_password
     db.commit()
@@ -205,7 +205,6 @@ def reset_password(request: ResetPasswordOTPRequest, db: Session = Depends(get_d
     del OTP_STORE[request.email]
     
     return {"message": "Password updated successfully."}
-
 # ---------------------------------------------------------
 # 5. CHANGE EMAIL
 # ---------------------------------------------------------

@@ -114,18 +114,14 @@ export default function SignUp({ onCompleteSignUp }) {
         firstname: payload.firstname,
         surname: payload.surname,
         email: payload.email,
+        isProfileComplete: false 
       };
 
       login(accessToken, userRole, userData);
 
       toast.dismiss(processingToast);
-      toast.success("Account created successfully!");
-
-      setTimeout(() => {
-         navigate('/hospital-number');
-      }, 500);
- 
-
+      toast.success("Account created! Let's set up your profile.");
+      
     } catch (error) {
       toast.dismiss(processingToast);
       toast.error(error.message || "A network error occurred. Please try again.");

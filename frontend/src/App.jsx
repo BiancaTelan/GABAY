@@ -27,16 +27,22 @@ import AppointmentCancelled from './pages/ApptCancelled';
 import ForgotPassword from './pages/ForgotPassword';
 import Footer from './components/footer';
 import VerifyEmail from './pages/VerifyEmail';
+import CompleteProfile from './pages/CompleteProfile';
 
 
 const PatientRoute = () => {
-  const { token, userRole } = useContext(AuthContext);
+  const { token, userRole, userInfo } = useContext(AuthContext);
   const location = useLocation();
   const isLoggedIn = !!token;
   
   if (!isLoggedIn || (userRole !== 'patient')) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
+
+  if (userInfo && userInfo.isProfileComplete === false && location.pathname !== '/complete-profile') {
+      return <Navigate to="/complete-profile" replace />;
+  }
+
   return <Outlet />; 
 };
 
@@ -174,37 +180,24 @@ function App() {
           <Route path="/help" element={<Help />} />
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp onCompleteSignUp={handleCompleteSignUp} />} />
+          <Route path="/signup" element={<SignUp />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
 
           {/* Protected Patient Routes */}
             <Route element={<PatientRoute />}>
+            <Route path="/complete-profile" element={<CompleteProfile />} />
             <Route path="/departments" element={<DepartmentList onReserveGeneral={() => { setFormMode('fill'); navigate('/general-form'); }} onReserveSpecialty={() => { setFormMode('fill'); navigate('/specialty-form'); }} />} />
             <Route path="/account" element={<Account userInfo={userInfo} onLogout={handleLogout} onUpdateProfile={() => {}} />} />
-            <Route path="/hospital-number" element={<HospitalNumber onNavigate={handleNavigation} />} />
-            <Route path="/register-number" element={<RegisterHospitalNumber initialData={registrationData} onFinalSubmit={handleFinalRegistration} />} />
-            <Route path="/generated-number" element={<GeneratedHospitalNumber onNavigate={handleNavigation} />} />
             <Route path="/prevAppt" element={<AppointmentHistory />} />
             <Route path="/inbox" element={<Inbox userInfo={userInfo} />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/appointment-confirmed" element={<AppointmentConfirmed />} />
             <Route path="/appointment-cancelled" element={<AppointmentCancelled />} />
-            <Route path="/reschedule/:appointmentId" element={
-                  <RescheduleForm userInfo={userInfo} />
-            } />
-            
-            <Route path="/general-form" element={
-                <GeneralForm userInfo={userInfo} mode={formMode} onConfirm={handleFormSubmission} />
-            } />
-
-            <Route path="/specialty-form" element={
-              <SpecialtyForm userInfo={userInfo} mode={formMode} onConfirm={handleFormSubmission} />
-            } />
-
-            <Route path="/reservation-confirmation" element={  
-                <ReservationConfirmation userInfo={userInfo} />
-            } />
+            <Route path="/reschedule/:appointmentId" element={<RescheduleForm userInfo={userInfo} />} />
+            <Route path="/general-form" element={<GeneralForm userInfo={userInfo} mode={formMode} onConfirm={handleFormSubmission} />} />
+            <Route path="/specialty-form" element={<SpecialtyForm userInfo={userInfo} mode={formMode} onConfirm={handleFormSubmission} />} />
+            <Route path="/reservation-confirmation" element={<ReservationConfirmation userInfo={userInfo} />} />
           </Route>
           
           <Route path="*" element={<Navigate to="/" />} />
