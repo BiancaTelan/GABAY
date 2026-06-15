@@ -1222,19 +1222,35 @@ def get_admin_calendar_data(month: str, db: Session = Depends(get_db), current_a
     try:
         target_year, target_month = map(int, month.split('-'))
 
-        events_in_month = db.query(CalendarEvent).filter(extract('year', CalendarEvent.date) == target_year, extract('month', CalendarEvent.date) == target_month).all()
+        events_in_month = db.query(CalendarEvent).filter(
+            extract('year', CalendarEvent.date) == target_year, 
+            extract('month', CalendarEvent.date) == target_month
+        ).all()
+        
         formatted_events = [{"id": e.eventID, "title": e.title, "description": e.description, "date": e.date.strftime("%Y-%m-%d"), "type": (e.type.value if hasattr(e.type, 'value') else str(e.type)).upper()} for e in events_in_month]
 
-        appointments = db.query(Appointment.assignedDate, Appointment.statusID, func.count(Appointment.appointmentID).label('count')).filter(extract('year', Appointment.assignedDate) == target_year, extract('month', Appointment.assignedDate) == target_month, Appointment.assignedDate != None).group_by(Appointment.assignedDate, Appointment.statusID).all()
+        appointments = db.query(Appointment.assignedDate, AppointmentStatus.statusName, func.count(Appointment.appointmentID).label('count'))\
+            .join(AppointmentStatus, Appointment.statusID == AppointmentStatus.statusID)\
+            .filter(extract('year', Appointment.assignedDate) == target_year, extract('month', Appointment.assignedDate) == target_month, Appointment.assignedDate != None)\
+            .group_by(Appointment.assignedDate, AppointmentStatus.statusName).all()
 
         daily_stats = {}
-        for appt_date, status_id, count in appointments:
+        for appt_date, status_name, count in appointments:
             date_str = appt_date.strftime("%Y-%m-%d")
-            if date_str not in daily_stats: daily_stats[date_str] = {"date": date_str, "confirmed": 0, "canceled": 0, "noShow": 0, "completed": 0}
-            if status_id in [2, 5, 6, 7]: daily_stats[date_str]["confirmed"] += count
-            elif status_id in [3, 4]: daily_stats[date_str]["canceled"] += count
-            elif status_id == 8: daily_stats[date_str]["noShow"] += count
-            elif status_id == 9: daily_stats[date_str]["completed"] += count
+            s_name = status_name.lower()
+            
+            if date_str not in daily_stats: 
+                daily_stats[date_str] = {"date": date_str, "confirmed": 0, "canceled": 0, "noShow": 0, "completed": 0}
+            
+            # Match the text of the status to securely route the stats
+            if "approve" in s_name or "reschedule" in s_name or "book" in s_name:
+                daily_stats[date_str]["confirmed"] += count
+            elif "cancel" in s_name or "deny" in s_name:
+                daily_stats[date_str]["canceled"] += count
+            elif "no show" in s_name:
+                daily_stats[date_str]["noShow"] += count
+            elif "complete" in s_name:
+                daily_stats[date_str]["completed"] += count
         
         active_doctors = db.query(Doctor).filter(Doctor.isAvailable == True).all()
         capacity_map = {"Monday": 0, "Tuesday": 0, "Wednesday": 0, "Thursday": 0, "Friday": 0, "Saturday": 0, "Sunday": 0}
@@ -1250,7 +1266,6 @@ def get_admin_calendar_data(month: str, db: Session = Depends(get_db), current_a
     except Exception as e:
         print(f"Calendar Fetch Error: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch calendar data")
-
 @router.post("/calendar/events")
 def create_calendar_event(data: CalendarEventCreate, request: Request, db: Session = Depends(get_db), current_admin: User = Depends(get_current_user)):
     try:
@@ -1444,8 +1459,17 @@ def get_analytics_data(
         dept_appts = appts_query.filter(Appointment.deptID == d.deptID)
         total = dept_appts.count()
         if total > 0:
-            completed = dept_appts.filter(Appointment.statusID == 9).count() 
-            canceled = dept_appts.filter(Appointment.statusID.in_([3, 4])).count() 
+            completed = dept_appts.join(AppointmentStatus).filter(
+                AppointmentStatus.statusName.ilike("%Complete%")
+            ).count()
+            
+            canceled = dept_appts.join(AppointmentStatus).filter(
+                or_(
+                    AppointmentStatus.statusName.ilike("%Cancel%"),
+                    AppointmentStatus.statusName.ilike("%Deny%")
+                )
+            ).count()
+            
             dept_stats.append({
                 "name": d.department,
                 "reservations": total,
