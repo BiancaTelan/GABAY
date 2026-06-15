@@ -69,8 +69,8 @@ class PatientProfileUpdate(BaseModel):
     guardianSurname: Optional[str] = ""
     guardianExtension: Optional[str] = ""
     guardianContactNum: Optional[str] = ""
-    relationship: Optional[str] = ""
-    
+    guardianRelationship: Optional[str] = ""
+
 # ==========================================
 # USER SCHEMAS (Accounts & Authentication)
 # ==========================================

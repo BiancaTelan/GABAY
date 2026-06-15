@@ -24,7 +24,7 @@ export default function CompleteProfile() {
     dob: '', age: '', gender: 'Female', civilStatus: '',
     contactNumber: '', street: '', barangay: '', city: '', province: '', postalCode: '',
     emergencyContact: '', emergencyContactNum: '', emergencyEmail: '',
-    guardianFirstName: '', guardianMiddleName: '', guardianSurname: '', guardianExtension: '', guardianContactNum: '', relationship: '',
+    guardianFirstName: '', guardianMiddleName: '', guardianSurname: '', guardianExtension: '', guardianContactNum: '', guardianRelationship: '',
     hospitalChoice: null,
     hospitalNumInput: ''
   });
@@ -125,7 +125,7 @@ export default function CompleteProfile() {
       if (!formData.guardianFirstName.trim()) newErrors.guardianFirstName = "Guardian first name is required";
       if (!formData.guardianSurname.trim()) newErrors.guardianSurname = "Guardian last name is required";
       if (!formData.guardianContactNum.trim() || !phonePattern.test(formData.guardianContactNum)) newErrors.guardianContactNum = "Valid 11-digit mobile number required";
-      if (!formData.relationship) newErrors.relationship = "Relationship is required";
+      if (!formData.guardianRelationship) newErrors.guardianRelationship = "Relationship is required";
     }
     
     setErrors(newErrors);
@@ -284,7 +284,7 @@ export default function CompleteProfile() {
                 </div>
                 <Input label="Postal Code" name="postalCode" value={formData.postalCode} onChange={handleInputChange} error={errors.postalCode} isEditing />
               </div>
-              
+
               {/* Conditional Guardian Section */}
               {isMinor && (
                 <>
@@ -296,14 +296,14 @@ export default function CompleteProfile() {
                     
                     <div className="flex flex-col">
                       <label className="text-xs font-semibold text-gray-600 mb-1">Relationship</label>
-                      <select name="relationship" value={formData.relationship} onChange={handleInputChange} className="w-full border p-2.5 rounded-xl text-sm outline-none bg-gray-50 focus:ring-2 focus:ring-gabay-teal/20 focus:border-gabay-teal">
+                      <select name="guardianRelationship" value={formData.guardianRelationship} onChange={handleInputChange} className="w-full border p-2.5 rounded-xl text-sm outline-none bg-gray-50 focus:ring-2 focus:ring-gabay-teal/20 focus:border-gabay-teal">
                         <option value="">Select Relationship</option>
                         <option value="Parent">Parent</option>
                         <option value="Sibling">Sibling</option>
                         <option value="Grandparent">Grandparent</option>
                         <option value="Extended Relative">Extended Relative</option>
                       </select>
-                      {errors.relationship && <span className="text-red-500 text-xs mt-1">{errors.relationship}</span>}
+                      {errors.guardianRelationship && <span className="text-red-500 text-xs mt-1">{errors.guardianRelationship}</span>}
                     </div>
                   </div>
                 </>

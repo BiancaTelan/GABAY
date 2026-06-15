@@ -111,7 +111,7 @@ class Patient(Base):
     guardianSurname: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     guardianExtension: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     guardianContactNum: Mapped[Optional[str]] = mapped_column(String(15), nullable=True)
-    relationship: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    guardianRelationship: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     
     # === Relationships ===
     user_account: Mapped[Optional["User"]] = relationship(back_populates="patient_profile")
