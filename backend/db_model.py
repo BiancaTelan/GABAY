@@ -44,6 +44,13 @@ class weekDayEnum(enum.Enum):
     Saturday = "Saturday"
     Sunday = "Sunday"
 
+staff_department_assoc = Table(
+    "staff_department_assoc",
+    Base.metadata,
+    Column("staffID", Integer, ForeignKey("staffTable.staffID", ondelete="CASCADE"), primary_key=True),
+    Column("deptID", Integer, ForeignKey("departmentTable.deptID", ondelete="CASCADE"), primary_key=True)
+)
+
 # === TABLE MODELS ===
 class User(Base):
     __tablename__ = "userTable"
@@ -75,6 +82,7 @@ class Department(Base):
     # === Relationship ===
     appointments: Mapped[list["Appointment"]] = relationship(back_populates="department")
     doctors: Mapped[list["Doctor"]] = relationship(back_populates="department")
+    staff: Mapped[List["Staff"]] = relationship(secondary=staff_department_assoc, back_populates="departments")
 
 class Patient(Base):
     __tablename__ = "patientTable"
@@ -186,6 +194,7 @@ class Staff(Base):
 
     # === Relationships ===
     user_account: Mapped[Optional["User"]] = relationship(back_populates="staff_profile")
+    departments: Mapped[List["Department"]] = relationship(secondary=staff_department_assoc, back_populates="staff")
 
 
 class Schedule(Base): 
