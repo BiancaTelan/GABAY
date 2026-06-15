@@ -185,7 +185,7 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
         const data = await response.json();
 
         const addressStr = data.address || "";
-        const [street = "", barangay = "", city = "", province = ""] = addressStr.split(" | ");
+        const [street = "", barangay = "", city = "", province = "", postalCode = ""] = addressStr.split(" | ");
         
         const formattedData = { 
            ...data, 
@@ -193,7 +193,8 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
            street, 
            barangay, 
            city, 
-           province 
+           province,
+           postalCode
         };
 
         setLocalUserInfo(formattedData);

@@ -116,7 +116,14 @@ def get_patient_profile(email: str, db: Session = Depends(get_db)):
         "address": patient.address or "",
         "emergencyContact": patient.emergencyContact or "",
         "emergencyContactNum": patient.emergencyContactNum or "",
-        "emergencyEmail": patient.emergencyEmail or ""
+        "emergencyEmail": patient.emergencyEmail or "",
+        # ADDED GUARDIAN FIELDS BELOW
+        "guardianFirstName": patient.guardianFirstName or "",
+        "guardianMiddleName": patient.guardianMiddleName or "",
+        "guardianSurname": patient.guardianSurname or "",
+        "guardianExtension": patient.guardianExtension or "",
+        "guardianContactNum": patient.guardianContactNum or "",
+        "guardianRelationship": patient.guardianRelationship or ""
     }
 
 # ---------------------------------------------------------
@@ -137,6 +144,11 @@ def update_patient_profile(
         dob_date = datetime.strptime(data.dob, "%Y-%m-%d").date()
         today = date.today()
         age = today.year - dob_date.year - ((today.month, today.day) < (dob_date.month, dob_date.day))
+        
+        if age < 0:
+            raise HTTPException(status_code=400, detail="Date of birth cannot be in the future.")
+        if age > 110:
+            raise HTTPException(status_code=400, detail="Age cannot exceed 110 years old.")
         
         patient.dob = dob_date
         patient.age = age

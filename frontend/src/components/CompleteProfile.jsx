@@ -112,7 +112,13 @@ export default function CompleteProfile() {
 
   const validateStep1 = () => {
     let newErrors = {};
-    if (!formData.dob) newErrors.dob = "Date of birth is required";
+    if (!formData.dob) {
+      newErrors.dob = "Date of birth is required";
+    } else if (formData.age < 0) {
+      newErrors.dob = "Date of birth cannot be in the future";
+    } else if (formData.age > 110) {
+      newErrors.dob = "Age cannot exceed 110 years old";
+    }
     if (!formData.contactNumber || !phonePattern.test(formData.contactNumber)) newErrors.contactNumber = "Valid 11-digit number required";
     if (!formData.civilStatus) newErrors.civilStatus = "Civil status is required";
     if (!formData.street) newErrors.street = "Street/House No. is required";
@@ -303,6 +309,17 @@ export default function CompleteProfile() {
                   error={errors.emergencyContactNum} 
                   isEditing 
                 />
+                <div className="md:col-span-2">
+                  <Input 
+                    label="Emergency Email Address (Optional)" 
+                    type="email"
+                    name="emergencyEmail" 
+                    value={formData.emergencyEmail} 
+                    onChange={handleInputChange} 
+                    error={errors.emergencyEmail} 
+                    isEditing 
+                  />
+                </div>
               </div>
 
               {/* Conditional Guardian Section */}
@@ -311,7 +328,22 @@ export default function CompleteProfile() {
                   <h2 className="text-xl font-bold text-gabay-navy font-montserrat border-b pb-2 pt-4">Guardian Information</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Input label="First Name" name="guardianFirstName" value={formData.guardianFirstName} onChange={handleInputChange} error={errors.guardianFirstName} isEditing />
+                    <Input label="Middle Name" name="guardianMiddleName" value={formData.guardianMiddleName} onChange={handleInputChange} error={errors.guardianMiddleName} isEditing />
                     <Input label="Last Name" name="guardianSurname" value={formData.guardianSurname} onChange={handleInputChange} error={errors.guardianSurname} isEditing />
+                    
+                    <div className="flex flex-col">
+                      <label className="text-xs font-semibold text-gray-600 mb-1">Name Extension</label>
+                      <select name="guardianExtension" value={formData.guardianExtension} onChange={handleInputChange} className="w-full border p-2.5 rounded-xl text-sm outline-none bg-gray-50 focus:ring-2 focus:ring-gabay-teal/20 focus:border-gabay-teal">
+                        <option value="">None (N/A)</option>
+                        <option value="Jr.">Jr.</option>
+                        <option value="Sr.">Sr.</option>
+                        <option value="II">II</option>
+                        <option value="III">III</option>
+                        <option value="IV">IV</option>
+                        <option value="V">V</option>
+                      </select>
+                    </div>
+
                     <Input label="Contact Number" name="guardianContactNum" value={formData.guardianContactNum} onChange={handleInputChange} error={errors.guardianContactNum} isEditing />
                     
                     <div className="flex flex-col">
