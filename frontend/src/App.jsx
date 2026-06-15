@@ -27,7 +27,7 @@ import AppointmentCancelled from './pages/ApptCancelled';
 import ForgotPassword from './pages/ForgotPassword';
 import Footer from './components/footer';
 import VerifyEmail from './pages/VerifyEmail';
-import CompleteProfile from './pages/CompleteProfile';
+import CompleteProfile from './components/CompleteProfile';
 
 
 const PatientRoute = () => {
