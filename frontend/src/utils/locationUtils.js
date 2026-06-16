@@ -4,14 +4,17 @@ export const getZipCode = (province, city) => {
   if (!province || !city) return "";
   
   const cleanProv = province.trim();
-  const cleanCity = city.trim();
+  const cleanCity = city.trim().toUpperCase();
 
-  if (postalData[cleanProv] && postalData[cleanProv][cleanCity]) {
-    return postalData[cleanProv][cleanCity];
+  if (postalData[cleanProv]) {
+    for (const [jsonCity, zip] of Object.entries(postalData[cleanProv])) {
+      if (cleanCity.includes(jsonCity.toUpperCase())) {
+        return zip;
+      }
+    }
   }
   return "";
 };
-
 export const getLocationByZip = (zip) => {
   if (!zip || zip.length !== 4) return null;
 
@@ -22,5 +25,5 @@ export const getLocationByZip = (zip) => {
       }
     }
   }
-  return null;
+  return null; 
 };

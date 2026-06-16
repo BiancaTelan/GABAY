@@ -32,29 +32,6 @@ export default function CompleteProfile() {
 
   const [isMinor, setIsMinor] = useState(false);
 
-  const postalCodeMap = {
-    "1900": { city: "Cainta", province: "Rizal" },
-    "1920": { city: "Taytay", province: "Rizal" },
-    "1800": { city: "Marikina", province: "METRO MANILA" }, 
-    "1600": { city: "Pasig", province: "METRO MANILA" },
-    "1100": { city: "Quezon City", province: "METRO MANILA" },
-    "1000": { city: "Manila", province: "METRO MANILA" }
-  };
-
-  const cityToPostalMap = {
-    "Cainta": "1900",
-    "Taytay": "1920",
-    "Marikina": "1800",
-    "Pasig": "1600",
-    "Quezon City": "1100",
-    "Manila": "1000",
-    "Antipolo": "1870",
-    "San Juan": "1500",
-    "Mandaluyong": "1550",
-    "Makati": "1200",
-    "Taguig": "1630"
-  };
-
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -76,38 +53,62 @@ export default function CompleteProfile() {
       });
   }, [token]);
 
-  const handleProvinceChange = async (e) => {
-    const provinceName = e.target.value;
-    const selectedProv = provinces.find(p => p.name === provinceName);
-    setFormData(prev => ({ ...prev, province: provinceName, city: '', barangay: '' }));
-    setCities([]); setBarangays([]);
+  useEffect(() => {
+    const fetchCities = async () => {
+      if (!formData.province) return;
+      const selectedProv = provinces.find(p => p.name.toUpperCase() === formData.province.toUpperCase());
+      
+      if (selectedProv) {
+        const url = selectedProv.isRegion 
+          ? `https://psgc.gitlab.io/api/regions/${selectedProv.code}/cities-municipalities/`
+          : `https://psgc.gitlab.io/api/provinces/${selectedProv.code}/cities-municipalities/`;
+        const res = await fetch(url);
+        const data = await res.json();
+        setCities(data.sort((a, b) => a.name.localeCompare(b.name)));
 
-    if (selectedProv) {
-      const url = selectedProv.isRegion 
-        ? `https://psgc.gitlab.io/api/regions/${selectedProv.code}/cities-municipalities/`
-        : `https://psgc.gitlab.io/api/provinces/${selectedProv.code}/cities-municipalities/`;
-      const res = await fetch(url);
-      const data = await res.json();
-      setCities(data.sort((a, b) => a.name.localeCompare(b.name)));
-    }
+        if (formData.province !== selectedProv.name) {
+           setFormData(prev => ({ ...prev, province: selectedProv.name }));
+        }
+      }
+    };
+    if (provinces.length > 0) fetchCities();
+  }, [formData.province, provinces]);
+
+  useEffect(() => {
+    const fetchBarangays = async () => {
+      if (!formData.city) return;
+      
+      const selectedCity = cities.find(c => c.name.toUpperCase().includes(formData.city.toUpperCase()));
+      
+      if (selectedCity) {
+        const res = await fetch(`https://psgc.gitlab.io/api/cities-municipalities/${selectedCity.code}/barangays/`);
+        const data = await res.json();
+        setBarangays(data.sort((a, b) => a.name.localeCompare(b.name)));
+
+        if (formData.city !== selectedCity.name) {
+           setFormData(prev => ({ ...prev, city: selectedCity.name }));
+        }
+      }
+    };
+    if (cities.length > 0) fetchBarangays();
+  }, [formData.city, cities]);
+
+  const handleProvinceChange = (e) => {
+    const provinceName = e.target.value;
+    setFormData(prev => ({ ...prev, province: provinceName, city: '', barangay: '' }));
+    setCities([]); 
+    setBarangays([]);
   };
 
-  const handleCityChange = async (e) => {
+  const handleCityChange = (e) => {
     const cityName = e.target.value;
-    const selectedCity = cities.find(c => c.name === cityName);
-    const autoZip = getZipCode(localUserInfo.province, cityName);
+    const autoZip = getZipCode(formData.province, cityName);
     setFormData(prev => ({ ...prev, 
       city: cityName, 
       barangay: '',
-      postalCode: autoZip || prev.postalCode
+      postalCode: autoZip || prev.postalCode 
     }));
     setBarangays([]);
-
-    if (selectedCity) {
-      const res = await fetch(`https://psgc.gitlab.io/api/cities-municipalities/${selectedCity.code}/barangays/`);
-      const data = await res.json();
-      setBarangays(data.sort((a, b) => a.name.localeCompare(b.name)));
-    }
   };
 
   const handleInputChange = (e) => {
