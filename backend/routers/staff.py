@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, File, UploadFile, Query, BackgroundTasks
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, extract, cast, String, or_
 from db_connection import get_db
 from db_model import Appointment, Department, Schedule, Staff, SystemLogs, actionTypeEnum, User, Patient, Doctor, DailyQueue, queueStatusEnum, AppointmentStatus, weekDayEnum
@@ -1511,14 +1511,18 @@ def update_queue_status(
 def get_no_shows(db: Session = Depends(get_db), current_staff: User = Depends(get_current_user)):
 
     noshow_id = get_status_id(db, "No Show")
-    no_shows = db.query(Appointment).filter(
+    no_shows = db.query(Appointment).options(
+        joinedload(Appointment.patient),
+        joinedload(Appointment.doctor),
+        joinedload(Appointment.assignedSchedule)
+    ).filter(
         Appointment.statusID == noshow_id
     ).all()
 
     results = []
     for appt in no_shows:
-        patient = db.query(Patient).filter(Patient.patientID == appt.patientID).first()
-        doctor = db.query(Doctor).filter(Doctor.docID == appt.docID).first() if appt.docID else None
+        patient = appt.patient
+        doctor = appt.doctor
         
         time_str = "TBD"
         if appt.assignedSchedule:

@@ -1456,22 +1456,45 @@ def get_analytics_data(
             })
     dept_stats.sort(key=lambda x: x["reservations"], reverse=True)
 
+    # STAFF PERFORMANCE 
+    staff_users = db.query(User).options(joinedload(User.staff_profile)).filter(User.role == roleEnum.Staff).all()
+
+    log_counts = db.query(
+        SystemLogs.userID,
+        SystemLogs.actionType,
+        func.count(SystemLogs.logID).label('total_count')
+    ).filter(
+        SystemLogs.actionType.in_([
+            actionTypeEnum.APPROVE, 
+            actionTypeEnum.DENY, 
+            actionTypeEnum.UPDATE, 
+            actionTypeEnum.RESCHEDULE
+        ])
+    ).group_by(SystemLogs.userID, SystemLogs.actionType).all()
+
+    performance_dict = {}
+    for user_id, action, count in log_counts:
+        if user_id not in performance_dict:
+            performance_dict[user_id] = {"approved": 0, "canceled": 0, "rescheduled": 0}
+            
+        if action == actionTypeEnum.APPROVE:
+            performance_dict[user_id]["approved"] = count
+        elif action == actionTypeEnum.DENY:
+            performance_dict[user_id]["canceled"] = count
+        elif action in [actionTypeEnum.UPDATE, actionTypeEnum.RESCHEDULE]:
+            performance_dict[user_id]["rescheduled"] += count
+
     staff_performance = []
-    staff_users = db.query(User).filter(User.role == roleEnum.Staff).all()
     for s in staff_users:
         if s.staff_profile:
-            s_logs = logs_query.filter(SystemLogs.userID == s.userID)
-            approved = s_logs.filter(SystemLogs.actionType == actionTypeEnum.APPROVE).count()
-            canceled = s_logs.filter(SystemLogs.actionType == actionTypeEnum.DENY).count()
-            rescheduled = s_logs.filter(SystemLogs.actionType.in_([actionTypeEnum.UPDATE, actionTypeEnum.RESCHEDULE])).count()
-            
+            stats = performance_dict.get(s.userID, {"approved": 0, "canceled": 0, "rescheduled": 0})
             staff_performance.append({
                 "id": s.userID,
                 "name": f"{s.staff_profile.firstname} {s.staff_profile.surname}",
                 "role": s.staff_profile.position,
-                "approved": approved,
-                "canceled": canceled,
-                "rescheduled": rescheduled,
+                "approved": stats["approved"],
+                "canceled": stats["canceled"],
+                "rescheduled": stats["rescheduled"],
                 "isOnline": s.isActive
             })
     staff_performance.sort(key=lambda x: x["approved"] + x["rescheduled"], reverse=True)
