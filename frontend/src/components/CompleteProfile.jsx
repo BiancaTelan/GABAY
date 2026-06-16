@@ -6,7 +6,7 @@ import { AuthContext } from '../authContext';
 import { phonePattern, dobPattern, minAgeRequirement } from '../utils/constants';
 import toast from 'react-hot-toast';
 import { getApiErrorMessage, parseJsonResponse, showValidationError } from '../utils/apiError';
-import { CheckCircle, Info } from 'lucide-react';
+import { CheckCircle, Info, Loader2 } from 'lucide-react';
 import YesIcon from '../assets/personCheck.png';
 import NoIcon from '../assets/personCancel.png';
 import { getZipCode, getLocationByZip } from '../utils/locationUtils'; 
