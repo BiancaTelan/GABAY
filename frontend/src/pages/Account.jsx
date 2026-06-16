@@ -14,7 +14,7 @@ import { getZipCode, getLocationByZip } from '../utils/locationUtils';
 // ==========================================
 // HELPER COMPONENT 
 // ==========================================
-function AddressDropdowns({ tempUserInfo, setTempUserInfo, isEditing, localUserInfo }) {
+function AddressDropdowns({ localUserInfo, setLocalUserInfo, isEditing }) {
   const [provinces, setProvinces] = useState([]);
   const [cities, setCities] = useState([]);
   const [barangays, setBarangays] = useState([]);
@@ -67,7 +67,7 @@ function AddressDropdowns({ tempUserInfo, setTempUserInfo, isEditing, localUserI
     const provinceName = e.target.value;
     const selectedProv = provinces.find(p => p.name === provinceName);
     
-    setTempUserInfo(prev => ({ ...prev, province: provinceName, city: '', barangay: '' }));
+    setLocalUserInfo(prev => ({ ...prev, province: provinceName, city: '', barangay: '' }));
     setCities([]); 
     setBarangays([]); 
 
@@ -86,7 +86,8 @@ function AddressDropdowns({ tempUserInfo, setTempUserInfo, isEditing, localUserI
     const cityName = e.target.value;
     const selectedCity = cities.find(c => c.name === cityName);
     const autoZip = getZipCode(localUserInfo.province, cityName);
-    setTempUserInfo(prev => ({ ...prev, 
+    
+    setLocalUserInfo(prev => ({ ...prev, 
       city: cityName, 
       barangay: '',
       postalCode: autoZip || prev.postalCode
@@ -104,7 +105,7 @@ function AddressDropdowns({ tempUserInfo, setTempUserInfo, isEditing, localUserI
     <>
       <div className="md:col-span-2">
         <label className="block text-xs font-semibold text-gray-600 mb-1">Province</label>
-        <select disabled={!isEditing} value={tempUserInfo.province} onChange={handleProvinceChange} className="w-full border p-2.5 rounded-xl text-sm outline-none bg-gray-50 focus:ring-2 focus:ring-gabay-teal/20 focus:border-gabay-teal disabled:opacity-60 disabled:bg-gray-100 transition-all">
+        <select disabled={!isEditing} value={localUserInfo.province || ""} onChange={handleProvinceChange} className="w-full border p-2.5 rounded-xl text-sm outline-none bg-gray-50 focus:ring-2 focus:ring-gabay-teal/20 focus:border-gabay-teal disabled:opacity-60 disabled:bg-gray-100 transition-all">
           <option value="" disabled>Select Province</option>
           {provinces.map(prov => <option key={prov.code} value={prov.name}>{prov.name}</option>)}
         </select>
@@ -112,7 +113,7 @@ function AddressDropdowns({ tempUserInfo, setTempUserInfo, isEditing, localUserI
 
       <div className="md:col-span-2">
         <label className="block text-xs font-semibold text-gray-600 mb-1">City / Municipality</label>
-        <select disabled={!isEditing || !tempUserInfo.province} value={tempUserInfo.city} onChange={handleCityChange} className="w-full border p-2.5 rounded-xl text-sm outline-none bg-gray-50 focus:ring-2 focus:ring-gabay-teal/20 focus:border-gabay-teal disabled:opacity-60 disabled:bg-gray-100 transition-all">
+        <select disabled={!isEditing || !localUserInfo.province} value={localUserInfo.city || ""} onChange={handleCityChange} className="w-full border p-2.5 rounded-xl text-sm outline-none bg-gray-50 focus:ring-2 focus:ring-gabay-teal/20 focus:border-gabay-teal disabled:opacity-60 disabled:bg-gray-100 transition-all">
           <option value="" disabled>Select City</option>
           {cities.map(city => <option key={city.code} value={city.name}>{city.name}</option>)}
         </select>
@@ -120,7 +121,7 @@ function AddressDropdowns({ tempUserInfo, setTempUserInfo, isEditing, localUserI
 
       <div className="md:col-span-2">
         <label className="block text-xs font-semibold text-gray-600 mb-1">Barangay</label>
-        <select disabled={!isEditing || !tempUserInfo.city} value={tempUserInfo.barangay} onChange={(e) => setTempUserInfo(prev => ({ ...prev, barangay: e.target.value }))} className="w-full border p-2.5 rounded-xl text-sm outline-none bg-gray-50 focus:ring-2 focus:ring-gabay-teal/20 focus:border-gabay-teal disabled:opacity-60 disabled:bg-gray-100 transition-all">
+        <select disabled={!isEditing || !localUserInfo.city} value={localUserInfo.barangay || ""} onChange={(e) => setLocalUserInfo(prev => ({ ...prev, barangay: e.target.value }))} className="w-full border p-2.5 rounded-xl text-sm outline-none bg-gray-50 focus:ring-2 focus:ring-gabay-teal/20 focus:border-gabay-teal disabled:opacity-60 disabled:bg-gray-100 transition-all">
           <option value="" disabled>Select Barangay</option>
           {barangays.map(brgy => <option key={brgy.code} value={brgy.name}>{brgy.name}</option>)}
         </select>
