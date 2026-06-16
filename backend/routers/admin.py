@@ -26,6 +26,7 @@ import tempfile
 import cloudinary
 import cloudinary.uploader
 import os
+import shutil
 import uuid
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
@@ -813,7 +814,7 @@ def update_department(dept_id: int, data: DepartmentCreateUpdate, request: Reque
 
     db.add(SystemLogs(
         userID=current_admin.userID, actionType=actionTypeEnum.UPDATE, tableAffected="departmentTable",
-        target=data.department, # TARGET ADDED
+        target=data.department, 
         details=f"Updated department: {data.department}", ipAddress=request.client.host
     ))
     db.commit()
@@ -1300,8 +1301,7 @@ async def restore_database(
         raise HTTPException(status_code=400, detail="Invalid file format. Please upload a .sql file.")
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=".sql") as temp_file:
-        content = await backup_file.read()
-        temp_file.write(content)
+        shutil.copyfileobj(backup_file.file, temp_file)
         temp_file_path = temp_file.name
 
     try:
@@ -1310,20 +1310,30 @@ async def restore_database(
         db_name = os.getenv("DB_NAME", "gabay_db")
         db_host = os.getenv("DB_HOST", "localhost")
 
+        env = os.environ.copy()
         if db_pass:
-            cmd = f"mysql -h {db_host} -u {db_user} -p'{db_pass}' {db_name} < {temp_file_path}"
-        else:
-            cmd = f"mysql -h {db_host} -u {db_user} {db_name} < {temp_file_path}"
+            env["MYSQL_PWD"] = db_pass
 
-        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = process.communicate()
+        cmd = ["mysql", "-h", db_host, "-u", db_user, db_name]
+        
+        with open(temp_file_path, 'r') as f:
+            process = subprocess.run(
+                cmd, 
+                stdin=f, 
+                env=env, 
+                capture_output=True, 
+                text=True
+            )
 
         if process.returncode != 0:
-            raise Exception(f"MySQL Restore Error: {stderr.decode()}")
+            raise Exception(f"MySQL Restore Error: {process.stderr}")
 
         db.add(SystemLogs(
-            userID=current_admin.userID, actionType=actionTypeEnum.UPDATE, tableAffected="Entire Database", 
-            target="System Recovery", details=f"Admin restored database using file: {backup_file.filename}",
+            userID=current_admin.userID, 
+            actionType=actionTypeEnum.UPDATE, 
+            tableAffected="Entire Database", 
+            target="System Recovery", 
+            details=f"Admin restored database using file: {backup_file.filename}",
             ipAddress=request.client.host
         ))
         db.commit()
@@ -1333,7 +1343,6 @@ async def restore_database(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
-        # Clean up temp file
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
 
