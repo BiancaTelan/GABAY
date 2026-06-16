@@ -4,7 +4,7 @@ from sqlalchemy import desc
 from datetime import datetime, date
 from dependencies import get_current_user
 from db_connection import get_db
-from db_model import User, Patient
+from db_model import User, Patient, Appointment
 from py_schema import HospitalNumberRequest, PatientProfileUpdate, ContactFormRequest
 from email_utils import send_contact_us_email
 from pydantic import BaseModel
@@ -75,15 +75,26 @@ def link_hospital_number(
     if not patient:
         raise HTTPException(status_code=404, detail="Patient profile not found.")
     
-    # Check if the hospital number is already claimed by another account
     existing = db.query(Patient).filter(Patient.hospital_num == data.hospital_num).first()
-    if existing and existing.patientID != patient.patientID:
-        raise HTTPException(status_code=400, detail="This hospital number is already registered to another account.")
+    
+    if not existing:
+        raise HTTPException(status_code=400, detail="Invalid hospital number. This number is not recognized by the hospital system.")
+    
+    if existing.patientID != patient.patientID:
+        if existing.userID is not None:
+            raise HTTPException(status_code=400, detail="This hospital number is already securely registered to another online account.")
+        
+        if existing.firstname.strip().lower() != patient.firstname.strip().lower() or existing.surname.strip().lower() != patient.surname.strip().lower():
+            raise HTTPException(status_code=400, detail="Verification failed. The name on this hospital number does not match your profile.")
+        
+        db.query(Appointment).filter(Appointment.patientID == existing.patientID).update({"patientID": patient.patientID})
+        
+        db.delete(existing)
         
     patient.hospital_num = data.hospital_num
     db.commit()
     
-    return {"message": "Hospital number linked successfully!"}
+    return {"message": "Hospital number verified and linked successfully!"}
 
 # ---------------------------------------------------------
 # 2. PATIENT PROFILE MANAGEMENT

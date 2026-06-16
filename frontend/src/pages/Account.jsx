@@ -9,11 +9,12 @@ import { AuthContext } from '../authContext';
 import toast from 'react-hot-toast';
 import { jsPDF } from 'jspdf';
 import { getApiErrorMessage, parseJsonResponse, showValidationError } from '../utils/apiError';
+import { getZipCode, getLocationByZip } from '../utils/locationUtils'; 
 
 // ==========================================
 // HELPER COMPONENT 
 // ==========================================
-function AddressDropdowns({ tempUserInfo, setTempUserInfo, isEditing, localUserInfo }) {
+function AddressDropdowns({ localUserInfo, setLocalUserInfo, isEditing }) {
   const [provinces, setProvinces] = useState([]);
   const [cities, setCities] = useState([]);
   const [barangays, setBarangays] = useState([]);
@@ -66,7 +67,7 @@ function AddressDropdowns({ tempUserInfo, setTempUserInfo, isEditing, localUserI
     const provinceName = e.target.value;
     const selectedProv = provinces.find(p => p.name === provinceName);
     
-    setTempUserInfo(prev => ({ ...prev, province: provinceName, city: '', barangay: '' }));
+    setLocalUserInfo(prev => ({ ...prev, province: provinceName, city: '', barangay: '' }));
     setCities([]); 
     setBarangays([]); 
 
@@ -84,8 +85,13 @@ function AddressDropdowns({ tempUserInfo, setTempUserInfo, isEditing, localUserI
   const handleCityChange = async (e) => {
     const cityName = e.target.value;
     const selectedCity = cities.find(c => c.name === cityName);
+    const autoZip = getZipCode(localUserInfo.province, cityName);
     
-    setTempUserInfo(prev => ({ ...prev, city: cityName, barangay: '' }));
+    setLocalUserInfo(prev => ({ ...prev, 
+      city: cityName, 
+      barangay: '',
+      postalCode: autoZip || prev.postalCode
+    }));
     setBarangays([]);
 
     if (selectedCity) {
@@ -99,7 +105,7 @@ function AddressDropdowns({ tempUserInfo, setTempUserInfo, isEditing, localUserI
     <>
       <div className="md:col-span-2">
         <label className="block text-xs font-semibold text-gray-600 mb-1">Province</label>
-        <select disabled={!isEditing} value={tempUserInfo.province} onChange={handleProvinceChange} className="w-full border p-2.5 rounded-xl text-sm outline-none bg-gray-50 focus:ring-2 focus:ring-gabay-teal/20 focus:border-gabay-teal disabled:opacity-60 disabled:bg-gray-100 transition-all">
+        <select disabled={!isEditing} value={localUserInfo.province || ""} onChange={handleProvinceChange} className="w-full border p-2.5 rounded-xl text-sm outline-none bg-gray-50 focus:ring-2 focus:ring-gabay-teal/20 focus:border-gabay-teal disabled:opacity-60 disabled:bg-gray-100 transition-all">
           <option value="" disabled>Select Province</option>
           {provinces.map(prov => <option key={prov.code} value={prov.name}>{prov.name}</option>)}
         </select>
@@ -107,7 +113,7 @@ function AddressDropdowns({ tempUserInfo, setTempUserInfo, isEditing, localUserI
 
       <div className="md:col-span-2">
         <label className="block text-xs font-semibold text-gray-600 mb-1">City / Municipality</label>
-        <select disabled={!isEditing || !tempUserInfo.province} value={tempUserInfo.city} onChange={handleCityChange} className="w-full border p-2.5 rounded-xl text-sm outline-none bg-gray-50 focus:ring-2 focus:ring-gabay-teal/20 focus:border-gabay-teal disabled:opacity-60 disabled:bg-gray-100 transition-all">
+        <select disabled={!isEditing || !localUserInfo.province} value={localUserInfo.city || ""} onChange={handleCityChange} className="w-full border p-2.5 rounded-xl text-sm outline-none bg-gray-50 focus:ring-2 focus:ring-gabay-teal/20 focus:border-gabay-teal disabled:opacity-60 disabled:bg-gray-100 transition-all">
           <option value="" disabled>Select City</option>
           {cities.map(city => <option key={city.code} value={city.name}>{city.name}</option>)}
         </select>
@@ -115,7 +121,7 @@ function AddressDropdowns({ tempUserInfo, setTempUserInfo, isEditing, localUserI
 
       <div className="md:col-span-2">
         <label className="block text-xs font-semibold text-gray-600 mb-1">Barangay</label>
-        <select disabled={!isEditing || !tempUserInfo.city} value={tempUserInfo.barangay} onChange={(e) => setTempUserInfo(prev => ({ ...prev, barangay: e.target.value }))} className="w-full border p-2.5 rounded-xl text-sm outline-none bg-gray-50 focus:ring-2 focus:ring-gabay-teal/20 focus:border-gabay-teal disabled:opacity-60 disabled:bg-gray-100 transition-all">
+        <select disabled={!isEditing || !localUserInfo.city} value={localUserInfo.barangay || ""} onChange={(e) => setLocalUserInfo(prev => ({ ...prev, barangay: e.target.value }))} className="w-full border p-2.5 rounded-xl text-sm outline-none bg-gray-50 focus:ring-2 focus:ring-gabay-teal/20 focus:border-gabay-teal disabled:opacity-60 disabled:bg-gray-100 transition-all">
           <option value="" disabled>Select Barangay</option>
           {barangays.map(brgy => <option key={brgy.code} value={brgy.name}>{brgy.name}</option>)}
         </select>
@@ -244,6 +250,14 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
       const updated = { ...prev, [name]: value };
       if (name === 'dob' && value.length === 10) {
         updated.age = calculateAge(value);
+      }
+      if (name === 'postalCode' && value.length === 4) {
+        const locationInfo = getLocationByZip(value);
+        if (locationInfo) {
+          updated.province = locationInfo.province;
+          updated.city = locationInfo.city;
+          updated.barangay = ''; 
+        }
       }
       return updated;
     });
@@ -715,9 +729,8 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
               {isEditing ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                    <Input label="House No./Block/Lot/Street" name="street" value={localUserInfo.street} onChange={handleInputChange} required error={errors.street} />
-                   <Input label="Barangay" name="barangay" value={localUserInfo.barangay} onChange={handleInputChange} required error={errors.barangay}/>
-                   <Input label="City" name="city" value={localUserInfo.city} onChange={handleInputChange} required error={errors.city}/>
-                   <Input label="Province" name="province" value={localUserInfo.province} onChange={handleInputChange} required error={errors.province}/>
+                   <AddressDropdowns localUserInfo={localUserInfo} setLocalUserInfo={setLocalUserInfo} isEditing={isEditing} />
+                   
                    <Input 
                       label="Postal Code" 
                       name="postalCode" 
@@ -726,6 +739,7 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
                       error={errors.postalCode} 
                       isEditing={isEditing} 
                       required 
+                      maxLength={4}
                     />
                 </div>
               ) : (

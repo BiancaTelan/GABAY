@@ -6,9 +6,10 @@ import { AuthContext } from '../authContext';
 import { phonePattern, dobPattern, minAgeRequirement } from '../utils/constants';
 import toast from 'react-hot-toast';
 import { getApiErrorMessage, parseJsonResponse, showValidationError } from '../utils/apiError';
-import { CheckCircle, Info } from 'lucide-react';
+import { CheckCircle, Info, Loader2 } from 'lucide-react';
 import YesIcon from '../assets/personCheck.png';
 import NoIcon from '../assets/personCancel.png';
+import { getZipCode, getLocationByZip } from '../utils/locationUtils'; 
 
 export default function CompleteProfile() {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ export default function CompleteProfile() {
   const [provinces, setProvinces] = useState([]);
   const [cities, setCities] = useState([]);
   const [barangays, setBarangays] = useState([]);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [formData, setFormData] = useState({
     firstname: '', middlename: '', surname: '', suffix: '',
     dob: '', age: '', gender: 'Female', civilStatus: '',
@@ -40,6 +42,8 @@ export default function CompleteProfile() {
         setFormData(prev => ({ ...prev, firstname: data.firstname, middlename: data.middlename, surname: data.surname, suffix: data.suffix || '' }));
       } catch (err) {
         console.error("Failed to fetch initial profile");
+      } finally {
+        setIsLoadingProfile(false);
       }
     };
     fetchProfile();
@@ -52,33 +56,62 @@ export default function CompleteProfile() {
       });
   }, [token]);
 
-  const handleProvinceChange = async (e) => {
-    const provinceName = e.target.value;
-    const selectedProv = provinces.find(p => p.name === provinceName);
-    setFormData(prev => ({ ...prev, province: provinceName, city: '', barangay: '' }));
-    setCities([]); setBarangays([]);
+  useEffect(() => {
+    const fetchCities = async () => {
+      if (!formData.province) return;
+      const selectedProv = provinces.find(p => p.name.toUpperCase() === formData.province.toUpperCase());
+      
+      if (selectedProv) {
+        const url = selectedProv.isRegion 
+          ? `https://psgc.gitlab.io/api/regions/${selectedProv.code}/cities-municipalities/`
+          : `https://psgc.gitlab.io/api/provinces/${selectedProv.code}/cities-municipalities/`;
+        const res = await fetch(url);
+        const data = await res.json();
+        setCities(data.sort((a, b) => a.name.localeCompare(b.name)));
 
-    if (selectedProv) {
-      const url = selectedProv.isRegion 
-        ? `https://psgc.gitlab.io/api/regions/${selectedProv.code}/cities-municipalities/`
-        : `https://psgc.gitlab.io/api/provinces/${selectedProv.code}/cities-municipalities/`;
-      const res = await fetch(url);
-      const data = await res.json();
-      setCities(data.sort((a, b) => a.name.localeCompare(b.name)));
-    }
+        if (formData.province !== selectedProv.name) {
+           setFormData(prev => ({ ...prev, province: selectedProv.name }));
+        }
+      }
+    };
+    if (provinces.length > 0) fetchCities();
+  }, [formData.province, provinces]);
+
+  useEffect(() => {
+    const fetchBarangays = async () => {
+      if (!formData.city) return;
+      
+      const selectedCity = cities.find(c => c.name.toUpperCase().includes(formData.city.toUpperCase()));
+      
+      if (selectedCity) {
+        const res = await fetch(`https://psgc.gitlab.io/api/cities-municipalities/${selectedCity.code}/barangays/`);
+        const data = await res.json();
+        setBarangays(data.sort((a, b) => a.name.localeCompare(b.name)));
+
+        if (formData.city !== selectedCity.name) {
+           setFormData(prev => ({ ...prev, city: selectedCity.name }));
+        }
+      }
+    };
+    if (cities.length > 0) fetchBarangays();
+  }, [formData.city, cities]);
+
+  const handleProvinceChange = (e) => {
+    const provinceName = e.target.value;
+    setFormData(prev => ({ ...prev, province: provinceName, city: '', barangay: '' }));
+    setCities([]); 
+    setBarangays([]);
   };
 
-  const handleCityChange = async (e) => {
+  const handleCityChange = (e) => {
     const cityName = e.target.value;
-    const selectedCity = cities.find(c => c.name === cityName);
-    setFormData(prev => ({ ...prev, city: cityName, barangay: '' }));
+    const autoZip = getZipCode(formData.province, cityName);
+    setFormData(prev => ({ ...prev, 
+      city: cityName, 
+      barangay: '',
+      postalCode: autoZip || prev.postalCode 
+    }));
     setBarangays([]);
-
-    if (selectedCity) {
-      const res = await fetch(`https://psgc.gitlab.io/api/cities-municipalities/${selectedCity.code}/barangays/`);
-      const data = await res.json();
-      setBarangays(data.sort((a, b) => a.name.localeCompare(b.name)));
-    }
   };
 
   const handleInputChange = (e) => {
@@ -104,6 +137,16 @@ export default function CompleteProfile() {
         updated.age = age;
         setIsMinor(age < 18);
       }
+
+      if (name === 'postalCode' && value.length === 4) {
+        const locationInfo = getLocationByZip(value);
+        if (locationInfo) {
+          updated.province = locationInfo.province;
+          updated.city = locationInfo.city;
+          updated.barangay = ''; 
+        }
+      }
+
       return updated;
     });
 
@@ -112,6 +155,9 @@ export default function CompleteProfile() {
 
   const validateStep1 = () => {
     let newErrors = {};
+
+    if (!formData.firstname.trim()) newErrors.firstname = "First name is required";
+    if (!formData.surname.trim()) newErrors.surname = "Last name is required";
     if (!formData.dob) {
       newErrors.dob = "Date of birth is required";
     } else if (formData.age < 0) {
@@ -135,7 +181,12 @@ export default function CompleteProfile() {
     }
     
     setErrors(newErrors);
-    if (Object.keys(newErrors).length > 0) showValidationError(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      showValidationError(newErrors);
+      if (newErrors.firstname || newErrors.surname) {
+          toast.error("Account name is missing. Please refresh the page.");
+      }
+    }
     return Object.keys(newErrors).length === 0;
   };
 
@@ -178,7 +229,11 @@ export default function CompleteProfile() {
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ hospital_num: formData.hospitalNumInput })
         });
-        if (!linkRes.ok) throw new Error("Failed to link hospital number. It may already be in use.");
+        
+        if (!linkRes.ok) {
+           const errorData = await linkRes.json().catch(() => ({}));
+           throw new Error(errorData.detail || "Failed to link hospital number. It may already be in use.");
+        }
       } else {
         const genRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/patients/generate-hospital-number`, {
           method: 'POST',
@@ -197,6 +252,17 @@ export default function CompleteProfile() {
       setIsSubmitting(false);
     }
   };
+
+  if (isLoadingProfile) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center font-poppins">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-10 h-10 animate-spin text-gabay-teal" />
+          <p className="text-gabay-navy font-bold animate-pulse">Securing account details...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-12 px-4 font-poppins">

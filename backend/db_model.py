@@ -154,12 +154,12 @@ class Appointment(Base):
     __tablename__ = "appointmentTable"
 
     appointmentID: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    patientID: Mapped[int] = mapped_column(ForeignKey("patientTable.patientID", ondelete="CASCADE"), nullable=False)
-    docID: Mapped[Optional[int]] = mapped_column(ForeignKey("doctorTable.docID", ondelete="SET NULL"))
+    patientID: Mapped[int] = mapped_column(ForeignKey("patientTable.patientID", ondelete="CASCADE"), nullable=False, index=True)
+    docID: Mapped[Optional[int]] = mapped_column(ForeignKey("doctorTable.docID", ondelete="SET NULL"), index=True)
     deptID: Mapped[int] = mapped_column(ForeignKey("departmentTable.deptID", ondelete="RESTRICT"), nullable=False)
     assignedScheduleID: Mapped[Optional[int]] = mapped_column(ForeignKey("scheduleTable.scheduleID", ondelete="SET NULL"))
     assignedDate: Mapped[Optional[date]] = mapped_column(Date)
-    statusID: Mapped[int] = mapped_column(ForeignKey("appointmentStatusTable.statusID", ondelete="RESTRICT"), nullable=False)
+    statusID: Mapped[int] = mapped_column(ForeignKey("appointmentStatusTable.statusID", ondelete="RESTRICT"), nullable=False, index=True)
     purposeDetailed: Mapped[Optional[str]] = mapped_column(Text)
     type: Mapped[Optional[str]] = mapped_column(String(50))
     batch: Mapped[Optional[str]] = mapped_column(String(50))
@@ -225,9 +225,9 @@ class SystemLogs(Base):
     __tablename__ = "systemLogTable"
    
     logID: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    userID: Mapped[Optional[int]] = mapped_column(ForeignKey("userTable.userID", ondelete="SET NULL")) 
+    userID: Mapped[Optional[int]] = mapped_column(ForeignKey("userTable.userID", ondelete="SET NULL"), index=True) 
     tableAffected: Mapped[str] = mapped_column(String(50), nullable=False) 
-    actionType: Mapped[actionTypeEnum] = mapped_column(SQLEnum(actionTypeEnum), nullable=False)
+    actionType: Mapped[actionTypeEnum] = mapped_column(SQLEnum(actionTypeEnum), nullable=False, index=True)
     target: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     timestamp: Mapped[datetime] = mapped_column(DateTime, default=func.convert_tz(func.now(), '+00:00', '+08:00'))
     details: Mapped[Optional[str]] = mapped_column(Text)
