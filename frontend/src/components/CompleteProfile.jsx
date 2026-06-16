@@ -218,7 +218,11 @@ export default function CompleteProfile() {
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ hospital_num: formData.hospitalNumInput })
         });
-        if (!linkRes.ok) throw new Error("Failed to link hospital number. It may already be in use.");
+        
+        if (!linkRes.ok) {
+           const errorData = await linkRes.json().catch(() => ({}));
+           throw new Error(errorData.detail || "Failed to link hospital number. It may already be in use.");
+        }
       } else {
         const genRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/patients/generate-hospital-number`, {
           method: 'POST',
