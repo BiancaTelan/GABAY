@@ -4,12 +4,13 @@ from typing import Optional
 import jwt
 from passlib.context import CryptContext
 from dotenv import load_dotenv
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from jwt.exceptions import InvalidTokenError
 from db_connection import get_db
 from db_model import User, SystemSettings
+import zoneinfo
 
 load_dotenv()
 
@@ -102,34 +103,54 @@ def verify_token(token: str, db: Session):
         return None
 
 # ---------------------------------------------------------
-# 6. Maintenance Check
+# Maintenance & Operational Check
 # ---------------------------------------------------------
-def verify_system_operational(db: Session = Depends(get_db)):
+def verify_system_operational(request: Request, db: Session = Depends(get_db)):
     """Middleware to enforce Maintenance Mode and Operational Hours"""
+    
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
+        try:
+            user = verify_token(token, db) 
+            if user and hasattr(user, 'role') and user.role.value == "Admin":
+                return True 
+        except Exception:
+            pass 
+
     settings = db.query(SystemSettings).first()
     if not settings:
-        return True
+        return True 
 
+    # 2. Maintenance Mode Check
     if settings.maintenanceMode:
         raise HTTPException(
             status_code=503, 
             detail=f"System is currently under maintenance. Reason: {settings.downtimeReason}"
         )
 
+    # 3. Operational Hours Check
     try:
-        now = datetime.now().time()
-        start_time = datetime.strptime(settings.startTime, "%I:%M %p").time()
-        end_time = datetime.strptime(settings.endTime, "%I:%M %p").time()
+        tz_name = os.getenv("TZ", "Asia/Manila")
+        local_tz = zoneinfo.ZoneInfo(tz_name)
+        now = datetime.now(local_tz).time()
+        
+        start_time = datetime.strptime(settings.startTime.strip(), "%I:%M %p").time()
+        end_time = datetime.strptime(settings.endTime.strip(), "%I:%M %p").time()
 
         if not (start_time <= now <= end_time):
             raise HTTPException(
                 status_code=403, 
                 detail=f"The system is currently closed. Operating hours are from {settings.startTime} to {settings.endTime}."
             )
-    except Exception as e:
-        print(f"Time parsing error in system guard: {e}")
-        pass 
+            
+    except HTTPException:
+        raise
+    except ValueError as e:
+        print(f"🚨 CRITICAL: Time parsing error in settings: {e}")
+        raise HTTPException(
+            status_code=500, 
+            detail="Server configuration error regarding operational hours."
+        )
 
     return True
-
-    
