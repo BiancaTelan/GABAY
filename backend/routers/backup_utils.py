@@ -2,6 +2,7 @@ import os
 import subprocess
 from datetime import datetime
 from dotenv import load_dotenv
+import cloudinary.uploader 
 
 load_dotenv()
 
@@ -28,22 +29,34 @@ def perform_database_backup():
         MYSQLDUMP_PATH, 
         "-h", DB_HOST, 
         "-P", str(DB_PORT),
-        "-u", DB_USER
+        "-u", DB_USER,
+        DB_NAME
     ]
     
+    env = os.environ.copy()
     if DB_PASS:
-        dump_cmd.extend([f"-p{DB_PASS}"])
-        
-    # REMOVED: The two problematic '--column-statistics' and '--set-gtid-purged' flags 
-    # were completely deleted from here!
-    
-    dump_cmd.append(DB_NAME)
+        env["MYSQL_PWD"] = DB_PASS
 
     try:
         with open(filepath, 'w') as out_file:
-            subprocess.run(dump_cmd, stdout=out_file, check=True)
+            subprocess.run(dump_cmd, stdout=out_file, env=env, check=True)
             
-        return {"success": True, "filepath": filepath, "filename": filename}
+        upload_result = cloudinary.uploader.upload(
+            filepath, 
+            resource_type="raw", 
+            folder="gabay_backups",
+            use_filename=True,
+            unique_filename=False
+        )
+        
+        if os.path.exists(filepath):
+            os.remove(filepath)
+            
+        return {
+            "success": True, 
+            "filename": filename,
+            "url": upload_result.get("secure_url") 
+        }
         
     except subprocess.CalledProcessError as e:
         if os.path.exists(filepath):
@@ -53,4 +66,6 @@ def perform_database_backup():
     except FileNotFoundError:
         return {"success": False, "error": f"Executable not found at path: {MYSQLDUMP_PATH}"}
     except Exception as e:
+        if os.path.exists(filepath):
+            os.remove(filepath)
         return {"success": False, "error": str(e)}

@@ -25,6 +25,7 @@ import psutil
 import tempfile
 import cloudinary
 import cloudinary.uploader
+import cloudinary.api
 import os
 import shutil
 import uuid
@@ -1265,27 +1266,66 @@ def update_system_settings(
     db.commit()
     background_tasks.add_task(execute_log_retention_cleanup)
     return {"message": "System settings completely updated!"}
-    
+
+@router.get("/backups")
+def get_available_backups(current_user: User = Depends(get_current_user)):
+    """Fetches a list of all raw database backups stored in Cloudinary."""
+    if current_user.role.value != "Admin":
+        raise HTTPException(status_code=403, detail="Unauthorized.")
+
+    try:
+        resources = cloudinary.api.resources(
+            type="upload", 
+            resource_type="raw", 
+            prefix="gabay_backups/", 
+            max_results=50
+        )
+        
+        backups = []
+        for item in resources.get('resources', []):
+            backups.append({
+                "filename": item['public_id'].split('/')[-1],
+                "created_at": item['created_at'],
+                "size_bytes": item['bytes'],
+                "download_url": item['secure_url']
+            })
+            
+        backups.sort(key=lambda x: x["created_at"], reverse=True)
+        return {"backups": backups}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch backups: {str(e)}")
+
 @router.post("/backup")
 def trigger_manual_backup(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    if current_user.role.value != "Admin": raise HTTPException(status_code=403, detail="Unauthorized. Admins only.")
+    if current_user.role.value != "Admin": 
+        raise HTTPException(status_code=403, detail="Unauthorized. Admins only.")
         
     result = perform_database_backup()
+    
     if not result["success"]:
         print(f"🚨 BACKUP FAILED: {result.get('error')}")
         raise HTTPException(status_code=500, detail=f"Backup Failed: {result.get('error')}")
 
     try:
         db.add(SystemLogs(
-            userID=current_user.userID, tableAffected="Entire Database", actionType=actionTypeEnum.UPDATE, 
-            target="Database Backup", # TARGET ADDED
-            details=f"Manual system backup successfully generated. File: {result['filename']}"
+            userID=current_user.userID, 
+            tableAffected="Entire Database", 
+            actionType=actionTypeEnum.UPDATE, 
+            target="Database Backup", 
+            details=f"Manual system backup successfully generated and uploaded. File: {result['filename']}"
         ))
         db.commit()
-    except Exception as e: print(f"⚠️ BACKUP SUCCEEDED, BUT LOGGING FAILED: {e}")
+    except Exception as e: 
+        print(f"⚠️ BACKUP SUCCEEDED, BUT LOGGING FAILED: {e}")
 
-    print(f"✅ BACKUP SUCCESS: Saved to {result['filepath']}")
-    return {"message": "Backup sequence completed successfully!", "filename": result["filename"]}
+    print(f"✅ BACKUP SUCCESS: Uploaded securely to Cloudinary")
+    
+    return {
+        "message": "Backup sequence completed and uploaded successfully!", 
+        "filename": result["filename"],
+        "download_url": result["url"]
+    }
 
 @router.post("/restore")
 async def restore_database(
