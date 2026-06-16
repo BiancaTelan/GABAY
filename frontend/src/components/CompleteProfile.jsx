@@ -20,6 +20,7 @@ export default function CompleteProfile() {
   const [provinces, setProvinces] = useState([]);
   const [cities, setCities] = useState([]);
   const [barangays, setBarangays] = useState([]);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [formData, setFormData] = useState({
     firstname: '', middlename: '', surname: '', suffix: '',
     dob: '', age: '', gender: 'Female', civilStatus: '',
@@ -41,6 +42,8 @@ export default function CompleteProfile() {
         setFormData(prev => ({ ...prev, firstname: data.firstname, middlename: data.middlename, surname: data.surname, suffix: data.suffix || '' }));
       } catch (err) {
         console.error("Failed to fetch initial profile");
+      } finally {
+        setIsLoadingProfile(false);
       }
     };
     fetchProfile();
@@ -152,6 +155,9 @@ export default function CompleteProfile() {
 
   const validateStep1 = () => {
     let newErrors = {};
+
+    if (!formData.firstname.trim()) newErrors.firstname = "First name is required";
+    if (!formData.surname.trim()) newErrors.surname = "Last name is required";
     if (!formData.dob) {
       newErrors.dob = "Date of birth is required";
     } else if (formData.age < 0) {
@@ -175,7 +181,12 @@ export default function CompleteProfile() {
     }
     
     setErrors(newErrors);
-    if (Object.keys(newErrors).length > 0) showValidationError(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      showValidationError(newErrors);
+      if (newErrors.firstname || newErrors.surname) {
+          toast.error("Account name is missing. Please refresh the page.");
+      }
+    }
     return Object.keys(newErrors).length === 0;
   };
 
@@ -241,6 +252,17 @@ export default function CompleteProfile() {
       setIsSubmitting(false);
     }
   };
+
+  if (isLoadingProfile) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center font-poppins">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-10 h-10 animate-spin text-gabay-teal" />
+          <p className="text-gabay-navy font-bold animate-pulse">Securing account details...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-12 px-4 font-poppins">
