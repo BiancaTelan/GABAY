@@ -9,6 +9,7 @@ import { AuthContext } from '../authContext';
 import toast from 'react-hot-toast';
 import { jsPDF } from 'jspdf';
 import { getApiErrorMessage, parseJsonResponse, showValidationError } from '../utils/apiError';
+import { getZipCode, getLocationByZip } from '../utils/locationUtils'; 
 
 // ==========================================
 // HELPER COMPONENT 
@@ -84,8 +85,12 @@ function AddressDropdowns({ tempUserInfo, setTempUserInfo, isEditing, localUserI
   const handleCityChange = async (e) => {
     const cityName = e.target.value;
     const selectedCity = cities.find(c => c.name === cityName);
-    
-    setTempUserInfo(prev => ({ ...prev, city: cityName, barangay: '' }));
+    const autoZip = getZipCode(localUserInfo.province, cityName);
+    setTempUserInfo(prev => ({ ...prev, 
+      city: cityName, 
+      barangay: '',
+      postalCode: autoZip || prev.postalCode
+    }));
     setBarangays([]);
 
     if (selectedCity) {
@@ -244,6 +249,14 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
       const updated = { ...prev, [name]: value };
       if (name === 'dob' && value.length === 10) {
         updated.age = calculateAge(value);
+      }
+      if (name === 'postalCode' && value.length === 4) {
+        const locationInfo = getLocationByZip(value);
+        if (locationInfo) {
+          updated.province = locationInfo.province;
+          updated.city = locationInfo.city;
+          updated.barangay = ''; 
+        }
       }
       return updated;
     });
@@ -715,9 +728,8 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
               {isEditing ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                    <Input label="House No./Block/Lot/Street" name="street" value={localUserInfo.street} onChange={handleInputChange} required error={errors.street} />
-                   <Input label="Barangay" name="barangay" value={localUserInfo.barangay} onChange={handleInputChange} required error={errors.barangay}/>
-                   <Input label="City" name="city" value={localUserInfo.city} onChange={handleInputChange} required error={errors.city}/>
-                   <Input label="Province" name="province" value={localUserInfo.province} onChange={handleInputChange} required error={errors.province}/>
+                   <AddressDropdowns localUserInfo={localUserInfo} setLocalUserInfo={setLocalUserInfo} isEditing={isEditing} />
+                   
                    <Input 
                       label="Postal Code" 
                       name="postalCode" 
@@ -726,6 +738,7 @@ export default function Account({ userInfo, onLogout, onUpdateProfile }) {
                       error={errors.postalCode} 
                       isEditing={isEditing} 
                       required 
+                      maxLength={4}
                     />
                 </div>
               ) : (

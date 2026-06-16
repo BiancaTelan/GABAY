@@ -9,6 +9,7 @@ import { getApiErrorMessage, parseJsonResponse, showValidationError } from '../u
 import { CheckCircle, Info } from 'lucide-react';
 import YesIcon from '../assets/personCheck.png';
 import NoIcon from '../assets/personCancel.png';
+import { getZipCode, getLocationByZip } from '../utils/locationUtils'; 
 
 export default function CompleteProfile() {
   const navigate = useNavigate();
@@ -30,6 +31,29 @@ export default function CompleteProfile() {
   });
 
   const [isMinor, setIsMinor] = useState(false);
+
+  const postalCodeMap = {
+    "1900": { city: "Cainta", province: "Rizal" },
+    "1920": { city: "Taytay", province: "Rizal" },
+    "1800": { city: "Marikina", province: "METRO MANILA" }, 
+    "1600": { city: "Pasig", province: "METRO MANILA" },
+    "1100": { city: "Quezon City", province: "METRO MANILA" },
+    "1000": { city: "Manila", province: "METRO MANILA" }
+  };
+
+  const cityToPostalMap = {
+    "Cainta": "1900",
+    "Taytay": "1920",
+    "Marikina": "1800",
+    "Pasig": "1600",
+    "Quezon City": "1100",
+    "Manila": "1000",
+    "Antipolo": "1870",
+    "San Juan": "1500",
+    "Mandaluyong": "1550",
+    "Makati": "1200",
+    "Taguig": "1630"
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -71,7 +95,12 @@ export default function CompleteProfile() {
   const handleCityChange = async (e) => {
     const cityName = e.target.value;
     const selectedCity = cities.find(c => c.name === cityName);
-    setFormData(prev => ({ ...prev, city: cityName, barangay: '' }));
+    const autoZip = getZipCode(localUserInfo.province, cityName);
+    setFormData(prev => ({ ...prev, 
+      city: cityName, 
+      barangay: '',
+      postalCode: autoZip || prev.postalCode
+    }));
     setBarangays([]);
 
     if (selectedCity) {
@@ -104,6 +133,16 @@ export default function CompleteProfile() {
         updated.age = age;
         setIsMinor(age < 18);
       }
+
+      if (name === 'postalCode' && value.length === 4) {
+        const locationInfo = getLocationByZip(value);
+        if (locationInfo) {
+          updated.province = locationInfo.province;
+          updated.city = locationInfo.city;
+          updated.barangay = ''; 
+        }
+      }
+
       return updated;
     });
 

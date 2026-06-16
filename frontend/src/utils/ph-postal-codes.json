@@ -1,0 +1,53 @@
+{
+  "METRO MANILA": {
+    "Manila": "1000",
+    "Quezon City": "1100",
+    "Makati": "1200",
+    "Pasay": "1300",
+    "Caloocan": "1400",
+    "Valenzuela": "1440",
+    "Malabon": "1470",
+    "Navotas": "1490",
+    "San Juan": "1500",
+    "Mandaluyong": "1550",
+    "Pasig": "1600",
+    "Pateros": "1620",
+    "Taguig": "1630",
+    "Parañaque": "1700",
+    "Las Piñas": "1740",
+    "Muntinlupa": "1770",
+    "Marikina": "1800"
+  },
+  "Rizal": {
+    "Cainta": "1900",
+    "Taytay": "1920",
+    "Angono": "1930",
+    "Binangonan": "1940",
+    "Cardona": "1950",
+    "Morong": "1960",
+    "Baras": "1970",
+    "Tanay": "1980",
+    "Pililla": "1910",
+    "Jala-jala": "1990",
+    "Teresa": "1880",
+    "San Mateo": "1850",
+    "Rodriguez": "1860",
+    "Antipolo": "1870"
+  },
+  "Laguna": {
+    "San Pedro": "4023",
+    "Biñan": "4024",
+    "Santa Rosa": "4026",
+    "Cabuyao": "4025",
+    "Calamba": "4027",
+    "Los Baños": "4030"
+  },
+  "Cavite": {
+    "Bacoor": "4102",
+    "Imus": "4103",
+    "Dasmariñas": "4114",
+    "Carmona": "4116",
+    "Silang": "4118",
+    "Tagaytay": "4120"
+  }
+}
