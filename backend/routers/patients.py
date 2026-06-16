@@ -9,6 +9,8 @@ from py_schema import HospitalNumberRequest, PatientProfileUpdate, ContactFormRe
 from email_utils import send_contact_us_email
 from pydantic import BaseModel
 from security import verify_system_operational
+from fastapi.encoders import jsonable_encoder
+from utils.audit_logger import log_audit_trail
 
 router = APIRouter(prefix="/patients", tags=["Patient Management"])
 
@@ -20,10 +22,13 @@ def generate_hospital_number(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user) 
 ):
+    
     try:
         patient = db.query(Patient).filter(Patient.userID == current_user.userID).first()
         if not patient:
             raise HTTPException(status_code=404, detail="Patient profile not found.")
+        
+        old_data_snapshot = jsonable_encoder(patient)
 
         if patient.hospital_num:
             return {
@@ -48,6 +53,19 @@ def generate_hospital_number(
         new_hospital_number = f"{prefix}{new_sequence:06d}"
 
         patient.hospital_num = new_hospital_number
+
+        new_data_snapshot = jsonable_encoder(patient)   
+
+        log_audit_trail(
+            db=db,
+            table_name="patientTable",
+            action_type="UPDATE",
+            record_id=patient.patientID,
+            old_data=old_data_snapshot,
+            new_data=new_data_snapshot,
+            active_user_id=current_user.userID
+        )
+
         db.commit()
 
         return {
@@ -76,6 +94,8 @@ def link_hospital_number(
         raise HTTPException(status_code=404, detail="Patient profile not found.")
     
     existing = db.query(Patient).filter(Patient.hospital_num == data.hospital_num).first()
+
+    old_data_snapshot = jsonable_encoder(patient)
     
     if not existing:
         raise HTTPException(status_code=400, detail="Invalid hospital number. This number is not recognized by the hospital system.")
@@ -92,6 +112,18 @@ def link_hospital_number(
         db.delete(existing)
         
     patient.hospital_num = data.hospital_num
+    new_data_snapshot = jsonable_encoder(patient)
+
+    log_audit_trail(
+            db=db,
+            table_name="patientTable",
+            action_type="UPDATE",
+            record_id=patient.patientID,
+            old_data=old_data_snapshot,
+            new_data=new_data_snapshot,
+            active_user_id=current_user.userID
+        )
+
     db.commit()
     
     return {"message": "Hospital number verified and linked successfully!"}
@@ -150,6 +182,8 @@ def update_patient_profile(
     patient = db.query(Patient).filter(Patient.userID == current_user.userID).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient profile not found.")
+    
+    old_data_snapshot = jsonable_encoder(patient)
 
     try:
         dob_date = datetime.strptime(data.dob, "%Y-%m-%d").date()
@@ -198,6 +232,18 @@ def update_patient_profile(
     patient.guardianContactNum = data.guardianContactNum
     patient.guardianRelationship = data.guardianRelationship
 
+    new_data_snapshot = jsonable_encoder(patient)   
+
+    log_audit_trail(
+        db=db,
+        table_name="patientTable",
+        action_type="UPDATE",
+        record_id=patient.patientID,
+        old_data=old_data_snapshot,
+        new_data=new_data_snapshot,
+        active_user_id=current_user.userID
+    )
+
     db.commit()
     return {"message": "Profile successfully updated!"}
 
@@ -213,11 +259,22 @@ def delete_user_account(
 ):
     try:
         user_to_delete = db.query(User).filter(User.userID == current_user.userID).first()
-        
         if not user_to_delete:
             raise HTTPException(status_code=404, detail="User not found.")
+        
+        old_data_snapshot = jsonable_encoder(user_to_delete)
 
         db.delete(user_to_delete)
+
+        log_audit_trail(
+            db=db,
+            table_name="userTable",
+            action_type="DELETE",
+            record_id=user_to_delete.userID,
+            old_data=old_data_snapshot,
+            new_data=None,
+            active_user_id=current_user.userID
+        )
         db.commit()
 
         return {"message": "Account and all associated records have been permanently deleted."}

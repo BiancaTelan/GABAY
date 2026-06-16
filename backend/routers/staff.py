@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, File, UploadFile, Query, BackgroundTasks
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func, extract, cast, String, or_
+from sqlalchemy import func, extract, cast, String, or_, desc
 from db_connection import get_db
 from db_model import Appointment, Department, Schedule, Staff, SystemLogs, actionTypeEnum, User, Patient, Doctor, DailyQueue, queueStatusEnum, AppointmentStatus, weekDayEnum
 from security import get_current_user, verify_token, verify_system_operational
@@ -11,6 +11,8 @@ from typing import Optional
 from email_utils import send_patient_appointment_email
 from zoneinfo import ZoneInfo
 from fastapi.responses import StreamingResponse
+from fastapi.encoders import jsonable_encoder
+from utils.audit_logger import log_audit_trail
 from sse_manager import notifier
 import asyncio
 import calendar
@@ -207,6 +209,8 @@ def approve_appointment(
     appointment = db.query(Appointment).filter(Appointment.appointmentID == appointment_id).first()
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found")
+    
+    old_data_snapshot = jsonable_encoder(appointment)
 
     try:
         if "-" in data.assigned_date:
@@ -242,6 +246,18 @@ def approve_appointment(
     appointment.actionBy_userID = current_staff.userID
     appointment.actionDate = func.now()
     appointment.actionReason = "Approved schedule"
+
+    new_data_snapshot = jsonable_encoder(appointment)
+
+    log_audit_trail(
+        db=db,
+        table_name="appointmentTable",
+        action_type="UPDATE",
+        record_id=appointment.appointmentID,
+        old_data=old_data_snapshot,
+        new_data=new_data_snapshot,
+        active_user_id=current_staff.userID
+    )
 
     db.commit()
 
@@ -296,6 +312,8 @@ def reschedule_appointment(
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found")
 
+    old_data_snapshot = jsonable_encoder(appointment)
+
     try:
         if "-" in data.new_date:
             parsed_date = datetime.strptime(data.new_date, "%Y-%m-%d").date()
@@ -327,6 +345,18 @@ def reschedule_appointment(
     appointment.actionBy_userID = current_staff.userID
     appointment.actionDate = func.now()
     appointment.actionReason = f"Rescheduled: {data.reason}"
+
+    new_data_snapshot = jsonable_encoder(appointment)
+
+    log_audit_trail(
+        db=db,
+        table_name="appointmentTable",
+        action_type="UPDATE",
+        record_id=appointment.appointmentID,
+        old_data=old_data_snapshot,
+        new_data=new_data_snapshot,
+        active_user_id=current_staff.userID
+    )
 
     db.add(SystemLogs(
         userID=current_staff.userID,
@@ -382,11 +412,25 @@ def deny_appointment(
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found")
     
+    old_data_snapshot = jsonable_encoder(appointment)
+
     appointment.statusID = 4 
 
     appointment.actionBy_userID = current_staff.userID
     appointment.actionDate = func.now()
     appointment.actionReason = f"Denied: {data.reason}"
+
+    new_data_snapshot = jsonable_encoder(appointment)
+
+    log_audit_trail(
+        db=db,
+        table_name="appointmentTable",
+        action_type="UPDATE",
+        record_id=appointment.appointmentID,
+        old_data=old_data_snapshot,
+        new_data=new_data_snapshot,
+        active_user_id=current_staff.userID
+    )
 
     new_log = SystemLogs(
         userID=current_staff.userID,
@@ -529,6 +573,18 @@ def staff_book_appointment(
         actionReason="Booked by Staff"
     )
     db.add(new_appointment)
+
+    new_data_snapshot = jsonable_encoder(new_appointment)
+
+    log_audit_trail(
+        db=db,
+        table_name="appointmentTable",
+        action_type="INSERT",
+        record_id=new_appointment.appointmentID,
+        old_data=None,
+        new_data=new_data_snapshot,
+        active_user_id=current_staff.userID
+    )
     
     db.add(SystemLogs(
         userID=current_staff.userID,
@@ -655,6 +711,8 @@ def update_staff_profile(
     if not prof:
         raise HTTPException(status_code=404, detail="Profile not found")
     
+    old_data_snapshot = jsonable_encoder(prof)
+    
     prof.firstname = payload.firstname
     prof.middlename = payload.middlename
     prof.surname = payload.surname
@@ -671,6 +729,18 @@ def update_staff_profile(
         
     prof.address = f"{payload.street} | {payload.barangay} | {payload.city} | {payload.province} | {payload.postalCode}"
     
+    new_data_snapshot = jsonable_encoder(prof)
+
+    log_audit_trail(
+        db=db,
+        table_name="staffTable",
+        action_type="UPDATE",
+        record_id=prof.staffID,
+        old_data=old_data_snapshot,
+        new_data=new_data_snapshot,
+        active_user_id=prof.userID
+    )
+
     db.commit()
     return {"message": "Profile updated successfully"}
 
@@ -1029,8 +1099,20 @@ def update_doctor_availability(
     if not doctor:
         raise HTTPException(status_code=404, detail="Doctor not found")
         
+    old_data_snapshot = jsonable_encoder(doctor)
     doctor.isAvailable = (data.availability == "Available")
-    
+    new_data_snapshot = jsonable_encoder(doctor)
+
+    log_audit_trail(
+        db=db,
+        table_name="doctorTable",
+        action_type="UPDATE",
+        record_id=doctor.docID,
+        old_data=old_data_snapshot,
+        new_data=new_data_snapshot,
+        active_user_id=current_staff.userID
+    )
+
     db.add(SystemLogs(
         userID=current_staff.userID, 
         actionType=actionTypeEnum.UPDATE, 
@@ -1059,12 +1141,26 @@ def update_doctor_schedule(
 ):
     schedule = db.query(Schedule).filter(Schedule.docID == doctor_id).first()
     
+    old_data_snapshot = jsonable_encoder(schedule)
+
     if not schedule:
         schedule = Schedule(docID=doctor_id)
         db.add(schedule)
         
     schedule.weekDay = data.schedule
     
+    new_data_snapshot = jsonable_encoder(schedule)
+
+    log_audit_trail(
+        db=db,
+        table_name="scheduleTable",
+        action_type="UPDATE",
+        record_id=schedule.scheduleID,
+        old_data=old_data_snapshot,
+        new_data=new_data_snapshot,
+        active_user_id=current_staff.userID
+    )
+
     db.add(SystemLogs(
         userID=current_staff.userID, 
         actionType=actionTypeEnum.UPDATE, 
@@ -1094,7 +1190,6 @@ def add_doctor_schedule(
     doctor = db.query(Doctor).filter(Doctor.docID == doctor_id).first()
     if not doctor:
         raise HTTPException(status_code=404, detail="Doctor not found")
-
     try:
         normalized_time = data.timePeriod.replace("–", "-").replace("—", "-")
         raw_start, raw_end = normalized_time.split("-")
@@ -1129,6 +1224,18 @@ def add_doctor_schedule(
         )
         db.add(new_schedule)
     
+    new_data_snapshot = jsonable_encoder(new_schedule)
+
+    log_audit_trail(
+        db=db,
+        table_name="scheduleTable",
+        action_type="INSERT",
+        record_id=new_schedule.scheduleID,
+        old_data=None,
+        new_data=new_data_snapshot,
+        active_user_id=current_staff.userID
+    )
+
     db.add(SystemLogs(
         userID=current_staff.userID, actionType=actionTypeEnum.INSERT, tableAffected="scheduleTable",
         target=f"Dr. {doctor.firstname} {doctor.surname}", 
@@ -1158,6 +1265,8 @@ def edit_specific_schedule(
     schedule = db.query(Schedule).filter(Schedule.scheduleID == schedule_id).first()
     if not schedule:
         raise HTTPException(status_code=404, detail="Schedule not found")
+    
+    old_data_snapshot = jsonable_encoder(schedule)
 
     try:
         normalized_time = data.timePeriod.replace("–", "-").replace("—", "-")
@@ -1176,6 +1285,18 @@ def edit_specific_schedule(
     schedule.startTime = parsed_start    
     schedule.endTime = parsed_end          
     schedule.maxPatients = data.maxPatients
+
+    new_data_snapshot = jsonable_encoder(schedule)
+
+    log_audit_trail(
+        db=db,
+        table_name="scheduleTable",
+        action_type="UPDATE",
+        record_id=schedule.scheduleID,
+        old_data=old_data_snapshot,
+        new_data=new_data_snapshot,
+        active_user_id=current_staff.userID
+    )
 
     db.add(SystemLogs(
         userID=current_staff.userID, actionType=actionTypeEnum.UPDATE, tableAffected="scheduleTable",
@@ -1202,8 +1323,21 @@ def delete_specific_schedule(
     schedule = db.query(Schedule).filter(Schedule.scheduleID == schedule_id).first()
     if not schedule:
         raise HTTPException(status_code=404, detail="Schedule not found")
+    
+    old_data_snapshot = jsonable_encoder(schedule)
 
     db.delete(schedule)
+
+    log_audit_trail(
+        db=db,
+        table_name="scheduleTable",
+        action_type="DELETE",
+        record_id=schedule.scheduleID,
+        old_data=old_data_snapshot,
+        new_data=None,
+        active_user_id=current_staff.userID
+    )
+
     db.add(SystemLogs(
         userID=current_staff.userID, actionType=actionTypeEnum.DELETE, tableAffected="scheduleTable",
         target=f"Schedule #{schedule_id}",
@@ -1427,6 +1561,8 @@ def update_queue_status(
         Appointment.appointmentID == appointment_id, 
         Appointment.deptID.in_(dept_ids)
     ).first()
+
+    old_data_snapshot = jsonable_encoder(appointment)
     
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found in your department.")
@@ -1487,6 +1623,17 @@ def update_queue_status(
     else:
         raise HTTPException(status_code=400, detail="Invalid action")
 
+    new_data_snapshot = jsonable_encoder(appointment)
+
+    log_audit_trail(
+        db=db,
+        table_name="appointmentTable",
+        action_type="UPDATE",
+        record_id=appointment.appointmentID,
+        old_data=old_data_snapshot,
+        new_data=new_data_snapshot,
+        active_user_id=current_staff.userID
+    )
     
     db.add(SystemLogs(
         userID=current_staff.userID,

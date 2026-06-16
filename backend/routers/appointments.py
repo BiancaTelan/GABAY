@@ -15,6 +15,8 @@ from db_connection import get_db
 from db_model import User, Patient, Appointment, Department, Doctor, AppointmentStatus, roleEnum, Schedule
 from email_utils import send_notification_email, send_appointment_received_email
 from security import verify_system_operational
+from fastapi.encoders import jsonable_encoder
+from utils.audit_logger import log_audit_trail
 
 router = APIRouter(prefix="/api/appointments", tags=["Appointments"])
 

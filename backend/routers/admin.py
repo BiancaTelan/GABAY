@@ -14,6 +14,8 @@ from zoneinfo import ZoneInfo
 from fastapi.responses import StreamingResponse
 from sse_manager import notifier
 from dateutil.relativedelta import relativedelta
+from fastapi.encoders import jsonable_encoder
+from utils.audit_logger import log_audit_trail
 import subprocess
 import asyncio
 import calendar
@@ -250,6 +252,18 @@ def create_personnel(data: PersonnelCreate, background_tasks: BackgroundTasks, r
     )
     db.add(new_staff)
     
+    new_data_snapshot = jsonable_encoder(new_staff)
+
+    log_audit_trail(
+        db=db,
+        table_name="staffTable",
+        action_type="INSERT",
+        record_id=new_staff.userID,
+        old_data=None,
+        new_data=new_data_snapshot,
+        active_user_id=current_admin.userID
+    )
+
     db.add(SystemLogs(
         userID=current_admin.userID, actionType=actionTypeEnum.INSERT, tableAffected="userTable",
         target=f"{data.firstname} {data.surname}", # TARGET ADDED
@@ -268,6 +282,8 @@ def update_personnel(user_id: int, data: PersonnelUpdate, request: Request, db: 
     user = db.query(User).filter(User.userID == user_id).first()
     if not user: raise HTTPException(status_code=404, detail="User not found")
 
+    old_data_snapshot = jsonable_encoder(user)
+
     user.role = roleEnum.Admin if data.role.lower() == "admin" else roleEnum.Staff
     user.isActive = True if data.status == "Active" else False
 
@@ -277,6 +293,18 @@ def update_personnel(user_id: int, data: PersonnelUpdate, request: Request, db: 
         user.staff_profile.position = data.position
         user.staff_profile.gender = data.gender
         user.staff_profile.contactNumber = data.contactNumber
+
+    new_data_snapshot = jsonable_encoder(user)
+
+    log_audit_trail(
+        db=db,
+        table_name="staffTable",
+        action_type="UPDATE",
+        record_id=user.userID,
+        old_data=old_data_snapshot,
+        new_data=new_data_snapshot,
+        active_user_id=current_admin.userID
+    )
 
     db.add(SystemLogs(
         userID=current_admin.userID, actionType=actionTypeEnum.UPDATE, tableAffected="userTable/staffTable",
@@ -290,9 +318,23 @@ def update_personnel(user_id: int, data: PersonnelUpdate, request: Request, db: 
 def deactivate_personnel(user_id: int, request: Request, db: Session = Depends(get_db), current_admin: User = Depends(get_current_user)):
     user = db.query(User).filter(User.userID == user_id).first()
     if not user: raise HTTPException(status_code=404, detail="User not found")
+    
+    old_data_snapshot = jsonable_encoder(user)
 
     target_name = f"{user.staff_profile.firstname} {user.staff_profile.surname}" if user.staff_profile else "Unknown Staff"
     user.isActive = False
+
+    new_data_snapshot = jsonable_encoder(user)
+
+    log_audit_trail(
+        db=db,
+        table_name="userTable",
+        action_type="UPDATE",
+        record_id=user.userID,
+        old_data=old_data_snapshot,
+        new_data=new_data_snapshot,
+        active_user_id=current_admin.userID
+    )
 
     db.add(SystemLogs(
         userID=current_admin.userID, actionType=actionTypeEnum.DELETE, tableAffected="userTable",
@@ -460,6 +502,8 @@ def update_personnel_page(
         user = db.query(User).filter(User.userID == person_id).first()
         if not user: raise HTTPException(status_code=404, detail="Staff not found")
 
+        old_data_snapshot = jsonable_encoder(user)
+
         emp_id = data.employeeID.strip() if data.employeeID and data.employeeID.strip() and data.employeeID.strip().lower() != "unassigned" else None
         if emp_id is not None and db.query(Staff).filter(Staff.employeeID == emp_id, Staff.userID != person_id).first():
             raise HTTPException(status_code=400, detail="Employee ID is already in use by another account.")
@@ -500,6 +544,18 @@ def update_personnel_page(
 
         background_tasks.add_task(send_personnel_update_email, recipient_email=target_email, name=target_name, changes=updated_changes)
 
+    new_data_snapshot = jsonable_encoder(user)
+    
+    log_audit_trail(
+            db=db,
+            table_name="staffTable",
+            action_type="UPDATE",
+            record_id=user.userID,
+            old_data=old_data_snapshot,
+            new_data=new_data_snapshot, 
+            active_user_id=current_admin.userID
+        )
+
     db.add(SystemLogs(
         userID=current_admin.userID, actionType=actionTypeEnum.UPDATE, tableAffected="staffTable",
         target=target_name,
@@ -535,6 +591,18 @@ def add_doctor(data: DoctorCreate, request: Request, db: Session = Depends(get_d
                 if day in day_map: db.add(Schedule(docID=new_doc.docID, weekDay=day_map[day], startTime=start_time, endTime=end_time, maxPatients=block.slot))
         except Exception: pass
 
+    new_data_snapshot = jsonable_encoder(new_doc)
+
+    log_audit_trail(
+        db=db,
+        table_name="doctorTable",
+        action_type="INSERT",
+        record_id=new_doc.docID,
+        old_data=None,
+        new_data=new_data_snapshot,
+        active_user_id=current_admin.userID
+    )
+
     db.add(SystemLogs(
         userID=current_admin.userID, actionType=actionTypeEnum.INSERT, tableAffected="doctorTable", 
         target=f"Dr. {data.firstname} {data.surname}", # TARGET ADDED
@@ -547,7 +615,9 @@ def add_doctor(data: DoctorCreate, request: Request, db: Session = Depends(get_d
 def update_doctor(doc_id: int, data: DoctorUpdate, request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db), current_admin: User = Depends(get_current_user)):
     doc = db.query(Doctor).filter(Doctor.docID == doc_id).first()
     if not doc: raise HTTPException(status_code=404, detail="Doctor not found")
-        
+    
+    old_data_snapshot = jsonable_encoder(doc)
+
     updated_changes = {}
     if data.employeeID:
         emp_id = data.employeeID.strip()
@@ -582,6 +652,18 @@ def update_doctor(doc_id: int, data: DoctorUpdate, request: Request, background_
     if updated_changes and target_email:
         background_tasks.add_task(send_personnel_update_email, recipient_email=target_email, name=target_name, changes=updated_changes)
 
+    new_data_snapshot = jsonable_encoder(doc)
+
+    log_audit_trail(
+        db=db,
+        table_name="doctorTable",
+        action_type="UPDATE",
+        record_id=doc.docID,
+        old_data=old_data_snapshot,
+        new_data=new_data_snapshot,
+        active_user_id=current_admin.userID
+    )
+    
     db.add(SystemLogs(
         userID=current_admin.userID, actionType=actionTypeEnum.UPDATE, tableAffected="doctorTable", 
         target=target_name,
@@ -593,15 +675,31 @@ def update_doctor(doc_id: int, data: DoctorUpdate, request: Request, background_
 @router.put("/doctors/{doc_id}/status")
 def toggle_doctor_status(doc_id: int, data: UserStatusUpdate, request: Request, db: Session = Depends(get_db), current_admin: User = Depends(get_current_user)):
     doc = db.query(Doctor).filter(Doctor.docID == doc_id).first()
+
+    old_data_snapshot = jsonable_encoder(doc)
+
     is_activating = (data.status == "Active")
     doc.isAvailable = is_activating
     
     target_name = f"Dr. {doc.firstname} {doc.surname}"
     db.add(SystemLogs(
         userID=current_admin.userID, actionType=actionTypeEnum.UPDATE if is_activating else actionTypeEnum.DELETE, tableAffected="doctorTable", 
-        target=target_name, # TARGET ADDED
+        target=target_name, 
         details=f"{'Reactivated' if is_activating else 'Deactivated'} {target_name}", ipAddress=request.client.host
     ))
+
+    new_data_snapshot = jsonable_encoder(doc)
+
+    log_audit_trail(
+        db=db,
+        table_name="doctorTable",
+        action_type="UPDATE",
+        record_id=doc.docID,
+        old_data=old_data_snapshot,
+        new_data=new_data_snapshot,
+        active_user_id=current_admin.userID
+    )
+
     db.commit()
     return {"message": f"Doctor status updated to {data.status}"}
 
@@ -622,10 +720,22 @@ def add_schedule_block(doc_id: int, data: ScheduleBlockCreate, db: Session = Dep
     except Exception as e: raise HTTPException(status_code=400, detail=str(e))
 
 @router.delete("/schedules/{sched_id}")
-def delete_schedule(sched_id: int, db: Session = Depends(get_db)):
+def delete_schedule(sched_id: int, db: Session = Depends(get_db), current_admin: User = Depends(get_current_user)):
     sched = db.query(Schedule).filter(Schedule.scheduleID == sched_id).first()
+    old_data_snapshot = jsonable_encoder(sched)
     if sched:
         db.delete(sched)
+
+        log_audit_trail(
+        db=db,
+        table_name="scheduleTable",
+        action_type="DELETE",
+        record_id=sched.scheduleID,
+        old_data=old_data_snapshot,
+        new_data=None,
+        active_user_id=current_admin.userID
+    )
+
         db.commit()
     return {"message": "Schedule deleted."}
 
@@ -655,6 +765,18 @@ def create_department(data: DepartmentCreateUpdate, request: Request, db: Sessio
     new_dept = Department(department=data.department, type=data.type.capitalize(), isActive=True)
     db.add(new_dept)
     
+    new_data_snapshot = jsonable_encoder(new_dept)
+
+    log_audit_trail(
+        db=db,
+        table_name="departmentTable",
+        action_type="INSERT",
+        record_id=new_dept.deptID,
+        old_data=None,
+        new_data=new_data_snapshot,
+        active_user_id=current_admin.userID
+    )
+
     db.add(SystemLogs(
         userID=current_admin.userID, actionType=actionTypeEnum.INSERT, tableAffected="departmentTable",
         target=data.department, # TARGET ADDED
@@ -669,8 +791,22 @@ def update_department(dept_id: int, data: DepartmentCreateUpdate, request: Reque
     dept = db.query(Department).filter(Department.deptID == dept_id).first()
     if not dept: raise HTTPException(status_code=404, detail="Department not found")
 
+    old_data_snapshot = jsonable_encoder(dept)
+
     dept.department = data.department
     dept.type = data.type.capitalize()
+
+    new_data_snapshot = jsonable_encoder(dept)
+
+    log_audit_trail(
+        db=db,
+        table_name="departmentTable",
+        action_type="UPDATE",
+        record_id=dept.deptID,
+        old_data=old_data_snapshot,
+        new_data=new_data_snapshot,
+        active_user_id=current_admin.userID
+    )
 
     db.add(SystemLogs(
         userID=current_admin.userID, actionType=actionTypeEnum.UPDATE, tableAffected="departmentTable",
@@ -686,7 +822,22 @@ def deactivate_department(dept_id: int, request: Request, db: Session = Depends(
     dept = db.query(Department).filter(Department.deptID == dept_id).first()
     if not dept: raise HTTPException(status_code=404, detail="Department not found")
 
+    old_data_snapshot = jsonable_encoder(dept)
+
     dept.isActive = False
+
+    new_data_snapshot = jsonable_encoder(dept)
+
+    log_audit_trail(
+        db=db,
+        table_name="departmentTable",
+        action_type="UPDATE",
+        record_id=dept.deptID,
+        old_data=old_data_snapshot,
+        new_data=new_data_snapshot,
+        active_user_id=current_admin.userID
+    )
+
     db.add(SystemLogs(
         userID=current_admin.userID, actionType=actionTypeEnum.DELETE, tableAffected="departmentTable",
         target=dept.department, # TARGET ADDED
@@ -976,6 +1127,8 @@ def update_profile(payload: ProfileUpdate, db: Session = Depends(get_db), curren
     if not prof:
         raise HTTPException(status_code=404, detail="Profile not found")
     
+    old_data_snapshot = jsonable_encoder(prof)
+
     prof.firstname = payload.firstname
     prof.middlename = payload.middlename
     prof.surname = payload.surname
@@ -991,6 +1144,18 @@ def update_profile(payload: ProfileUpdate, db: Session = Depends(get_db), curren
         
     prof.address = f"{payload.street} | {payload.barangay} | {payload.city} | {payload.province} | {payload.postalCode}"
     
+    new_data_snapshot = jsonable_encoder(prof)
+
+    log_audit_trail(
+        db=db,
+        table_name="staffTable",
+        action_type="UPDATE",
+        record_id=prof.staffID,
+        old_data=old_data_snapshot,
+        new_data=new_data_snapshot,
+        active_user_id=current_user.userID
+    )
+
     db.commit()
     return {"message": "Profile updated successfully"}
 
@@ -1020,12 +1185,27 @@ def change_account_email(data: EmailChangeRequest, request: Request, db: Session
     existing_user = db.query(User).filter(User.email == data.new_email).first()
     if existing_user: raise HTTPException(status_code=400, detail="This email is already connected to another account.")
 
+    old_data_snapshot = jsonable_encoder(existing_user)
+
     current_user.email = data.new_email
+
+    new_data_snapshot = jsonable_encoder(current_user)
+
+    log_audit_trail(
+        db=db,
+        table_name="userTable",
+        action_type="UPDATE",
+        record_id=current_user.userID,
+        old_data=old_data_snapshot,
+        new_data=new_data_snapshot,
+        active_user_id=current_user.userID
+    )
     db.add(SystemLogs(
         userID=current_user.userID, actionType=actionTypeEnum.UPDATE, tableAffected="userTable", 
-        target="Personal Account", # TARGET ADDED
+        target="Personal Account", 
         details="Personnel updated their login email", ipAddress=request.client.host
     ))
+
     db.commit()
     notifier.broadcast_sync({"title": "Email Updated", "desc": f"Updated email for user {current_user.userID}", "action": "UPDATE", "timestamp": datetime.now().isoformat()})
     return {"message": "Email updated successfully!", "new_email": data.new_email}
@@ -1292,12 +1472,26 @@ def toggle_patient_status(user_id: int, data: PatientStatusUpdate, request: Requ
     user = db.query(User).filter(User.userID == user_id).first()
     if not user or user.role != roleEnum.Patient: raise HTTPException(status_code=404, detail="Patient account not found.")
 
+    old_data_snapshot = jsonable_encoder(user)
+
     is_activating = (data.status == "Active")
     user.isActive = is_activating
     
     target_name = f"{user.patient_profile.firstname} {user.patient_profile.surname}" if user.patient_profile else "Unknown Patient"
     action = actionTypeEnum.UPDATE if is_activating else actionTypeEnum.DELETE
     
+    new_data_snapshot = jsonable_encoder(user)
+
+    log_audit_trail(
+        db=db,
+        table_name="userTable",
+        action_type="UPDATE",
+        record_id=user.userID,
+        old_data=old_data_snapshot,
+        new_data=new_data_snapshot,
+        active_user_id=current_admin.userID
+    )
+
     db.add(SystemLogs(
         userID=current_admin.userID, actionType=action, tableAffected="userTable",
         target=target_name, # TARGET ADDED
