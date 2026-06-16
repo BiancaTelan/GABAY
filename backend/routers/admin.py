@@ -251,6 +251,7 @@ def create_personnel(data: PersonnelCreate, background_tasks: BackgroundTasks, r
         position=data.position, gender=data.gender, contactNumber=data.contactNumber, workingDays=data.workingDays, workingHours=data.workingHours
     )
     db.add(new_staff)
+    db.flush()
     
     new_data_snapshot = jsonable_encoder(new_staff)
 
@@ -589,6 +590,7 @@ def add_doctor(data: DoctorCreate, request: Request, db: Session = Depends(get_d
             end_time = datetime.strptime(block.endTime, "%H:%M").time()
             for day in block.days:
                 if day in day_map: db.add(Schedule(docID=new_doc.docID, weekDay=day_map[day], startTime=start_time, endTime=end_time, maxPatients=block.slot))
+                db.flush()
         except Exception: pass
 
     new_data_snapshot = jsonable_encoder(new_doc)
@@ -764,6 +766,7 @@ def get_department_stats(db: Session = Depends(get_db)):
 def create_department(data: DepartmentCreateUpdate, request: Request, db: Session = Depends(get_db), current_admin: User = Depends(get_current_user)):
     new_dept = Department(department=data.department, type=data.type.capitalize(), isActive=True)
     db.add(new_dept)
+    db.flush()
     
     new_data_snapshot = jsonable_encoder(new_dept)
 

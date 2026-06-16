@@ -573,6 +573,7 @@ def staff_book_appointment(
         actionReason="Booked by Staff"
     )
     db.add(new_appointment)
+    db.flush()
 
     new_data_snapshot = jsonable_encoder(new_appointment)
 
@@ -1223,6 +1224,7 @@ def add_doctor_schedule(
             maxPatients=data.maxPatients 
         )
         db.add(new_schedule)
+        db.flush()
     
     new_data_snapshot = jsonable_encoder(new_schedule)
 
