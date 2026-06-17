@@ -885,19 +885,18 @@ def check_schedule_availability(
 
     day_of_week = target_date.strftime("%A") 
 
-    print("\n" + "="*40)
-    print(f"🛑 DEBUG: Checking availability...")
-    print(f"Doctor ID: {doctor_id}")
-    print(f"Target Date: {target_date} ({day_of_week})")
-
-    all_doctor_templates = db.query(Schedule).filter(Schedule.docID == doctor_id).all()
-    db_days = [f"'{t.weekDay}'" for t in all_doctor_templates]
-    print(f"Doctor's actual days in DB: {db_days}")
-    print("="*40 + "\n")
+    try:
+        day_enum = weekDayEnum[day_of_week]  
+    except KeyError:
+        return {
+            "is_available": False,
+            "reason": f"Doctor does not work on {day_of_week}s.",
+            "slots_left": 0
+        }
 
     schedule_template = db.query(Schedule).filter(
         Schedule.docID == doctor_id,
-        Schedule.weekDay == day_of_week 
+        Schedule.weekDay == day_enum 
     ).first()
 
     if not schedule_template:
